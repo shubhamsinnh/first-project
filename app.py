@@ -1,6 +1,6 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 
-Jobs = [
+Priests = [
     {"name": "Pankaj Jha", 
      "experience": "4 years", 
      "age": "40 years", 
@@ -30,7 +30,11 @@ Jobs = [
 app = Flask(__name__)
 @app.route("/")
 def hello_world():
-    return render_template('home.html', jobs=Jobs)
+    return render_template('home.html', Priests=Priests)
+
+@app.route("/api/priests")
+def list_priests():
+    return jsonify(Priests)
 
 if __name__ == "__main__":
-        app.run(debug=True)
+    app.run(debug=True)
