@@ -37,14 +37,14 @@
         <h2 class="text-center mt-2 mb-4">Available Priests</h2>
     
         <div class="container">
-            {% for Priests in Priests %}
+            {% for priests in priests %}
                 <div class="row align-items-center border-bottom py-3 g-0">
                     <!-- Priest Details (Left) -->
                     <div class="col-md-8">
-                        <h4 class="fw-bold text-dark" style="font-size: 1.5rem;">{{ Priests['name'] }}</h4>
-                        <div class="text-muted" style="font-size: 1.2rem;"><b>Location:</b> {{ Priests['Location'] }}</div>
-                        <div class="text-muted" style="font-size: 1.2rem;"><b>Experience:</b> {{ Priests['experience'] }}</div>
-                        <div class="text-muted" style="font-size: 1.2rem;"><b>Age:</b> {{ Priests['age'] }}</div>
+                        <h4 class="fw-bold text-dark" style="font-size: 1.5rem;">{{ priests['name'] }}</h4>
+                        <div class="text-muted" style="font-size: 1.2rem;"><b>Location:</b> {{ priests['Location'] }}</div>
+                        <div class="text-muted" style="font-size: 1.2rem;"><b>Experience:</b> {{ priests['experience'] }}</div>
+                        <div class="text-muted" style="font-size: 1.2rem;"><b>Age:</b> {{ priests['age'] }}</div>
                     </div>
     
                     <!-- Book Button (Right, Larger & Bold) -->
