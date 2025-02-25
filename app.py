@@ -1,6 +1,17 @@
 from flask import Flask, render_template, jsonify
+from flask_sqlalchemy import SQLAlchemy
+import os
+from dotenv import load_dotenv
 
-Priests = [
+load_dotenv()
+app = Flask(__name__)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")  # Secure DB connection
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Performance boost
+
+db = SQLAlchemy(app)
+
+priests = [
     {"name": "Pankaj Jha", 
      "experience": "4 years", 
      "age": "40 years", 
@@ -30,11 +41,11 @@ Priests = [
 app = Flask(__name__)
 @app.route("/")
 def hello_world():
-    return render_template('home.html', Priests=Priests)
+    return render_template('home.html', priests=priests)
 
 @app.route("/api/priests")
 def list_priests():
-    return jsonify(Priests)
+    return jsonify(priests)
 
 if __name__ == "__main__":
     app.run(debug=True)
