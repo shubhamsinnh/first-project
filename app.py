@@ -21,21 +21,49 @@ with app.app_context():
     except Exception as e:
         print(f"❌ Database connection error: {e}")
         
+class Priest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    experience = db.Column(db.String(50), nullable=False)
+    age = db.Column(db.String(20), nullable=False)
+    location = db.Column(db.String(100), nullable=False)
+    availability = db.Column(db.Boolean, default=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "experience": self.experience,
+            "age": self.age,
+            "location": self.location,
+            "availability": self.availability
+        }
+
         
-priests = [
-    {"name": "Pankaj Jha", "experience": "4 years", "age": "40 years", "availability": True, "Location": "Chennai"},
-    {"name": "Medhansh Acharya", "experience": "7 years", "age": "35 years", "availability": True, "Location": "Pune"},
-    {"name": "Govind Kumar Jha", "experience": "6 years", "age": "27 years", "availability": True, "Location": "New Delhi"},
-    {"name": "Shankar Pandit", "experience": "9 years", "age": "39 years", "availability": True, "Location": "Bangalore"}
-]
+# Marked down as we want to use data from database
+# priests = [
+#     {"name": "Pankaj Jha", "experience": "4 years", "age": "40 years", "availability": True, "Location": "Chennai"},
+#     {"name": "Medhansh Acharya", "experience": "7 years", "age": "35 years", "availability": True, "Location": "Pune"},
+#     {"name": "Govind Kumar Jha", "experience": "6 years", "age": "27 years", "availability": True, "Location": "New Delhi"},
+#     {"name": "Shankar Pandit", "experience": "9 years", "age": "39 years", "availability": True, "Location": "Bangalore"}
+# ]
 
 @app.route("/")
 def home():
-    return render_template('home.html', priests=priests)
+    return render_template('home.html', priests = priests)
+
 
 @app.route("/api/priests")
 def list_priests():
-    return jsonify(priests)
+    priests = Priest.query.all()  # Fetch data from database
+    return jsonify([priest.to_dict() for priest in priests])
+
+
+
+# We will be changing the api routes to returning databse list of priests instead of python list
+# @app.route("/api/priests")
+# def list_priests():
+#     return jsonify(priests)
 
 if __name__ == "__main__":
     app.run(debug=True)
