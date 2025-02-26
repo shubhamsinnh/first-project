@@ -20,8 +20,9 @@ with app.app_context():
         print("✅ Successfully connected to the PostgreSQL database!")
     except Exception as e:
         print(f"❌ Database connection error: {e}")
-        
-class Priest(db.Model):
+
+class Priests(db.Model):  # ✅ Class names should be PascalCase
+    __tablename__ = "priests"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     experience = db.Column(db.String(50), nullable=False)
@@ -48,22 +49,16 @@ class Priest(db.Model):
 #     {"name": "Shankar Pandit", "experience": "9 years", "age": "39 years", "availability": True, "Location": "Bangalore"}
 # ]
 
+
 @app.route("/")
 def home():
-    return render_template('home.html', priests = priests)
-
+    priests = Priests.query.all()  # ✅ Corrected query
+    return render_template('home.html', priests=priests)
 
 @app.route("/api/priests")
 def list_priests():
-    priests = Priest.query.all()  # Fetch data from database
-    return jsonify([priest.to_dict() for priest in priests])
-
-
-
-# We will be changing the api routes to returning databse list of priests instead of python list
-# @app.route("/api/priests")
-# def list_priests():
-#     return jsonify(priests)
+    priests = Priests.query.all()  # ✅ Corrected model reference
+    return jsonify([priest.to_dict() for priest in priests])  # ✅ Fixed iteration
 
 if __name__ == "__main__":
     app.run(debug=True)
