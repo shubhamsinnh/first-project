@@ -2,3 +2,6 @@ Flask
 gunicorn
 Flask-SQLAlchemy   
 python-dotenv
+flask_bcrypt
+flask_jwt_extended
+
