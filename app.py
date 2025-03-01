@@ -60,7 +60,12 @@ with app.app_context():
 # Routes
 @app.route("/")
 def home():
-    priests = Priests.query.all()  # ✅ Fetch data for rendering
+    priests = Priests.query.all()  # Fetch all priests
+    print(f"Fetched Priests: {priests}")  # Debugging output
+
+    if not priests:
+        print("❌ No priests found in database!")
+
     return render_template('home.html', priests=priests)
 
 # ✅ Register User (No user.py, everything is inside app.py)
