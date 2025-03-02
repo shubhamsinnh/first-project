@@ -23,7 +23,7 @@ jwt = JWTManager(app)
 with app.app_context(): 
     try:
         db.engine.connect()
-        print("✅ Successfully connected to the PostgreSQL database!")
+        print("✅ Successfully connected to Neon PostgreSQL!")
     except Exception as e:
         print(f"❌ Database connection error: {e}")
 
@@ -123,3 +123,4 @@ def get_available_priests():
 
 if __name__ == "__main__":
     app.run(debug=True)
+    
