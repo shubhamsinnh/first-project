@@ -30,12 +30,14 @@ with app.app_context():
 # Database Models
 class User(db.Model):
     __tablename__ = "users"
+    __table_args__ = {'schema': 'public'}
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)  # Hashed password
 
 class Priests(db.Model):
     __tablename__ = "priests"
+    __table_args__ = {'schema': 'public'}
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(250), nullable=False)
     experience = db.Column(db.String(250), nullable=False)
@@ -123,4 +125,3 @@ def get_available_priests():
 
 if __name__ == "__main__":
     app.run(debug=True)
-    
