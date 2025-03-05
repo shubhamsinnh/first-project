@@ -1,9 +1,11 @@
 from flask import Flask, render_template, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 import os
 from dotenv import load_dotenv
+
+from database import db  
+from models import User, Priests  #Import models from the `models/` folder
 
 load_dotenv()
 print("Database URL:", os.getenv("DATABASE_URL"))
@@ -13,47 +15,22 @@ app = Flask(__name__)
 # Database Configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config['JWT_SECRET_KEY'] = 'supersecretkey'  # Change this in production
+app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")  # Change this in production
 
-db = SQLAlchemy(app)
+db.init_app(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
-# ✅ Ensure the database connection works
+# Ensure the database connection works
 with app.app_context(): 
     try:
         db.engine.connect()
-        print("✅ Successfully connected to Neon PostgreSQL!")
+        print("Successfully connected to Neon PostgreSQL!")
     except Exception as e:
-        print(f"❌ Database connection error: {e}")
+        print(f"Database connection error: {e}")
 
-# Database Models
-class User(db.Model):
-    __tablename__ = "users"
-    __table_args__ = {'schema': 'public'}
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)  # Hashed password
+# Database Models is in - models.py
 
-class Priests(db.Model):
-    __tablename__ = "priests"
-    __table_args__ = {'schema': 'public'}
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(250), nullable=False)
-    experience = db.Column(db.String(250), nullable=False)
-    age = db.Column(db.String(50), nullable=False)
-    location = db.Column(db.String(100), nullable=False)
-    availability = db.Column(db.Boolean, default=True)
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "name": self.name,
-            "experience": self.experience,
-            "age": self.age,
-            "location": self.location,
-            "availability": self.availability
-        }
 
 # Ensure tables are created
 with app.app_context():
@@ -66,11 +43,11 @@ def home():
     print(f"Fetched Priests: {priests}")  # Debugging output
 
     if not priests:
-        print("❌ No priests found in database!")
+        print("No priests found in database!")
 
     return render_template('home.html', priests=priests)
 
-# ✅ Register User (No user.py, everything is inside app.py)
+# Register User (No user.py, everything is inside app.py)
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -91,7 +68,7 @@ def register():
 
     return jsonify({"message": "User registered successfully"}), 201
 
-# ✅ Login User
+# Login User
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -102,10 +79,10 @@ def login():
     if not user or not bcrypt.check_password_hash(user.password, password):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    access_token = create_access_token(identity=user.id)
+    access_token = create_access_token(identity=str(user.id)) # need to change it to string to complete postman requirment
     return jsonify({"message": "Login successful", "access_token": access_token}), 200
 
-# ✅ Fetch Priests (Requires Authentication)
+# Fetch Priests (Requires Authentication)
 @app.route("/api/priests", methods=["GET"])
 @jwt_required()
 def fetch_priests():
@@ -117,7 +94,7 @@ def fetch_priests():
         "priests": [priest.to_dict() for priest in priests]
     })
 
-# ✅ Fetch Available Priests (Public Route)
+# Fetch Available Priests (Public Route)
 @app.route("/api/available-priests", methods=["GET"])
 def get_available_priests():
     priests = Priests.query.filter_by(availability=True).all()
