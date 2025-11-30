@@ -123,5 +123,43 @@ def fetch_panditji():
     except SQLAlchemyError as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/pandit-signup", methods=['GET', 'POST'])
+def pandit_signup():
+    if request.method == 'POST':
+        try:
+            # Get form data
+            name = request.form.get('name')
+            email = request.form.get('email')
+            phone = request.form.get('phone')
+            experience = request.form.get('experience')
+            languages = request.form.get('languages')
+            location = request.form.get('location')
+            specialties = request.form.get('specialties')
+
+            new_pandit = Pandit(
+                name=name,
+                email=email,
+                phone=phone,
+                experience=experience,
+                languages=languages,
+                location=location,
+                specialties=specialties,
+                is_approved=False  # Admin will approve later
+            )
+            
+            db.session.add(new_pandit)
+            db.session.commit()
+            
+            return render_template('pandit_signup_success.html')
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error in pandit signup: {str(e)}")
+            return render_template('pandit_signup.html', error=str(e))
+    
+    return render_template('pandit_signup.html')
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=os.getenv("FLASK_DEBUG", False))
+
