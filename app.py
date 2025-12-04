@@ -21,6 +21,12 @@ app = Flask(__name__)
 app.config.update(
     SQLALCHEMY_DATABASE_URI=os.getenv("DATABASE_URL"),
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    SQLALCHEMY_ENGINE_OPTIONS={
+        'pool_pre_ping': True,  # Verify connections before using them
+        'pool_recycle': 300,    # Recycle connections after 5 minutes
+        'pool_size': 10,
+        'max_overflow': 20
+    },
     JWT_SECRET_KEY=os.getenv("JWT_SECRET_KEY"),
     UPLOAD_FOLDER=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/uploads'),
     ALLOWED_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif'},
@@ -56,7 +62,10 @@ def home():
         )
     except SQLAlchemyError as e:
         app.logger.error(f"Database error: {str(e)}")
-        return render_template('error.html'), 500
+        return jsonify({
+            "error": "Database connection error. Please check your database connection.",
+            "details": str(e)
+        }), 500
 
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -160,6 +169,267 @@ def pandit_signup():
     
     return render_template('pandit_signup.html')
 
+
+@app.route('/api/seed-data', methods=['GET'])
+def seed_data():
+    """Seed the database with sample data"""
+    try:
+        # Clear existing data (optional - remove if you want to keep existing data)
+        # PujaMaterial.query.delete()
+        # Testimonial.query.delete()
+        # Bundle.query.delete()
+        
+        # Check if data already exists
+        if Pandit.query.first() or PujaMaterial.query.first() or Testimonial.query.first() or Bundle.query.first():
+            return jsonify({"message": "Data already exists! Clear database first if you want to reseed."}), 200
+        
+        # Add Puja Materials
+        materials = [
+            PujaMaterial(
+                name="Premium Incense Sticks Set",
+                description="Hand-rolled traditional incense sticks made from natural ingredients. Includes sandalwood, jasmine, and rose varieties. Perfect for daily puja and meditation.",
+                price=299,
+                image_url="priest.jpeg"
+            ),
+            PujaMaterial(
+                name="Brass Diya Collection",
+                description="Set of 5 handcrafted brass diyas with intricate designs. Traditional oil lamps perfect for festivals and daily worship. Long-lasting and eco-friendly.",
+                price=599,
+                image_url="priest1.jpeg"
+            ),
+            PujaMaterial(
+                name="Sacred Puja Thali Set",
+                description="Complete brass puja thali with essential items including kumkum holder, rice bowl, diya, bell, and agarbatti holder. Ideal for all Hindu rituals.",
+                price=1299,
+                image_url="th.png"
+            ),
+            PujaMaterial(
+                name="Organic Camphor Tablets",
+                description="Pure and natural camphor tablets for aarti and havan. Smokeless burning, strong fragrance. Pack of 100 tablets for long-lasting use.",
+                price=149,
+                image_url="priest.jpeg"
+            )
+        ]
+        
+        # Add Testimonials
+        testimonials = [
+            Testimonial(
+                author="Priya Sharma",
+                author_image="priest.jpeg",
+                content="Excellent service! The pandit ji was very knowledgeable and performed the Griha Pravesh puja beautifully. The puja materials were of premium quality. Highly recommended!",
+                rating=5,
+                location="Mumbai, Maharashtra"
+            ),
+            Testimonial(
+                author="Rajesh Kumar",
+                author_image="priest1.jpeg",
+                content="Very professional and punctual. All the puja essentials arrived on time and were exactly as described. The complete ritual bundle saved me so much time and effort.",
+                rating=5,
+                location="Delhi, NCR"
+            ),
+            Testimonial(
+                author="Anjali Verma",
+                author_image="th.png",
+                content="PujaPath made our wedding ceremony stress-free. The pandit was experienced and guided us through every ritual. Thank you for preserving our traditions with such dedication!",
+                rating=5,
+                location="Bangalore, Karnataka"
+            ),
+            Testimonial(
+                author="Vikram Singh",
+                author_image="priest.jpeg",
+                content="Great platform for all puja needs. The prices are reasonable and the quality is authentic. I especially love the monthly subscription for daily puja items.",
+                rating=4,
+                location="Jaipur, Rajasthan"
+            )
+        ]
+        
+        # Add Sample Pandits
+        pandits = [
+            Pandit(
+                name="Pandit Govind Jha",
+                experience="15+ Years",
+                age=45,
+                location="Delhi, NCR",
+                availability=True,
+                image_url="govind-jha.webp",
+                rating=5,
+                languages="Hindi, English, Sanskrit"
+            ),
+            Pandit(
+                name="Pandit Medhansh Acharya",
+                experience="10+ Years",
+                age=38,
+                location="Mumbai, Maharashtra",
+                availability=True,
+                image_url="medhansh-acharya.webp",
+                rating=5,
+                languages="Hindi, English, Marathi"
+            ),
+            Pandit(
+                name="Pandit Pankaj Jha",
+                experience="20+ Years",
+                age=52,
+                location="Bangalore, Karnataka",
+                availability=False,
+                image_url="pankaj-jha.webp",
+                rating=5,
+                languages="Hindi, English, Kannada"
+            ),
+            Pandit(
+                name="Pandit Shankar Pandit",
+                experience="12+ Years",
+                age=42,
+                location="Pune, Maharashtra",
+                availability=True,
+                image_url="shankar-pandit.webp",
+                rating=5,
+                languages="Hindi, English, Marathi, Sanskrit"
+            )
+        ]
+        
+        # Add Ritual Bundles
+        bundles = [
+            Bundle(
+                name="Griha Pravesh Complete Package",
+                description="Everything you need for a perfect housewarming ceremony. Includes pandit booking, all puja materials, havan samagri, and decorative items.",
+                image_url="priest.jpeg",
+                original_price=5999,
+                discounted_price=4499,
+                includes="Pandit Service, Puja Thali, Havan Kund, Samagri, Flowers, Fruits"
+            ),
+            Bundle(
+                name="Satyanarayan Puja Bundle",
+                description="Complete kit for Satyanarayan Katha puja. Authentic materials curated by experienced pandits. Perfect for home celebrations and festivals.",
+                image_url="priest1.jpeg",
+                original_price=3499,
+                discounted_price=2799,
+                includes="Puja Book, Kalash Set, Prasad Items, Decorations, Photo Frame"
+            ),
+            Bundle(
+                name="Monthly Puja Essentials Box",
+                description="Subscription box with all daily puja needs delivered monthly. Includes incense, diyas, kumkum, vibhuti, and seasonal items.",
+                image_url="th.png",
+                original_price=999,
+                discounted_price=799,
+                includes="Incense Sticks, Diyas, Kumkum, Rice, Camphor, Sacred Thread"
+            ),
+            Bundle(
+                name="Wedding Ritual Complete Set",
+                description="Comprehensive package for Hindu wedding ceremonies. Experienced pandit with all required materials. Make your special day memorable.",
+                image_url="priest.jpeg",
+                original_price=15999,
+                discounted_price=12999,
+                includes="Expert Pandit, Complete Samagri, Mandap Items, Mangalsutra, Documentation"
+            )
+        ]
+        
+        # Add all items to database
+        db.session.add_all(pandits)
+        db.session.add_all(materials)
+        db.session.add_all(testimonials)
+        db.session.add_all(bundles)
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Sample data seeded successfully!",
+            "pandits": len(pandits),
+            "materials": len(materials),
+            "testimonials": len(testimonials),
+            "bundles": len(bundles)
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error seeding data: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/book-pandit', methods=['POST'])
+def book_pandit():
+    """API endpoint for booking a pandit"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['pandit_id', 'name', 'phone', 'puja_type', 'date', 'address']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({"error": f"Missing required field: {field}"}), 400
+        
+        # Here you would typically save to database
+        # For now, just return success
+        return jsonify({
+            "success": True,
+            "message": "Booking confirmed! We will contact you shortly.",
+            "booking_id": "BK" + str(data['pandit_id']) + "001",
+            "pandit_id": data['pandit_id'],
+            "customer_name": data['name'],
+            "phone": data['phone'],
+            "puja_type": data['puja_type'],
+            "date": data['date']
+        }), 201
+        
+    except Exception as e:
+        app.logger.error(f"Error in booking: {str(e)}")
+        return jsonify({"error": "Booking failed. Please try again."}), 500
+
+
+@app.route('/api/cart/add', methods=['POST'])
+def add_to_cart():
+    """API endpoint for adding items to cart"""
+    try:
+        data = request.get_json()
+        
+        if 'product_id' not in data:
+            return jsonify({"error": "Product ID required"}), 400
+        
+        product = PujaMaterial.query.get(data['product_id'])
+        if not product:
+            return jsonify({"error": "Product not found"}), 404
+        
+        return jsonify({
+            "success": True,
+            "message": "Item added to cart",
+            "product": {
+                "id": product.id,
+                "name": product.name,
+                "price": product.price
+            }
+        }), 200
+        
+    except Exception as e:
+        app.logger.error(f"Error adding to cart: {str(e)}")
+        return jsonify({"error": "Failed to add to cart"}), 500
+
+
+@app.route('/api/checkout', methods=['POST'])
+def checkout():
+    """API endpoint for checkout"""
+    try:
+        data = request.get_json()
+        
+        if 'items' not in data or not data['items']:
+            return jsonify({"error": "Cart is empty"}), 400
+        
+        # Calculate total
+        total = 0
+        for item in data['items']:
+            product = PujaMaterial.query.get(item['id'])
+            if product:
+                total += product.price * item['quantity']
+        
+        # Here you would typically process payment and create order
+        return jsonify({
+            "success": True,
+            "message": "Order placed successfully!",
+            "order_id": "ORD" + str(int(total)),
+            "total": total
+        }), 201
+        
+    except Exception as e:
+        app.logger.error(f"Error in checkout: {str(e)}")
+        return jsonify({"error": "Checkout failed"}), 500
+
+
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=os.getenv("FLASK_DEBUG", False))
+    app.run(host='0.0.0.0', port=5001, debug=os.getenv("FLASK_DEBUG", False))
 
