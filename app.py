@@ -1,15 +1,18 @@
-from flask import Flask, render_template, jsonify, request, url_for
+from flask import Flask, render_template, jsonify, request, url_for, session, redirect
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 from werkzeug.utils import secure_filename
+from functools import wraps
 import os
 from dotenv import load_dotenv
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
 from flask_migrate import Migrate
+from datetime import datetime, timedelta
 
 # Local imports
 from database import db
-from models import User, Pandit, PujaMaterial, Testimonial, Bundle
+from models import User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking
 
 # Load environment variables
 load_dotenv()
@@ -28,6 +31,7 @@ app.config.update(
         'max_overflow': 20
     },
     JWT_SECRET_KEY=os.getenv("JWT_SECRET_KEY"),
+    SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret-key-change-in-production"),
     UPLOAD_FOLDER=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/uploads'),
     ALLOWED_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif'},
     MAX_CONTENT_LENGTH=16 * 1024 * 1024  # 16MB file size limit
@@ -48,6 +52,15 @@ def allowed_file(filename):
     """Check if filename has an allowed extension"""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+# Admin login required decorator
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'admin_id' not in session:
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route("/")
 def home():
@@ -139,6 +152,7 @@ def pandit_signup():
         try:
             # Get form data
             name = request.form.get('name')
+            age = request.form.get('age')
             email = request.form.get('email')
             phone = request.form.get('phone')
             experience = request.form.get('experience')
@@ -148,12 +162,14 @@ def pandit_signup():
 
             new_pandit = Pandit(
                 name=name,
+                age=int(age) if age else 35,
                 email=email,
                 phone=phone,
                 experience=experience,
                 languages=languages,
                 location=location,
                 specialties=specialties,
+                availability=True,
                 is_approved=False  # Admin will approve later
             )
             
@@ -253,7 +269,11 @@ def seed_data():
                 availability=True,
                 image_url="govind-jha.webp",
                 rating=5,
-                languages="Hindi, English, Sanskrit"
+                languages="Hindi, English, Sanskrit",
+                email="govind.jha@pujapath.com",
+                phone="9876543210",
+                specialties="Wedding ceremonies, Griha Pravesh, Satyanarayan Puja",
+                is_approved=True
             ),
             Pandit(
                 name="Pandit Medhansh Acharya",
@@ -263,7 +283,11 @@ def seed_data():
                 availability=True,
                 image_url="medhansh-acharya.webp",
                 rating=5,
-                languages="Hindi, English, Marathi"
+                languages="Hindi, English, Marathi",
+                email="medhansh@pujapath.com",
+                phone="9876543211",
+                specialties="Navratri Puja, Wedding, Havan",
+                is_approved=True
             ),
             Pandit(
                 name="Pandit Pankaj Jha",
@@ -273,7 +297,11 @@ def seed_data():
                 availability=False,
                 image_url="pankaj-jha.webp",
                 rating=5,
-                languages="Hindi, English, Kannada"
+                languages="Hindi, English, Kannada",
+                email="pankaj@pujapath.com",
+                phone="9876543212",
+                specialties="All Hindu rituals, Vedic ceremonies",
+                is_approved=True
             ),
             Pandit(
                 name="Pandit Shankar Pandit",
@@ -283,7 +311,11 @@ def seed_data():
                 availability=True,
                 image_url="shankar-pandit.webp",
                 rating=5,
-                languages="Hindi, English, Marathi, Sanskrit"
+                languages="Hindi, English, Marathi, Sanskrit",
+                email="shankar@pujapath.com",
+                phone="9876543213",
+                specialties="Ganesh Puja, Wedding, Mundan, Shradh",
+                is_approved=True
             )
         ]
         
@@ -428,6 +460,182 @@ def checkout():
     except Exception as e:
         app.logger.error(f"Error in checkout: {str(e)}")
         return jsonify({"error": "Checkout failed"}), 500
+
+
+# ==================== ADMIN PANEL ROUTES ====================
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Admin login page"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        admin = Admin.query.filter_by(username=username).first()
+        
+        if admin and admin.check_password(password):
+            session['admin_id'] = admin.id
+            session['admin_username'] = admin.username
+            return redirect(url_for('admin_dashboard'))
+        
+        return render_template('admin_login.html', error="Invalid credentials")
+    
+    return render_template('admin_login.html')
+
+
+@app.route('/admin/logout')
+def admin_logout():
+    """Admin logout"""
+    session.pop('admin_id', None)
+    session.pop('admin_username', None)
+    return redirect(url_for('admin_login'))
+
+
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard():
+    """Admin dashboard with statistics"""
+    try:
+        # Get statistics
+        total_pandits = Pandit.query.count()
+        pending_pandits = Pandit.query.filter_by(is_approved=False).count()
+        total_products = PujaMaterial.query.count()
+        total_bookings = Booking.query.count()
+        pending_bookings = Booking.query.filter_by(status='pending').count()
+        
+        # Recent bookings
+        recent_bookings = Booking.query.order_by(Booking.created_at.desc()).limit(10).all()
+        
+        # Recent pandit signups
+        recent_pandits = Pandit.query.order_by(Pandit.id.desc()).limit(5).all()
+        
+        return render_template('admin_dashboard.html',
+                             total_pandits=total_pandits,
+                             pending_pandits=pending_pandits,
+                             total_products=total_products,
+                             total_bookings=total_bookings,
+                             pending_bookings=pending_bookings,
+                             recent_bookings=recent_bookings,
+                             recent_pandits=recent_pandits)
+    except Exception as e:
+        app.logger.error(f"Dashboard error: {str(e)}")
+        return f"Error loading dashboard: {str(e)}", 500
+
+
+@app.route('/admin/pandits')
+@admin_required
+def admin_pandits():
+    """Manage pandits"""
+    pandits = Pandit.query.order_by(Pandit.id.desc()).all()
+    return render_template('admin_pandits.html', pandits=pandits)
+
+
+@app.route('/admin/pandit/approve/<int:pandit_id>', methods=['POST'])
+@admin_required
+def approve_pandit(pandit_id):
+    """Approve a pandit"""
+    try:
+        pandit = Pandit.query.get_or_404(pandit_id)
+        pandit.is_approved = True
+        db.session.commit()
+        return jsonify({"success": True, "message": "Pandit approved successfully"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/admin/pandit/reject/<int:pandit_id>', methods=['POST'])
+@admin_required
+def reject_pandit(pandit_id):
+    """Reject/delete a pandit"""
+    try:
+        pandit = Pandit.query.get_or_404(pandit_id)
+        db.session.delete(pandit)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Pandit rejected successfully"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/admin/products')
+@admin_required
+def admin_products():
+    """Manage products"""
+    products = PujaMaterial.query.all()
+    return render_template('admin_products.html', products=products)
+
+
+@app.route('/admin/product/add', methods=['POST'])
+@admin_required
+def add_product():
+    """Add new product"""
+    try:
+        data = request.get_json()
+        product = PujaMaterial(
+            name=data['name'],
+            description=data['description'],
+            price=float(data['price']),
+            image_url=data.get('image_url', 'priest.jpeg')
+        )
+        db.session.add(product)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Product added", "product": product.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/admin/product/delete/<int:product_id>', methods=['POST'])
+@admin_required
+def delete_product(product_id):
+    """Delete product"""
+    try:
+        product = PujaMaterial.query.get_or_404(product_id)
+        db.session.delete(product)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Product deleted"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/admin/bookings')
+@admin_required
+def admin_bookings():
+    """View all bookings"""
+    bookings = Booking.query.order_by(Booking.created_at.desc()).all()
+    return render_template('admin_bookings.html', bookings=bookings)
+
+
+@app.route('/admin/init', methods=['GET'])
+def init_admin():
+    """Initialize admin user (run once)"""
+    try:
+        # Check if admin already exists
+        if Admin.query.first():
+            return jsonify({"message": "Admin already exists"}), 400
+        
+        # Create default admin
+        admin = Admin(
+            username="admin",
+            email="admin@pujapath.com",
+            is_super_admin=True
+        )
+        admin.set_password("admin123")  # Change this password!
+        
+        db.session.add(admin)
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Admin created successfully",
+            "username": "admin",
+            "password": "admin123",
+            "warning": "Please change this password immediately!"
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

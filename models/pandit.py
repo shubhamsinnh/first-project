@@ -19,6 +19,12 @@ class Pandit(db.Model):
     rating = db.Column(db.Integer, default=5)  # New column for star ratings
     languages = db.Column(db.String(200))  # New column for spoken languages
     
+    # Admin approval fields
+    email = db.Column(db.String(150))
+    phone = db.Column(db.String(20))
+    specialties = db.Column(db.Text)
+    is_approved = db.Column(db.Boolean, default=False)
+    
     def to_dict(self):
         return {
             "id": self.id,
