@@ -4,3 +4,4 @@ from .pandit import Pandit  # Fixed PascalCase
 from .puja_materials import PujaMaterial
 from .testimonial import Testimonial
 from .bundle import Bundle
+from .admin import Admin, Booking
