@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - PujaPath</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-5px); }
+    </style>
+</head>
+<body class="bg-gray-100">
+    
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-purple-600 font-bold">
+                        ॐ
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">PujaPath Admin</h1>
+                        <p class="text-sm text-blue-100">Management Dashboard</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <span class="text-sm">Welcome, {{ session.admin_username }}</span>
+                    <a href="/admin/logout" class="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white border-b">
+        <div class="container mx-auto px-6">
+            <div class="flex space-x-8">
+                <a href="/admin/dashboard" class="py-4 border-b-2 border-blue-600 text-blue-600 font-semibold">Dashboard</a>
+                <a href="/admin/pandits" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Pandits</a>
+                <a href="/admin/products" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Products</a>
+                <a href="/admin/bookings" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Bookings</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Pandits -->
+            <div class="stat-card bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-blue-100 text-sm font-medium">Total Pandits</p>
+                        <h3 class="text-4xl font-bold mt-2">{{ total_pandits }}</h3>
+                    </div>
+                    <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                {% if pending_pandits > 0 %}
+                <p class="text-sm text-blue-100">{{ pending_pandits }} pending approval</p>
+                {% else %}
+                <p class="text-sm text-blue-100">All approved</p>
+                {% endif %}
+            </div>
+
+            <!-- Total Products -->
+            <div class="stat-card bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-green-100 text-sm font-medium">Total Products</p>
+                        <h3 class="text-4xl font-bold mt-2">{{ total_products }}</h3>
+                    </div>
+                    <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-sm text-green-100">Puja essentials in stock</p>
+            </div>
+
+            <!-- Total Bookings -->
+            <div class="stat-card bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-purple-100 text-sm font-medium">Total Bookings</p>
+                        <h3 class="text-4xl font-bold mt-2">{{ total_bookings }}</h3>
+                    </div>
+                    <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                </div>
+                {% if pending_bookings > 0 %}
+                <p class="text-sm text-purple-100">{{ pending_bookings }} pending</p>
+                {% else %}
+                <p class="text-sm text-purple-100">All processed</p>
+                {% endif %}
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="stat-card bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="mb-4">
+                    <p class="text-orange-100 text-sm font-medium mb-4">Quick Actions</p>
+                </div>
+                <div class="space-y-2">
+                    <a href="/admin/pandits" class="block bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                        Manage Pandits
+                    </a>
+                    <a href="/admin/products" class="block bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                        Manage Products
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Recent Bookings -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4">Recent Bookings</h2>
+                {% if recent_bookings %}
+                <div class="space-y-4">
+                    {% for booking in recent_bookings %}
+                    <div class="border-l-4 border-blue-500 pl-4 py-2">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-semibold">{{ booking.customer_name }}</p>
+                                <p class="text-sm text-gray-600">{{ booking.puja_type }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ booking.date }}</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold 
+                                {% if booking.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif booking.status == 'confirmed' %}bg-green-100 text-green-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ booking.status }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-center py-8">No bookings yet</p>
+                {% endif %}
+            </div>
+
+            <!-- Recent Pandit Signups -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4">Recent Pandit Signups</h2>
+                {% if recent_pandits %}
+                <div class="space-y-4">
+                    {% for pandit in recent_pandits %}
+                    <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold">
+                                {{ pandit.name[0] }}
+                            </div>
+                            <div>
+                                <p class="font-semibold">{{ pandit.name }}</p>
+                                <p class="text-sm text-gray-600">{{ pandit.location }}</p>
+                            </div>
+                        </div>
+                        {% if pandit.is_approved %}
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                            Approved
+                        </span>
+                        {% else %}
+                        <a href="/admin/pandits" class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold hover:bg-yellow-200">
+                            Pending
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-center py-8">No recent signups</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
