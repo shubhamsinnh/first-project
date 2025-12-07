@@ -33,8 +33,11 @@ class Pandit(db.Model):
             "age": self.age,
             "location": self.location,
             "availability": self.availability,
-            # New fields with defaults for existing records
             "image_url": self.image_url or "/static/images/default-pandit.jpg",
             "rating": self.rating or 5,
-            "languages": self.languages or "Hindi, English"
+            "languages": self.languages or "Hindi, English",
+            "email": self.email,
+            "phone": self.phone,
+            "specialties": self.specialties,
+            "is_approved": self.is_approved
         }
