@@ -68,7 +68,7 @@ def home():
     try:
         return render_template(
             'home.html',
-            pandits=Pandit.query.all(),
+            pandits=Pandit.query.filter_by(is_approved=True).all(),  # Only show approved pandits
             materials=PujaMaterial.query.all(),
             testimonials=Testimonial.query.all(),
             bundles=Bundle.query.all()
@@ -146,6 +146,35 @@ def fetch_panditji():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/about')
+def about():
+    """About Us page"""
+    return render_template('about.html')
+
+
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    """Contact Us page"""
+    if request.method == 'POST':
+        try:
+            # Get form data
+            name = request.form.get('name')
+            email = request.form.get('email')
+            phone = request.form.get('phone')
+            subject = request.form.get('subject')
+            message = request.form.get('message')
+            
+            # Here you would typically save to database or send email
+            app.logger.info(f"Contact form submission from {name} ({email}): {subject}")
+            
+            return render_template('contact.html', success=True)
+        except Exception as e:
+            app.logger.error(f"Error in contact form: {str(e)}")
+            return render_template('contact.html', error=str(e))
+    
+    return render_template('contact.html')
+
+
 @app.route("/pandit-signup", methods=['GET', 'POST'])
 def pandit_signup():
     if request.method == 'POST':
@@ -190,133 +219,76 @@ def pandit_signup():
 def seed_data():
     """Seed the database with sample data"""
     try:
-        # Clear existing data (optional - remove if you want to keep existing data)
-        # PujaMaterial.query.delete()
-        # Testimonial.query.delete()
-        # Bundle.query.delete()
-        
         # Check if data already exists
         if Pandit.query.first() or PujaMaterial.query.first() or Testimonial.query.first() or Bundle.query.first():
-            return jsonify({"message": "Data already exists! Clear database first if you want to reseed."}), 200
+            return jsonify({
+                "message": "Data already exists!",
+                "tip": "Visit /api/clear-data first if you want to reseed",
+                "counts": {
+                    "pandits": Pandit.query.count(),
+                    "materials": PujaMaterial.query.count(),
+                    "testimonials": Testimonial.query.count(),
+                    "bundles": Bundle.query.count()
+                }
+            }), 200
         
-        # Add Puja Materials
+        # Add Puja Materials (20+ products)
         materials = [
-            PujaMaterial(
-                name="Premium Incense Sticks Set",
-                description="Hand-rolled traditional incense sticks made from natural ingredients. Includes sandalwood, jasmine, and rose varieties. Perfect for daily puja and meditation.",
-                price=299,
-                image_url="priest.jpeg"
-            ),
-            PujaMaterial(
-                name="Brass Diya Collection",
-                description="Set of 5 handcrafted brass diyas with intricate designs. Traditional oil lamps perfect for festivals and daily worship. Long-lasting and eco-friendly.",
-                price=599,
-                image_url="priest1.jpeg"
-            ),
-            PujaMaterial(
-                name="Sacred Puja Thali Set",
-                description="Complete brass puja thali with essential items including kumkum holder, rice bowl, diya, bell, and agarbatti holder. Ideal for all Hindu rituals.",
-                price=1299,
-                image_url="th.png"
-            ),
-            PujaMaterial(
-                name="Organic Camphor Tablets",
-                description="Pure and natural camphor tablets for aarti and havan. Smokeless burning, strong fragrance. Pack of 100 tablets for long-lasting use.",
-                price=149,
-                image_url="priest.jpeg"
-            )
+            PujaMaterial(name="Premium Incense Sticks Set", description="Hand-rolled traditional incense sticks made from natural ingredients. Includes sandalwood, jasmine, and rose varieties.", price=299, image_url="priest.jpeg"),
+            PujaMaterial(name="Brass Diya Collection", description="Set of 5 handcrafted brass diyas with intricate designs. Traditional oil lamps perfect for festivals and daily worship.", price=599, image_url="priest1.jpeg"),
+            PujaMaterial(name="Sacred Puja Thali Set", description="Complete brass puja thali with essential items including kumkum holder, rice bowl, diya, bell, and agarbatti holder.", price=1299, image_url="th.png"),
+            PujaMaterial(name="Organic Camphor Tablets", description="Pure and natural camphor tablets for aarti and havan. Smokeless burning, strong fragrance. Pack of 100 tablets.", price=149, image_url="priest.jpeg"),
+            PujaMaterial(name="Sandalwood Powder", description="Premium quality pure sandalwood powder for tilak, havan, and puja. 100g pack of aromatic sandalwood.", price=450, image_url="priest1.jpeg"),
+            PujaMaterial(name="Rudraksha Mala 108 Beads", description="Authentic 5 Mukhi Rudraksha mala with 108 beads. Perfect for meditation, japa, and spiritual practices.", price=899, image_url="th.png"),
+            PujaMaterial(name="Copper Kalash Set", description="Traditional copper kalash (pot) with coconut holder and mango leaves holder. Essential for all Hindu pujas.", price=799, image_url="priest.jpeg"),
+            PujaMaterial(name="Havan Samagri Pack", description="Complete havan samagri pack with all essential herbs and ingredients. Includes guggal, camphor, ghee, and more.", price=199, image_url="priest1.jpeg"),
+            PujaMaterial(name="Kumkum & Haldi Set", description="Pure kumkum and turmeric powder set in decorative containers. Perfect for tilak and puja rituals.", price=159, image_url="th.png"),
+            PujaMaterial(name="Brass Bell (Ghanti)", description="Handcrafted brass temple bell with beautiful sound. Used in daily puja and aarti ceremonies.", price=399, image_url="priest.jpeg"),
+            PujaMaterial(name="Silver Puja Items Set", description="Premium silver-plated puja items set including diya, incense holder, and kumkum container.", price=1899, image_url="priest1.jpeg"),
+            PujaMaterial(name="Cotton Wicks (Batti)", description="Pure cotton wicks for diyas. Pack of 200 pieces. Long-lasting and smokeless burning.", price=99, image_url="th.png"),
+            PujaMaterial(name="Tulsi Mala", description="Authentic Tulsi wood mala with 108 beads. Sacred for Lord Vishnu worship and meditation.", price=299, image_url="priest.jpeg"),
+            PujaMaterial(name="Puja Oil (Til Tel)", description="Pure sesame oil for lighting diyas. 1 liter bottle. Traditional and long-lasting.", price=249, image_url="priest1.jpeg"),
+            PujaMaterial(name="Dhoop Sticks Premium", description="Natural dhoop sticks made from cow dung, herbs, and essential oils. Pack of 50 sticks.", price=179, image_url="th.png"),
+            PujaMaterial(name="Gangajal (Holy Water)", description="Authentic Ganga jal from Haridwar in sealed bottle. 500ml. Essential for all pujas.", price=99, image_url="priest.jpeg"),
+            PujaMaterial(name="Panchamrit Set", description="Complete set of 5 containers for panchamrit ingredients: milk, curd, honey, sugar, ghee.", price=699, image_url="priest1.jpeg"),
+            PujaMaterial(name="Bhagavad Gita Book", description="Complete Bhagavad Gita with Hindi and English translation. Hardcover edition with beautiful illustrations.", price=399, image_url="th.png"),
+            PujaMaterial(name="Brass Aarti Plate", description="Decorative brass aarti thali with handles. Perfect for evening aarti and festivals.", price=549, image_url="priest.jpeg"),
+            PujaMaterial(name="Shankh (Conch Shell)", description="Natural white shankh for puja and blowing during aarti. Large size, clear sound.", price=799, image_url="priest1.jpeg"),
+            PujaMaterial(name="Puja Bells Set", description="Set of 3 brass bells in different sizes. Melodious sound for temple and home puja.", price=599, image_url="th.png"),
+            PujaMaterial(name="Agarbatti Stand Holder", description="Beautiful brass incense stick holder with ash catcher. Decorative and functional.", price=249, image_url="priest.jpeg"),
+            PujaMaterial(name="Lotus Diya Holders", description="Set of 5 lotus-shaped brass diya holders. Beautiful design for decoration and worship.", price=699, image_url="priest1.jpeg"),
+            PujaMaterial(name="Puja Flowers Fresh Pack", description="Fresh flowers for daily puja including roses, marigolds, and jasmine. One day supply.", price=149, image_url="th.png"),
+            PujaMaterial(name="Sacred Thread (Janeu)", description="Pure cotton sacred thread for religious ceremonies. Pack of 10 pieces.", price=129, image_url="priest.jpeg")
         ]
         
-        # Add Testimonials
+        # Add Testimonials (8 reviews)
         testimonials = [
-            Testimonial(
-                author="Priya Sharma",
-                author_image="priest.jpeg",
-                content="Excellent service! The pandit ji was very knowledgeable and performed the Griha Pravesh puja beautifully. The puja materials were of premium quality. Highly recommended!",
-                rating=5,
-                location="Mumbai, Maharashtra"
-            ),
-            Testimonial(
-                author="Rajesh Kumar",
-                author_image="priest1.jpeg",
-                content="Very professional and punctual. All the puja essentials arrived on time and were exactly as described. The complete ritual bundle saved me so much time and effort.",
-                rating=5,
-                location="Delhi, NCR"
-            ),
-            Testimonial(
-                author="Anjali Verma",
-                author_image="th.png",
-                content="PujaPath made our wedding ceremony stress-free. The pandit was experienced and guided us through every ritual. Thank you for preserving our traditions with such dedication!",
-                rating=5,
-                location="Bangalore, Karnataka"
-            ),
-            Testimonial(
-                author="Vikram Singh",
-                author_image="priest.jpeg",
-                content="Great platform for all puja needs. The prices are reasonable and the quality is authentic. I especially love the monthly subscription for daily puja items.",
-                rating=4,
-                location="Jaipur, Rajasthan"
-            )
+            Testimonial(author="Priya Sharma", author_image="priest.jpeg", content="Excellent service! The pandit ji was very knowledgeable and performed the Griha Pravesh puja beautifully. The puja materials were of premium quality. Highly recommended!", rating=5, location="Mumbai, Maharashtra"),
+            Testimonial(author="Rajesh Kumar", author_image="priest1.jpeg", content="Very professional and punctual. All the puja essentials arrived on time and were exactly as described. The complete ritual bundle saved me so much time and effort.", rating=5, location="Delhi, NCR"),
+            Testimonial(author="Anjali Verma", author_image="th.png", content="PujaPath made our wedding ceremony stress-free. The pandit was experienced and guided us through every ritual. Thank you for preserving our traditions with such dedication!", rating=5, location="Bangalore, Karnataka"),
+            Testimonial(author="Vikram Singh", author_image="priest.jpeg", content="Great platform for all puja needs. The prices are reasonable and the quality is authentic. I especially love the monthly subscription for daily puja items.", rating=5, location="Jaipur, Rajasthan"),
+            Testimonial(author="Meera Patel", author_image="priest1.jpeg", content="Booked a pandit for Satyanarayan Katha and it was a wonderful experience. The pandit was knowledgeable and explained everything beautifully. Will definitely use again!", rating=5, location="Ahmedabad, Gujarat"),
+            Testimonial(author="Amit Gupta", author_image="th.png", content="The quality of puja items is top-notch. Received my order within 2 days with proper packaging. Customer service is also very helpful and responsive.", rating=5, location="Pune, Maharashtra"),
+            Testimonial(author="Kavita Reddy", author_image="priest.jpeg", content="Found the perfect pandit for my daughter's wedding through PujaPath. Everything was organized professionally and the ceremony was beautiful. Highly satisfied!", rating=5, location="Hyderabad, Telangana"),
+            Testimonial(author="Sandeep Joshi", author_image="priest1.jpeg", content="Impressed with the variety of puja materials available. The Rudraksha mala I purchased is authentic and of excellent quality. Great initiative to preserve our culture!", rating=5, location="Kolkata, West Bengal")
         ]
         
-        # Add Sample Pandits
+        # Add Sample Pandits (10+ pandits)
         pandits = [
-            Pandit(
-                name="Pandit Govind Jha",
-                experience="15+ Years",
-                age=45,
-                location="Delhi, NCR",
-                availability=True,
-                image_url="govind-jha.webp",
-                rating=5,
-                languages="Hindi, English, Sanskrit",
-                email="govind.jha@pujapath.com",
-                phone="9876543210",
-                specialties="Wedding ceremonies, Griha Pravesh, Satyanarayan Puja",
-                is_approved=True
-            ),
-            Pandit(
-                name="Pandit Medhansh Acharya",
-                experience="10+ Years",
-                age=38,
-                location="Mumbai, Maharashtra",
-                availability=True,
-                image_url="medhansh-acharya.webp",
-                rating=5,
-                languages="Hindi, English, Marathi",
-                email="medhansh@pujapath.com",
-                phone="9876543211",
-                specialties="Navratri Puja, Wedding, Havan",
-                is_approved=True
-            ),
-            Pandit(
-                name="Pandit Pankaj Jha",
-                experience="20+ Years",
-                age=52,
-                location="Bangalore, Karnataka",
-                availability=False,
-                image_url="pankaj-jha.webp",
-                rating=5,
-                languages="Hindi, English, Kannada",
-                email="pankaj@pujapath.com",
-                phone="9876543212",
-                specialties="All Hindu rituals, Vedic ceremonies",
-                is_approved=True
-            ),
-            Pandit(
-                name="Pandit Shankar Pandit",
-                experience="12+ Years",
-                age=42,
-                location="Pune, Maharashtra",
-                availability=True,
-                image_url="shankar-pandit.webp",
-                rating=5,
-                languages="Hindi, English, Marathi, Sanskrit",
-                email="shankar@pujapath.com",
-                phone="9876543213",
-                specialties="Ganesh Puja, Wedding, Mundan, Shradh",
-                is_approved=True
-            )
+            Pandit(name="Pandit Govind Jha", experience="15+ Years", age=45, location="Delhi, NCR", availability=True, image_url="govind-jha.webp", rating=5, languages="Hindi, English, Sanskrit", email="govind.jha@pujapath.com", phone="9876543210", specialties="Wedding ceremonies, Griha Pravesh, Satyanarayan Puja", is_approved=True),
+            Pandit(name="Pandit Medhansh Acharya", experience="10+ Years", age=38, location="Mumbai, Maharashtra", availability=True, image_url="medhansh-acharya.webp", rating=5, languages="Hindi, English, Marathi", email="medhansh@pujapath.com", phone="9876543211", specialties="Navratri Puja, Wedding, Havan", is_approved=True),
+            Pandit(name="Pandit Pankaj Jha", experience="20+ Years", age=52, location="Bangalore, Karnataka", availability=False, image_url="pankaj-jha.webp", rating=5, languages="Hindi, English, Kannada", email="pankaj@pujapath.com", phone="9876543212", specialties="All Hindu rituals, Vedic ceremonies", is_approved=True),
+            Pandit(name="Pandit Shankar Pandit", experience="12+ Years", age=42, location="Pune, Maharashtra", availability=True, image_url="shankar-pandit.webp", rating=5, languages="Hindi, English, Marathi, Sanskrit", email="shankar@pujapath.com", phone="9876543213", specialties="Ganesh Puja, Wedding, Mundan, Shradh", is_approved=True),
+            Pandit(name="Pandit Rajesh Sharma", experience="18+ Years", age=48, location="Jaipur, Rajasthan", availability=True, image_url="govind-jha.webp", rating=5, languages="Hindi, English, Rajasthani", email="rajesh@pujapath.com", phone="9876543214", specialties="Durga Puja, Lakshmi Puja, Wedding", is_approved=True),
+            Pandit(name="Pandit Suresh Mishra", experience="8+ Years", age=35, location="Lucknow, UP", availability=True, image_url="medhansh-acharya.webp", rating=5, languages="Hindi, English", email="suresh@pujapath.com", phone="9876543215", specialties="Satyanarayan Katha, Griha Pravesh, Havan", is_approved=True),
+            Pandit(name="Pandit Vishnu Sharma", experience="25+ Years", age=58, location="Varanasi, UP", availability=True, image_url="pankaj-jha.webp", rating=5, languages="Hindi, Sanskrit, English", email="vishnu@pujapath.com", phone="9876543216", specialties="All Vedic rituals, Shradh, Mundan", is_approved=True),
+            Pandit(name="Pandit Anil Tiwari", experience="14+ Years", age=44, location="Indore, MP", availability=True, image_url="shankar-pandit.webp", rating=5, languages="Hindi, English", email="anil@pujapath.com", phone="9876543217", specialties="Wedding, Engagement, Griha Pravesh", is_approved=True),
+            Pandit(name="Pandit Krishna Bhatt", experience="11+ Years", age=40, location="Ahmedabad, Gujarat", availability=True, image_url="govind-jha.webp", rating=5, languages="Hindi, Gujarati, English", email="krishna@pujapath.com", phone="9876543218", specialties="Navratri Puja, Janmashtami, Wedding", is_approved=True),
+            Pandit(name="Pandit Ramesh Pandey", experience="16+ Years", age=46, location="Kolkata, West Bengal", availability=False, image_url="medhansh-acharya.webp", rating=5, languages="Hindi, Bengali, English", email="ramesh@pujapath.com", phone="9876543219", specialties="Durga Puja, Kali Puja, Wedding", is_approved=True),
+            Pandit(name="Pandit Mahesh Joshi", experience="9+ Years", age=37, location="Hyderabad, Telangana", availability=True, image_url="pankaj-jha.webp", rating=5, languages="Hindi, Telugu, English", email="mahesh@pujapath.com", phone="9876543220", specialties="Satyanarayan Puja, Housewarming, Wedding", is_approved=True),
+            Pandit(name="Pandit Deepak Upadhyay", experience="13+ Years", age=43, location="Chennai, Tamil Nadu", availability=True, image_url="shankar-pandit.webp", rating=5, languages="Hindi, Tamil, English, Sanskrit", email="deepak@pujapath.com", phone="9876543221", specialties="All Hindu ceremonies, Wedding, Shradh", is_approved=True),
+            Pandit(name="Pandit Sanjay Trivedi", experience="22+ Years", age=54, location="Surat, Gujarat", availability=True, image_url="govind-jha.webp", rating=5, languages="Hindi, Gujarati, Sanskrit", email="sanjay@pujapath.com", phone="9876543222", specialties="Vedic rituals, Yagna, Wedding", is_approved=True),
+            Pandit(name="Pandit Prakash Dubey", experience="7+ Years", age=33, location="Nagpur, Maharashtra", availability=True, image_url="medhansh-acharya.webp", rating=5, languages="Hindi, Marathi, English", email="prakash@pujapath.com", phone="9876543223", specialties="Griha Pravesh, Mundan, Birthday Puja", is_approved=True)
         ]
         
         # Add Ritual Bundles
@@ -608,13 +580,31 @@ def admin_bookings():
     return render_template('admin_bookings.html', bookings=bookings)
 
 
+@app.route('/api/clear-data', methods=['GET'])
+def clear_data():
+    """Clear all seed data (use with caution!)"""
+    try:
+        PujaMaterial.query.delete()
+        Testimonial.query.delete()
+        Bundle.query.delete()
+        # Don't delete pandits as they might be real signups
+        db.session.commit()
+        return jsonify({"message": "Seed data cleared successfully. You can now reseed."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/admin/init', methods=['GET'])
 def init_admin():
     """Initialize admin user (run once)"""
     try:
         # Check if admin already exists
         if Admin.query.first():
-            return jsonify({"message": "Admin already exists"}), 400
+            return jsonify({
+                "message": "Admin already exists",
+                "tip": "Login at /admin/login with existing credentials"
+            }), 200
         
         # Create default admin
         admin = Admin(
@@ -628,10 +618,14 @@ def init_admin():
         db.session.commit()
         
         return jsonify({
-            "message": "Admin created successfully",
-            "username": "admin",
-            "password": "admin123",
-            "warning": "Please change this password immediately!"
+            "success": True,
+            "message": "Admin created successfully!",
+            "credentials": {
+                "username": "admin",
+                "password": "admin123"
+            },
+            "login_url": "/admin/login",
+            "warning": "⚠️ Please change this password immediately after first login!"
         }), 201
     except Exception as e:
         db.session.rollback()

@@ -4,12 +4,32 @@ A comprehensive platform connecting devotees with certified Pandits and authenti
 
 ## Features ✨
 
-- **Pandit Booking**: Connect with verified and experienced pandits for all types of Hindu rituals
-- **Puja Essentials Shop**: Purchase authentic puja materials and spiritual items
-- **Ritual Bundles**: Get complete packages for specific ceremonies (Griha Pravesh, Wedding, Satyanarayan Puja, etc.)
-- **User Authentication**: Secure JWT-based login and registration system
-- **Pandit Signup**: Pandits can register to join the platform
-- **Testimonials**: See what our delighted customers have to say
+### **Customer Features:**
+- **Pandit Booking System**: Beautiful modal-based booking with form validation
+- **Shopping Cart**: Full-featured cart with localStorage persistence, quantity management
+- **Puja Essentials Shop**: 25+ authentic puja materials with ratings and discounts
+- **Ritual Bundles**: Complete ceremony packages with discount badges
+- **Smooth Carousels**: Manual slide navigation for all product sections
+- **Responsive Design**: Works perfectly on mobile, tablet, and desktop
+- **Animated Stats**: Counting animation showing 500+ Pandits, 10K+ Customers, 50+ Cities
+
+### **Pandit Features:**
+- **Beautiful Signup Page**: Modern form with benefits sidebar
+- **Application Tracking**: Success page with next steps
+- **Profile Management**: Once approved, pandits appear on home page
+
+### **Admin Panel:**
+- **Secure Login**: Session-based authentication
+- **Dashboard**: Statistics overview with recent activity
+- **Pandit Management**: Approve/reject pandit applications
+- **Product Management**: Add/delete puja materials
+- **Booking Management**: View all customer bookings
+- **Professional UI**: Gradient design matching main site
+
+### **Additional Pages:**
+- **About Us**: Company story, mission, vision, and values
+- **Contact Us**: Contact form with multiple contact methods
+- **User Authentication**: JWT-based login and registration
 
 ## Tech Stack 🛠️
 
@@ -64,13 +84,29 @@ curl http://localhost:5000/api/seed-data
 ```
 
 This will populate the database with:
-- 4 Sample Pandits
-- 4 Puja Materials
-- 4 Customer Testimonials
-- 4 Ritual Bundles
+- **14 Sample Pandits** (across 10+ cities)
+- **25 Puja Materials** (incense, diyas, kalash, etc.)
+- **8 Customer Testimonials** (5-star reviews)
+- **4 Ritual Bundles** (wedding, griha pravesh, etc.)
 
-### 7. View the website
-Open your browser and go to: `http://localhost:5000`
+### 7. Initialize Admin User
+Visit this URL to create admin account:
+```
+http://localhost:5001/admin/init
+```
+
+This creates:
+- Username: `admin`
+- Password: `admin123`
+- **⚠️ Change this password immediately in production!**
+
+### 8. View the website
+Open your browser and go to: `http://localhost:5001`
+
+### 9. Access Admin Panel
+Go to: `http://localhost:5001/admin/login`
+- Login with credentials from step 7
+- Manage pandits, products, and bookings
 
 ## Project Structure 📁
 
@@ -98,16 +134,36 @@ first-project/
 ## API Endpoints 🔌
 
 ### Public Endpoints
-- `GET /` - Home page
+- `GET /` - Home page (shows only approved pandits)
+- `GET /about` - About Us page
+- `GET /contact` - Contact Us page
+- `POST /contact` - Submit contact form
 - `GET /pandit-signup` - Pandit registration form
 - `POST /pandit-signup` - Submit pandit registration
 - `POST /api/register` - User registration
 - `POST /api/login` - User authentication
 - `GET /api/seed-data` - Seed sample data (development only)
+- `POST /api/book-pandit` - Book a pandit
+- `POST /api/cart/add` - Add item to cart
+- `POST /api/checkout` - Checkout cart
 
 ### Protected Endpoints (Require JWT)
 - `GET /api/pandit-ji` - Fetch all pandits
 - `POST /api/upload` - Upload images
+
+### Admin Endpoints (Require Admin Session)
+- `GET /admin/login` - Admin login page
+- `POST /admin/login` - Admin authentication
+- `GET /admin/logout` - Admin logout
+- `GET /admin/dashboard` - Admin dashboard with stats
+- `GET /admin/pandits` - Manage all pandits
+- `POST /admin/pandit/approve/<id>` - Approve pandit
+- `POST /admin/pandit/reject/<id>` - Delete pandit
+- `GET /admin/products` - Manage products
+- `POST /admin/product/add` - Add new product
+- `POST /admin/product/delete/<id>` - Delete product
+- `GET /admin/bookings` - View all bookings
+- `GET /admin/init` - Initialize admin user (run once)
 
 ## Navigation Menu 🧭
 
@@ -122,20 +178,36 @@ The home page includes:
 
 ### User
 - username, password (hashed)
+- For customer authentication
 
 ### Pandit
 - name, experience, age, location, availability
 - image_url, rating, languages
+- email, phone, specialties, is_approved
+- Approval workflow for quality control
 
 ### PujaMaterial
 - name, description, price, image_url
+- Products available for purchase
 
 ### Testimonial
 - author, author_image, content, rating, location
+- Customer reviews and feedback
 
 ### Bundle
 - name, description, image_url
 - original_price, discounted_price, includes
+- Complete ceremony packages
+
+### Admin
+- username, email, password_hash
+- is_super_admin, created_at
+- Secure admin authentication
+
+### Booking
+- pandit_id, customer_name, phone, email
+- puja_type, date, address, notes, status
+- Booking management system
 
 ## Contributing 🤝
 
