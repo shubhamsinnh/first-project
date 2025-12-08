@@ -175,6 +175,12 @@ def contact():
     return render_template('contact.html')
 
 
+@app.route('/careers')
+def careers():
+    """Careers/Join Team page"""
+    return render_template('careers.html')    
+
+
 @app.route("/pandit-signup", methods=['GET', 'POST'])
 def pandit_signup():
     if request.method == 'POST':
