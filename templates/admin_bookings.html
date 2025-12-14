@@ -43,6 +43,7 @@
                 <a href="/admin/pandits" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Pandits</a>
                 <a href="/admin/products" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Products</a>
                 <a href="/admin/bookings" class="py-4 border-b-2 border-blue-600 text-blue-600 font-semibold">Bookings</a>
+                <a href="/admin/orders" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Orders</a>
             </div>
         </div>
     </div>
@@ -101,14 +102,20 @@
                         {% endif %}
                     </div>
                     
-                    <div class="ml-6">
-                        <span class="px-4 py-2 rounded-full text-sm font-bold
-                            {% if booking.status == 'pending' %}bg-yellow-100 text-yellow-800
-                            {% elif booking.status == 'confirmed' %}bg-green-100 text-green-800
-                            {% elif booking.status == 'completed' %}bg-blue-100 text-blue-800
-                            {% else %}bg-gray-100 text-gray-800{% endif %}">
-                            {{ booking.status|upper }}
-                        </span>
+                    <div class="ml-6 flex flex-col items-end space-y-3">
+                        <div>
+                            <span class="px-4 py-2 rounded-full text-sm font-bold
+                                {% if booking.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif booking.status == 'confirmed' %}bg-green-100 text-green-800
+                                {% elif booking.status == 'completed' %}bg-blue-100 text-blue-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ booking.status|upper }}
+                            </span>
+                        </div>
+                        <button onclick="updateBookingStatus({{ booking.id }}, '{{ booking.status }}')" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">
+                            Update Status
+                        </button>
                         <p class="text-xs text-gray-500 mt-2 text-right">{{ booking.created_at }}</p>
                     </div>
                 </div>
@@ -125,6 +132,73 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Update Status Modal -->
+    <div id="statusModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold mb-6">Update Booking Status</h3>
+            <form id="statusForm" class="space-y-4">
+                <input type="hidden" id="statusBookingId">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Status</label>
+                    <select id="bookingStatus" name="status" required
+                            class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button type="submit" 
+                            class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700">
+                        Update
+                    </button>
+                    <button type="button" onclick="closeStatusModal()" 
+                            class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-400">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function updateBookingStatus(bookingId, currentStatus) {
+            document.getElementById('statusBookingId').value = bookingId;
+            document.getElementById('bookingStatus').value = currentStatus;
+            document.getElementById('statusModal').classList.remove('hidden');
+        }
+
+        function closeStatusModal() {
+            document.getElementById('statusModal').classList.add('hidden');
+            document.getElementById('statusForm').reset();
+        }
+
+        document.getElementById('statusForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bookingId = document.getElementById('statusBookingId').value;
+            const status = document.getElementById('bookingStatus').value;
+
+            try {
+                const response = await fetch(`/admin/booking/update-status/${bookingId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Booking status updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error updating booking: ' + error);
+            }
+        });
+    </script>
 
 </body>
 </html>

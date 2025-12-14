@@ -43,6 +43,7 @@
                 <a href="/admin/pandits" class="py-4 border-b-2 border-blue-600 text-blue-600 font-semibold">Pandits</a>
                 <a href="/admin/products" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Products</a>
                 <a href="/admin/bookings" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Bookings</a>
+                <a href="/admin/orders" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Orders</a>
             </div>
         </div>
     </div>
@@ -114,6 +115,10 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex space-x-2">
+                                <button onclick="editPandit({{ pandit.id }})" 
+                                        class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+                                    Edit
+                                </button>
                                 {% if not pandit.is_approved %}
                                 <button onclick="approvePandit({{ pandit.id }})" 
                                         class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">
@@ -133,6 +138,87 @@
         </div>
     </div>
 
+    <!-- Edit Pandit Modal -->
+    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 my-8">
+            <h3 class="text-2xl font-bold mb-6">Edit Pandit</h3>
+            <form id="editPanditForm" class="space-y-4">
+                <input type="hidden" id="editPanditId" name="pandit_id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Name *</label>
+                        <input type="text" id="editPanditName" name="name" required
+                               class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Age *</label>
+                        <input type="number" id="editPanditAge" name="age" required min="18"
+                               class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Email *</label>
+                        <input type="email" id="editPanditEmail" name="email" required
+                               class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Phone *</label>
+                        <input type="tel" id="editPanditPhone" name="phone" required
+                               class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Experience *</label>
+                    <input type="text" id="editPanditExperience" name="experience" required
+                           class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"
+                           placeholder="15+ Years">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Languages *</label>
+                    <input type="text" id="editPanditLanguages" name="languages" required
+                           class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"
+                           placeholder="Hindi, English, Sanskrit">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Location *</label>
+                    <input type="text" id="editPanditLocation" name="location" required
+                           class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"
+                           placeholder="Delhi, NCR">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Specialties</label>
+                    <textarea id="editPanditSpecialties" name="specialties" rows="2"
+                              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"
+                              placeholder="Wedding ceremonies, Griha Pravesh, Satyanarayan Puja"></textarea>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Image URL</label>
+                    <input type="text" id="editPanditImageUrl" name="image_url"
+                           class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"
+                           placeholder="pandit/govind-jha.webp">
+                </div>
+                <div>
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="editPanditAvailability" name="availability" value="true"
+                               class="w-5 h-5 rounded border-gray-300">
+                        <span class="text-gray-700 font-semibold">Available for booking</span>
+                    </label>
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button type="submit" 
+                            class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700">
+                        Update Pandit
+                    </button>
+                    <button type="button" onclick="closeEditModal()" 
+                            class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-400">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         function filterPandits(status) {
             const rows = document.querySelectorAll('.pandit-row');
@@ -144,6 +230,60 @@
                 }
             });
         }
+
+        async function editPandit(panditId) {
+            try {
+                const response = await fetch(`/admin/pandit/edit/${panditId}`);
+                const pandit = await response.json();
+
+                document.getElementById('editPanditId').value = pandit.id;
+                document.getElementById('editPanditName').value = pandit.name;
+                document.getElementById('editPanditAge').value = pandit.age;
+                document.getElementById('editPanditEmail').value = pandit.email || '';
+                document.getElementById('editPanditPhone').value = pandit.phone || '';
+                document.getElementById('editPanditExperience').value = pandit.experience || '';
+                document.getElementById('editPanditLanguages').value = pandit.languages || '';
+                document.getElementById('editPanditLocation').value = pandit.location || '';
+                document.getElementById('editPanditSpecialties').value = pandit.specialties || '';
+                document.getElementById('editPanditImageUrl').value = pandit.image_url || '';
+                document.getElementById('editPanditAvailability').checked = pandit.availability;
+
+                document.getElementById('editModal').classList.remove('hidden');
+            } catch (error) {
+                alert('Error loading pandit: ' + error);
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editPanditForm').reset();
+        }
+
+        document.getElementById('editPanditForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            data.availability = document.getElementById('editPanditAvailability').checked;
+            const panditId = document.getElementById('editPanditId').value;
+
+            try {
+                const response = await fetch(`/admin/pandit/edit/${panditId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Pandit updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error updating pandit: ' + error);
+            }
+        });
 
         async function approvePandit(panditId) {
             if (!confirm('Approve this pandit?')) return;

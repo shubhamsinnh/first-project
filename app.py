@@ -4,6 +4,8 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token, ge
 from werkzeug.utils import secure_filename
 from functools import wraps
 import os
+import json
+from urllib.parse import unquote
 from dotenv import load_dotenv
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
@@ -12,7 +14,7 @@ from datetime import datetime, timedelta
 
 # Local imports
 from database import db
-from models import User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking
+from models import User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking, Order, OrderItem
 
 # Load environment variables
 load_dotenv()
@@ -21,15 +23,26 @@ load_dotenv()
 app = Flask(__name__)
 
 # Application configuration
-app.config.update(
-    SQLALCHEMY_DATABASE_URI=os.getenv("DATABASE_URL"),
-    SQLALCHEMY_TRACK_MODIFICATIONS=False,
-    SQLALCHEMY_ENGINE_OPTIONS={
-        'pool_pre_ping': True,  # Verify connections before using them
-        'pool_recycle': 300,    # Recycle connections after 5 minutes
+# Get database URL with fallback for SQLite (Windows compatibility)
+database_url = os.getenv("DATABASE_URL") or "sqlite:///pujapath.db"
+
+# Base config - engine options only for non-SQLite databases
+config_dict = {
+    'SQLALCHEMY_DATABASE_URI': database_url,
+    'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+}
+
+# Only add connection pooling for PostgreSQL/MySQL (not SQLite)
+if not database_url.startswith('sqlite'):
+    config_dict['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
         'pool_size': 10,
         'max_overflow': 20
-    },
+    }
+
+app.config.update(
+    **config_dict,
     JWT_SECRET_KEY=os.getenv("JWT_SECRET_KEY"),
     SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret-key-change-in-production"),
     UPLOAD_FOLDER=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/uploads'),
@@ -144,6 +157,24 @@ def fetch_panditji():
         return jsonify([p.to_dict() for p in pandits]), 200
     except SQLAlchemyError as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/product/<int:product_id>')
+def product_detail(product_id):
+    """Product detail page"""
+    product = PujaMaterial.query.get_or_404(product_id)
+    # Get some testimonials for reviews section
+    testimonials = Testimonial.query.limit(6).all()
+    # Get related products (other products excluding current) - fetch 4 for display
+    related_products = PujaMaterial.query.filter(PujaMaterial.id != product_id).limit(4).all()
+    return render_template('product_detail.html', product=product, testimonials=testimonials, related_products=related_products)
+
+
+@app.route('/bundle/<int:bundle_id>')
+def bundle_detail(bundle_id):
+    """Bundle detail page"""
+    bundle = Bundle.query.get_or_404(bundle_id)
+    return render_template('bundle_detail.html', bundle=bundle)
 
 
 @app.route('/about')
@@ -411,9 +442,152 @@ def add_to_cart():
         return jsonify({"error": "Failed to add to cart"}), 500
 
 
+@app.route('/checkout', methods=['GET', 'POST'])
+def checkout_page():
+    """Checkout page - display form and process order"""
+    if request.method == 'GET':
+        # Get cart from session or request
+        cart_data = request.args.get('cart')
+        if cart_data:
+            try:
+                cart = json.loads(unquote(cart_data))
+            except:
+                cart = []
+        else:
+            cart = []
+        
+        if not cart:
+            return redirect(url_for('home'))
+        
+        # Calculate totals
+        total = 0
+        for item in cart:
+            total += item.get('price', 0) * item.get('quantity', 1)
+        
+        return render_template('checkout.html', cart=cart, total=total)
+    
+    # POST - Process order
+    try:
+        data = request.form
+        
+        # Validate required fields
+        required_fields = ['customer_name', 'customer_email', 'customer_phone', 
+                          'shipping_address', 'city', 'state', 'pincode']
+        for field in required_fields:
+            if not data.get(field):
+                return render_template('checkout.html', 
+                                     error=f"Please fill in {field.replace('_', ' ')}",
+                                     cart=json.loads(data.get('cart_data', '[]')),
+                                     total=float(data.get('total', 0)))
+        
+        # Get cart items
+        cart_data = data.get('cart_data')
+        if not cart_data:
+            return render_template('checkout.html', 
+                                 error="Cart is empty",
+                                 cart=[],
+                                 total=0)
+        
+        try:
+            cart = json.loads(cart_data)
+        except:
+            return render_template('checkout.html', 
+                                 error="Invalid cart data",
+                                 cart=[],
+                                 total=0)
+        
+        if not cart:
+            return render_template('checkout.html', 
+                                 error="Cart is empty",
+                                 cart=[],
+                                 total=0)
+        
+        # Calculate total and validate products
+        total_amount = 0
+        order_items_data = []
+        
+        for item in cart:
+            product = PujaMaterial.query.get(item.get('id'))
+            if not product:
+                continue
+            
+            quantity = item.get('quantity', 1)
+            price = product.price
+            subtotal = price * quantity
+            total_amount += subtotal
+            
+            order_items_data.append({
+                'product': product,
+                'product_name': product.name,
+                'product_price': price,
+                'quantity': quantity,
+                'subtotal': subtotal
+            })
+        
+        if not order_items_data:
+            return render_template('checkout.html', 
+                                 error="No valid items in cart",
+                                 cart=cart,
+                                 total=0)
+        
+        # Generate order number
+        order_number = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{Order.query.count() + 1}"
+        
+        # Create order
+        order = Order(
+            order_number=order_number,
+            customer_name=data.get('customer_name'),
+            customer_email=data.get('customer_email'),
+            customer_phone=data.get('customer_phone'),
+            shipping_address=data.get('shipping_address'),
+            city=data.get('city'),
+            state=data.get('state'),
+            pincode=data.get('pincode'),
+            total_amount=total_amount,
+            status='confirmed',
+            payment_status='pending',  # In real app, integrate payment gateway
+            notes=data.get('notes', '')
+        )
+        
+        db.session.add(order)
+        db.session.flush()  # Get order ID
+        
+        # Create order items
+        for item_data in order_items_data:
+            order_item = OrderItem(
+                order_id=order.id,
+                product_id=item_data['product'].id,
+                product_name=item_data['product_name'],
+                product_price=item_data['product_price'],
+                quantity=item_data['quantity'],
+                subtotal=item_data['subtotal']
+            )
+            db.session.add(order_item)
+        
+        db.session.commit()
+        
+        # Redirect to order confirmation
+        return redirect(url_for('order_confirmation', order_number=order_number))
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error in checkout: {str(e)}")
+        return render_template('checkout.html', 
+                             error=f"Checkout failed: {str(e)}",
+                             cart=json.loads(data.get('cart_data', '[]')) if 'data' in locals() else [],
+                             total=float(data.get('total', 0)) if 'data' in locals() else 0)
+
+
+@app.route('/order-confirmation/<order_number>')
+def order_confirmation(order_number):
+    """Order confirmation page"""
+    order = Order.query.filter_by(order_number=order_number).first_or_404()
+    return render_template('order_confirmation.html', order=order)
+
+
 @app.route('/api/checkout', methods=['POST'])
-def checkout():
-    """API endpoint for checkout"""
+def checkout_api():
+    """API endpoint for checkout (legacy support)"""
     try:
         data = request.get_json()
         
@@ -427,11 +601,13 @@ def checkout():
             if product:
                 total += product.price * item['quantity']
         
-        # Here you would typically process payment and create order
+        # Generate order number
+        order_number = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{Order.query.count() + 1}"
+        
         return jsonify({
             "success": True,
             "message": "Order placed successfully!",
-            "order_id": "ORD" + str(int(total)),
+            "order_number": order_number,
             "total": total
         }), 201
         
@@ -522,6 +698,51 @@ def approve_pandit(pandit_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route('/admin/pandit/edit/<int:pandit_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_pandit(pandit_id):
+    """Edit pandit - GET returns data, POST updates"""
+    pandit = Pandit.query.get_or_404(pandit_id)
+    
+    if request.method == 'POST':
+        try:
+            data = request.get_json() if request.content_type and 'application/json' in request.content_type else request.form
+            
+            pandit.name = data.get('name', pandit.name)
+            pandit.age = int(data.get('age', pandit.age)) if data.get('age') else pandit.age
+            pandit.email = data.get('email', pandit.email)
+            pandit.phone = data.get('phone', pandit.phone)
+            pandit.experience = data.get('experience', pandit.experience)
+            pandit.languages = data.get('languages', pandit.languages)
+            pandit.location = data.get('location', pandit.location)
+            pandit.specialties = data.get('specialties', pandit.specialties)
+            pandit.availability = data.get('availability', 'true').lower() == 'true' if isinstance(data.get('availability'), str) else bool(data.get('availability', pandit.availability))
+            if 'image_url' in data:
+                pandit.image_url = data['image_url']
+            
+            db.session.commit()
+            return jsonify({"success": True, "message": "Pandit updated successfully"})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"success": False, "error": str(e)}), 500
+    
+    # GET - return pandit data
+    return jsonify({
+        "id": pandit.id,
+        "name": pandit.name,
+        "age": pandit.age,
+        "email": pandit.email,
+        "phone": pandit.phone,
+        "experience": pandit.experience,
+        "languages": pandit.languages,
+        "location": pandit.location,
+        "specialties": pandit.specialties,
+        "availability": pandit.availability,
+        "image_url": pandit.image_url,
+        "is_approved": pandit.is_approved
+    })
+
+
 @app.route('/admin/pandit/reject/<int:pandit_id>', methods=['POST'])
 @admin_required
 def reject_pandit(pandit_id):
@@ -549,11 +770,16 @@ def admin_products():
 def add_product():
     """Add new product"""
     try:
-        data = request.get_json()
+        # Handle both JSON and form data
+        if request.content_type and 'application/json' in request.content_type:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+        
         product = PujaMaterial(
-            name=data['name'],
-            description=data['description'],
-            price=float(data['price']),
+            name=data.get('name'),
+            description=data.get('description', ''),
+            price=float(data.get('price', 0)),
             image_url=data.get('image_url', 'priest.jpeg')
         )
         db.session.add(product)
@@ -561,6 +787,88 @@ def add_product():
         return jsonify({"success": True, "message": "Product added", "product": product.id})
     except Exception as e:
         db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/admin/product/edit/<int:product_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_product(product_id):
+    """Edit product - GET shows form, POST updates"""
+    product = PujaMaterial.query.get_or_404(product_id)
+    
+    if request.method == 'POST':
+        try:
+            # Handle form data
+            if request.content_type and 'application/json' in request.content_type:
+                data = request.get_json()
+                product.name = data.get('name', product.name)
+                product.description = data.get('description', product.description)
+                product.price = float(data.get('price', product.price))
+                if 'image_url' in data:
+                    product.image_url = data['image_url']
+            else:
+                # Handle form data
+                product.name = request.form.get('name', product.name)
+                product.description = request.form.get('description', product.description)
+                product.price = float(request.form.get('price', product.price))
+                if 'image_url' in request.form:
+                    product.image_url = request.form['image_url']
+            
+            db.session.commit()
+            return jsonify({"success": True, "message": "Product updated successfully", "product": {
+                "id": product.id,
+                "name": product.name,
+                "description": product.description,
+                "price": product.price,
+                "image_url": product.image_url
+            }})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"success": False, "error": str(e)}), 500
+    
+    # GET - return product data as JSON
+    return jsonify({
+        "id": product.id,
+        "name": product.name,
+        "description": product.description,
+        "price": product.price,
+        "image_url": product.image_url
+    })
+
+
+@app.route('/admin/product/upload-image', methods=['POST'])
+@admin_required
+def upload_product_image():
+    """Upload product image"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"success": False, "error": "No file part"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"success": False, "error": "No selected file"}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            # Add timestamp to avoid conflicts
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
+            filename = timestamp + filename
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            
+            # Return relative path for database storage
+            image_url = f'uploads/{filename}'
+            return jsonify({
+                "success": True,
+                "message": "Image uploaded successfully",
+                "image_url": image_url,
+                "url": url_for('static', filename=image_url)
+            }), 200
+        
+        return jsonify({"success": False, "error": "Invalid file type. Allowed: png, jpg, jpeg, gif"}), 400
+    except Exception as e:
+        app.logger.error(f"Error uploading image: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -584,6 +892,64 @@ def admin_bookings():
     """View all bookings"""
     bookings = Booking.query.order_by(Booking.created_at.desc()).all()
     return render_template('admin_bookings.html', bookings=bookings)
+
+
+@app.route('/admin/booking/update-status/<int:booking_id>', methods=['POST'])
+@admin_required
+def update_booking_status(booking_id):
+    """Update booking status"""
+    try:
+        booking = Booking.query.get_or_404(booking_id)
+        data = request.get_json() if request.content_type and 'application/json' in request.content_type else request.form
+        new_status = data.get('status')
+        
+        if new_status in ['pending', 'confirmed', 'completed', 'cancelled']:
+            booking.status = new_status
+            db.session.commit()
+            return jsonify({"success": True, "message": "Booking status updated"})
+        else:
+            return jsonify({"success": False, "error": "Invalid status"}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/admin/orders')
+@admin_required
+def admin_orders():
+    """View all orders"""
+    orders = Order.query.order_by(Order.id.desc()).all()
+    return render_template('admin_orders.html', orders=orders)
+
+
+@app.route('/admin/order/<int:order_id>')
+@admin_required
+def admin_order_detail(order_id):
+    """View order details"""
+    order = Order.query.get_or_404(order_id)
+    return render_template('admin_order_detail.html', order=order)
+
+
+@app.route('/admin/order/update-status/<int:order_id>', methods=['POST'])
+@admin_required
+def update_order_status(order_id):
+    """Update order status"""
+    try:
+        order = Order.query.get_or_404(order_id)
+        data = request.get_json() if request.content_type and 'application/json' in request.content_type else request.form
+        new_status = data.get('status')
+        payment_status = data.get('payment_status')
+        
+        if new_status in ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']:
+            order.status = new_status
+        if payment_status in ['pending', 'paid', 'refunded']:
+            order.payment_status = payment_status
+        
+        db.session.commit()
+        return jsonify({"success": True, "message": "Order status updated"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route('/api/clear-data', methods=['GET'])
