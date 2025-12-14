@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ bundle.name }} - PujaPath</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <a href="{{ url_for('home') }}" class="text-2xl font-bold gradient-text">PujaPath</a>
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('home') }}#bundles" class="text-gray-600 hover:text-gray-900">← Back to Bundles</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-12 max-w-6xl">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- Bundle Image -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden card-hover">
+                <div class="relative">
+                    <img src="{{ url_for('static', filename=bundle.image_url) }}" 
+                         alt="{{ bundle.name }}"
+                         class="w-full h-96 object-cover">
+                    <div class="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
+                        Save {{ ((bundle.original_price - bundle.discounted_price)/bundle.original_price * 100)|round|int }}%
+                    </div>
+                    <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full">
+                        <span class="text-sm text-gray-700 font-semibold">✨ Complete Package</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bundle Details -->
+            <div class="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 rounded-2xl shadow-xl p-8 border-2 border-amber-200">
+                <div class="mb-6">
+                    <span class="inline-block px-4 py-2 bg-amber-100 text-amber-600 rounded-full text-sm font-semibold mb-4">Best Value Package</span>
+                    <h1 class="text-4xl font-bold text-gray-800 mb-4">{{ bundle.name }}</h1>
+                    
+                    <!-- Rating -->
+                    <div class="flex items-center mb-4">
+                        <div class="flex text-yellow-400 text-lg">★★★★★</div>
+                        <span class="text-gray-600 ml-3 font-semibold">4.9/5</span>
+                        <span class="text-gray-400 ml-2">(89 reviews)</span>
+                    </div>
+
+                    <!-- Price -->
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-4">
+                            <span class="text-4xl font-bold text-amber-600">₹{{ bundle.discounted_price }}</span>
+                            <span class="text-2xl text-gray-400 line-through">₹{{ bundle.original_price }}</span>
+                            <span class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm font-bold">
+                                Save ₹{{ bundle.original_price - bundle.discounted_price }}
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Inclusive of all taxes & services</p>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3">Package Description</h3>
+                        <p class="text-gray-700 leading-relaxed">{{ bundle.description }}</p>
+                    </div>
+
+                    <!-- What's Included -->
+                    <div class="mb-6 bg-white rounded-xl p-6 border border-amber-200">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">What's Included</h3>
+                        <div class="space-y-2">
+                            {% for item in bundle.includes.split(',') %}
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-amber-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">{{ item.strip() }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Benefits -->
+                    <div class="mb-6 bg-white rounded-xl p-6 border border-amber-200">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Why Choose This Bundle?</h3>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">Everything you need in one package - no hassle</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">Curated by experienced pandits</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">Significant savings compared to buying separately</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="w-5 h-5 text-green-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">Premium quality authentic products</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="space-y-4">
+                        <button onclick="bookBundle()" 
+                                class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white py-4 rounded-xl font-bold text-lg hover:from-amber-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105">
+                            Book This Bundle
+                        </button>
+                        <button onclick="contactUs()" 
+                                class="w-full bg-white border-2 border-amber-500 text-amber-600 py-4 rounded-xl font-bold text-lg hover:bg-amber-50 transition-all">
+                            Contact for Customization
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Info Section -->
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center card-hover">
+                <div class="text-4xl mb-4">📦</div>
+                <h3 class="font-bold text-gray-800 mb-2">Complete Package</h3>
+                <p class="text-sm text-gray-600">Everything included, ready to use</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center card-hover">
+                <div class="text-4xl mb-4">🎯</div>
+                <h3 class="font-bold text-gray-800 mb-2">Expert Curated</h3>
+                <p class="text-sm text-gray-600">Selected by experienced pandits</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center card-hover">
+                <div class="text-4xl mb-4">💰</div>
+                <h3 class="font-bold text-gray-800 mb-2">Best Value</h3>
+                <p class="text-sm text-gray-600">Save more with bundle pricing</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16 py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2024 PujaPath. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const bundleId = {{ bundle.id }};
+        const bundleName = '{{ bundle.name }}';
+        const bundlePrice = {{ bundle.discounted_price }};
+
+        function bookBundle() {
+            // Show booking form or redirect to contact
+            const phone = '+91 9155095375';
+            const message = `Hi, I'm interested in booking the "${bundleName}" bundle. Please contact me.`;
+            window.location.href = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+        }
+
+        function contactUs() {
+            window.location.href = "{{ url_for('contact') }}";
+        }
+    </script>
+</body>
+</html>
+
+
+
