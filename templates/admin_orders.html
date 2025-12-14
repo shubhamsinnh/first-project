@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Orders - PujaPath Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-purple-600 font-bold">
+                        ॐ
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">PujaPath Admin</h1>
+                        <p class="text-sm text-blue-100">Order Management</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <span class="text-sm">Welcome, {{ session.admin_username }}</span>
+                    <a href="/admin/logout" class="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white border-b">
+        <div class="container mx-auto px-6">
+            <div class="flex space-x-8">
+                <a href="/admin/dashboard" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Dashboard</a>
+                <a href="/admin/pandits" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Pandits</a>
+                <a href="/admin/products" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Products</a>
+                <a href="/admin/bookings" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Bookings</a>
+                <a href="/admin/orders" class="py-4 border-b-2 border-blue-600 text-blue-600 font-semibold">Orders</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">All Orders ({{ orders|length }})</h2>
+            <div class="flex space-x-4">
+                <button onclick="filterOrders('all')" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
+                    All
+                </button>
+                <button onclick="filterOrders('pending')" class="px-4 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700">
+                    Pending
+                </button>
+                <button onclick="filterOrders('confirmed')" class="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700">
+                    Confirmed
+                </button>
+            </div>
+        </div>
+
+        {% if orders %}
+        <!-- Orders List -->
+        <div class="space-y-4">
+            {% for order in orders %}
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow order-item" data-status="{{ order.status }}">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-4 mb-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                {{ order.customer_name[0] }}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg">Order #{{ order.order_number }}</h3>
+                                <p class="text-sm text-gray-600">{{ order.customer_name }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Total Amount</p>
+                                <p class="font-semibold text-green-600">₹{{ order.total_amount }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Email</p>
+                                <p class="font-semibold">{{ order.customer_email }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Phone</p>
+                                <p class="font-semibold">{{ order.customer_phone }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Date</p>
+                                <p class="font-semibold">{{ order.created_at.strftime('%Y-%m-%d') if order.created_at else 'N/A' }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-xs text-gray-500 mb-1">Shipping Address</p>
+                            <p class="text-sm">{{ order.shipping_address }}, {{ order.city }}, {{ order.state }} - {{ order.pincode }}</p>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-xs text-gray-500 mb-2">Order Items:</p>
+                            <div class="bg-gray-50 rounded-lg p-3">
+                                {% for item in order.items %}
+                                <div class="flex justify-between items-center py-1">
+                                    <span class="text-sm">{{ item.product_name }} (x{{ item.quantity }})</span>
+                                    <span class="text-sm font-semibold">₹{{ item.subtotal }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        {% if order.notes %}
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Notes</p>
+                            <p class="text-sm text-gray-700">{{ order.notes }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="ml-6 flex flex-col items-end space-y-3">
+                        <div>
+                            <span class="px-4 py-2 rounded-full text-sm font-bold
+                                {% if order.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif order.status == 'confirmed' %}bg-green-100 text-green-800
+                                {% elif order.status == 'processing' %}bg-blue-100 text-blue-800
+                                {% elif order.status == 'shipped' %}bg-purple-100 text-purple-800
+                                {% elif order.status == 'delivered' %}bg-green-200 text-green-900
+                                {% elif order.status == 'cancelled' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ order.status|upper }}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="px-4 py-2 rounded-full text-sm font-bold
+                                {% if order.payment_status == 'paid' %}bg-green-100 text-green-800
+                                {% elif order.payment_status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif order.payment_status == 'refunded' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                Payment: {{ order.payment_status|upper }}
+                            </span>
+                        </div>
+                        <div class="mt-4">
+                            <button onclick="updateOrderStatus({{ order.id }})" 
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">
+                                Update Status
+                            </button>
+                        </div>
+                        <a href="/admin/order/{{ order.id }}" 
+                           class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-semibold hover:bg-gray-700">
+                            View Details
+                        </a>
+                        <p class="text-xs text-gray-500 mt-2 text-right">{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else 'N/A' }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-white rounded-xl shadow-lg p-12 text-center">
+            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+            <h3 class="text-xl font-bold text-gray-700 mb-2">No Orders Yet</h3>
+            <p class="text-gray-500">Orders will appear here once customers place orders</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Update Status Modal -->
+    <div id="statusModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold mb-6">Update Order Status</h3>
+            <form id="statusForm" class="space-y-4">
+                <input type="hidden" id="statusOrderId">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Order Status</label>
+                    <select id="orderStatus" name="status" required
+                            class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Payment Status</label>
+                    <select id="paymentStatus" name="payment_status" required
+                            class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="refunded">Refunded</option>
+                    </select>
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button type="submit" 
+                            class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700">
+                        Update
+                    </button>
+                    <button type="button" onclick="closeStatusModal()" 
+                            class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-400">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function filterOrders(status) {
+            const items = document.querySelectorAll('.order-item');
+            items.forEach(item => {
+                if (status === 'all') {
+                    item.style.display = '';
+                } else {
+                    item.style.display = item.dataset.status === status ? '' : 'none';
+                }
+            });
+        }
+
+        function updateOrderStatus(orderId) {
+            document.getElementById('statusOrderId').value = orderId;
+            document.getElementById('statusModal').classList.remove('hidden');
+        }
+
+        function closeStatusModal() {
+            document.getElementById('statusModal').classList.add('hidden');
+            document.getElementById('statusForm').reset();
+        }
+
+        document.getElementById('statusForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const orderId = document.getElementById('statusOrderId').value;
+            const status = document.getElementById('orderStatus').value;
+            const paymentStatus = document.getElementById('paymentStatus').value;
+
+            try {
+                const response = await fetch(`/admin/order/update-status/${orderId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status, payment_status: paymentStatus })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Order status updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error updating order: ' + error);
+            }
+        });
+    </script>
+
+</body>
+</html>
+
+

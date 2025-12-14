@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - PujaPath</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        @keyframes checkmark {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .checkmark {
+            animation: checkmark 0.6s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <a href="{{ url_for('home') }}" class="text-2xl font-bold gradient-text">PujaPath</a>
+                <a href="{{ url_for('home') }}" class="text-gray-600 hover:text-gray-900">← Back to Home</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-12 max-w-4xl">
+        <!-- Success Icon -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-24 h-24 bg-green-100 rounded-full mb-6">
+                <svg class="w-16 h-16 text-green-600 checkmark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-bold gradient-text mb-2">Order Confirmed!</h1>
+            <p class="text-gray-600 text-lg">Thank you for your order. We'll process it shortly.</p>
+        </div>
+
+        <!-- Order Details Card -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+            <div class="border-b border-gray-200 pb-4 mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Order Details</h2>
+                <p class="text-gray-600">Order Number: <span class="font-bold text-purple-600">{{ order.order_number }}</span></p>
+                <p class="text-sm text-gray-500">Placed on {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+            </div>
+
+            <!-- Order Items -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Items Ordered</h3>
+                <div class="space-y-4">
+                    {% for item in order.items %}
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800">{{ item.product_name }}</h4>
+                            <p class="text-sm text-gray-600">₹{{ item.product_price }} × {{ item.quantity }}</p>
+                        </div>
+                        <p class="font-bold text-green-600">₹{{ item.subtotal }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="border-t border-gray-200 pt-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600">Subtotal:</span>
+                    <span class="font-semibold">₹{{ order.total_amount }}</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-600">Shipping:</span>
+                    <span class="font-semibold text-green-600">FREE</span>
+                </div>
+                <div class="flex justify-between items-center text-xl font-bold pt-4 border-t border-gray-200">
+                    <span>Total Amount:</span>
+                    <span class="text-green-600">₹{{ order.total_amount }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shipping Information -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Shipping Information</h2>
+            <div class="space-y-2 text-gray-700">
+                <p><strong>Name:</strong> {{ order.customer_name }}</p>
+                <p><strong>Email:</strong> {{ order.customer_email }}</p>
+                <p><strong>Phone:</strong> {{ order.customer_phone }}</p>
+                <p><strong>Address:</strong> {{ order.shipping_address }}</p>
+                <p><strong>City:</strong> {{ order.city }}, <strong>State:</strong> {{ order.state }}</p>
+                <p><strong>Pincode:</strong> {{ order.pincode }}</p>
+            </div>
+        </div>
+
+        <!-- Order Status -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg mb-6">
+            <h3 class="font-bold text-blue-800 mb-2">Order Status</h3>
+            <p class="text-blue-700">
+                <strong>Current Status:</strong> 
+                <span class="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm font-semibold">
+                    {{ order.status.title() }}
+                </span>
+            </p>
+            <p class="text-blue-700 mt-2">
+                <strong>Payment Status:</strong> 
+                <span class="px-3 py-1 bg-yellow-200 text-yellow-800 rounded-full text-sm font-semibold">
+                    {{ order.payment_status.title() }}
+                </span>
+            </p>
+            <p class="text-sm text-blue-600 mt-4">
+                We'll contact you shortly to confirm payment details and delivery schedule.
+            </p>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 mb-6">
+            <h3 class="font-bold text-gray-800 mb-4">What's Next?</h3>
+            <ul class="space-y-3 text-gray-700">
+                <li class="flex items-start">
+                    <span class="text-green-600 font-bold mr-3">✓</span>
+                    <span>You'll receive an email confirmation at <strong>{{ order.customer_email }}</strong></span>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-600 font-bold mr-3">✓</span>
+                    <span>Our team will contact you on <strong>{{ order.customer_phone }}</strong> within 24 hours</span>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-600 font-bold mr-3">✓</span>
+                    <span>Your order will be processed and shipped within 2-3 business days</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4">
+            <a href="{{ url_for('home') }}" 
+               class="flex-1 bg-gradient-to-r from-green-600 to-emerald-700 text-white py-4 rounded-xl font-bold text-center hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl">
+                Continue Shopping
+            </a>
+            <button onclick="window.print()" 
+                    class="flex-1 bg-gray-200 text-gray-800 py-4 rounded-xl font-bold hover:bg-gray-300 transition-all">
+                Print Order Details
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16 py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2024 PujaPath. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
+
+
+

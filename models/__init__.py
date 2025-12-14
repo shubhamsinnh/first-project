@@ -5,3 +5,4 @@ from .puja_materials import PujaMaterial
 from .testimonial import Testimonial
 from .bundle import Bundle
 from .admin import Admin, Booking
+from .order import Order, OrderItem
