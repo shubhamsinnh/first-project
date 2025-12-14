@@ -8,6 +8,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Poppins', sans-serif; }
+        .image-preview {
+            max-height: 200px;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -43,6 +47,7 @@
                 <a href="/admin/pandits" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Pandits</a>
                 <a href="/admin/products" class="py-4 border-b-2 border-blue-600 text-blue-600 font-semibold">Products</a>
                 <a href="/admin/bookings" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Bookings</a>
+                <a href="/admin/orders" class="py-4 border-b-2 border-transparent hover:border-gray-300 text-gray-600 hover:text-gray-800 font-semibold">Orders</a>
             </div>
         </div>
     </div>
@@ -59,12 +64,20 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {% for product in products %}
             <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <img src="{{ url_for('static', filename=product.image_url) }}" 
-                     alt="{{ product.name }}"
-                     class="w-full h-48 object-cover">
+                <div class="relative">
+                    <img src="{{ url_for('static', filename=product.image_url) }}" 
+                         alt="{{ product.name }}"
+                         class="w-full h-48 object-cover">
+                    <div class="absolute top-2 right-2">
+                        <button onclick="editProduct({{ product.id }})" 
+                                class="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 shadow-lg">
+                            Edit
+                        </button>
+                    </div>
+                </div>
                 <div class="p-4">
                     <h3 class="font-bold text-lg mb-2">{{ product.name }}</h3>
-                    <p class="text-gray-600 text-sm mb-3 line-clamp-2">{{ product.description[:80] }}...</p>
+                    <p class="text-gray-600 text-sm mb-3 line-clamp-2">{{ product.description[:80] }}{% if product.description|length > 80 %}...{% endif %}</p>
                     <div class="flex justify-between items-center">
                         <span class="text-2xl font-bold text-green-600">₹{{ product.price }}</span>
                         <button onclick="deleteProduct({{ product.id }}, '{{ product.name }}')" 
@@ -79,35 +92,47 @@
     </div>
 
     <!-- Add Product Modal -->
-    <div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+    <div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 my-8">
             <h3 class="text-2xl font-bold mb-6">Add New Product</h3>
             <form id="addProductForm" class="space-y-4">
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Product Name</label>
+                    <label class="block text-gray-700 font-semibold mb-2">Product Name *</label>
                     <input type="text" name="name" required
                            class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"
                            placeholder="Premium Incense Sticks">
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Description</label>
-                    <textarea name="description" required rows="3"
+                    <label class="block text-gray-700 font-semibold mb-2">Description *</label>
+                    <textarea name="description" required rows="4"
                               class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"
                               placeholder="Product description..."></textarea>
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Price (₹)</label>
-                    <input type="number" name="price" required step="0.01"
+                    <label class="block text-gray-700 font-semibold mb-2">Price (₹) *</label>
+                    <input type="number" name="price" required step="0.01" min="0"
                            class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"
                            placeholder="299">
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-semibold mb-2">Image</label>
-                    <select name="image_url" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
-                        <option value="priest.jpeg">priest.jpeg</option>
-                        <option value="priest1.jpeg">priest1.jpeg</option>
-                        <option value="th.png">th.png</option>
-                    </select>
+                    <label class="block text-gray-700 font-semibold mb-2">Product Image *</label>
+                    <div class="space-y-3">
+                        <input type="file" id="addImageFile" accept="image/*" 
+                               class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"
+                               onchange="handleAddImageUpload(event)">
+                        <div id="addImagePreview" class="hidden">
+                            <img id="addImagePreviewImg" src="" alt="Preview" class="image-preview w-full rounded-xl border-2 border-gray-200">
+                            <p class="text-sm text-gray-600 mt-2" id="addImageUrl"></p>
+                        </div>
+                        <input type="hidden" name="image_url" id="addImageUrlInput" value="priest.jpeg">
+                        <p class="text-xs text-gray-500">Or select from existing:</p>
+                        <select id="addImageSelect" onchange="document.getElementById('addImageUrlInput').value = this.value"
+                                class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                            <option value="priest.jpeg">priest.jpeg</option>
+                            <option value="priest1.jpeg">priest1.jpeg</option>
+                            <option value="th.png">th.png</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="flex space-x-4 pt-4">
                     <button type="submit" 
@@ -123,14 +148,107 @@
         </div>
     </div>
 
+    <!-- Edit Product Modal -->
+    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 my-8">
+            <h3 class="text-2xl font-bold mb-6">Edit Product</h3>
+            <form id="editProductForm" class="space-y-4">
+                <input type="hidden" id="editProductId" name="product_id">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Product Name *</label>
+                    <input type="text" id="editProductName" name="name" required
+                           class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Description *</label>
+                    <textarea id="editProductDescription" name="description" required rows="4"
+                              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Price (₹) *</label>
+                    <input type="number" id="editProductPrice" name="price" required step="0.01" min="0"
+                           class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Product Image *</label>
+                    <div class="space-y-3">
+                        <div id="editCurrentImage" class="mb-3">
+                            <p class="text-sm text-gray-600 mb-2">Current Image:</p>
+                            <img id="editCurrentImageImg" src="" alt="Current" class="image-preview w-full rounded-xl border-2 border-gray-200">
+                        </div>
+                        <input type="file" id="editImageFile" accept="image/*" 
+                               class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500"
+                               onchange="handleEditImageUpload(event)">
+                        <div id="editImagePreview" class="hidden">
+                            <p class="text-sm text-gray-600 mb-2">New Image Preview:</p>
+                            <img id="editImagePreviewImg" src="" alt="Preview" class="image-preview w-full rounded-xl border-2 border-gray-200">
+                            <p class="text-sm text-gray-600 mt-2" id="editImageUrl"></p>
+                        </div>
+                        <input type="hidden" name="image_url" id="editImageUrlInput">
+                        <p class="text-xs text-gray-500">Or select from existing:</p>
+                        <select id="editImageSelect" onchange="document.getElementById('editImageUrlInput').value = this.value; updateEditImagePreview(this.value)"
+                                class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:outline-none focus:border-blue-500">
+                            <option value="priest.jpeg">priest.jpeg</option>
+                            <option value="priest1.jpeg">priest1.jpeg</option>
+                            <option value="th.png">th.png</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex space-x-4 pt-4">
+                    <button type="submit" 
+                            class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700">
+                        Update Product
+                    </button>
+                    <button type="button" onclick="closeEditModal()" 
+                            class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-400">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        // Add Product Functions
         function openAddModal() {
             document.getElementById('addModal').classList.remove('hidden');
+            document.getElementById('addProductForm').reset();
+            document.getElementById('addImagePreview').classList.add('hidden');
+            document.getElementById('addImageUrlInput').value = 'priest.jpeg';
         }
 
         function closeAddModal() {
             document.getElementById('addModal').classList.add('hidden');
             document.getElementById('addProductForm').reset();
+            document.getElementById('addImagePreview').classList.add('hidden');
+        }
+
+        async function handleAddImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/admin/product/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('addImagePreviewImg').src = result.url;
+                    document.getElementById('addImageUrl').textContent = 'Uploaded: ' + result.image_url;
+                    document.getElementById('addImageUrlInput').value = result.image_url;
+                    document.getElementById('addImagePreview').classList.remove('hidden');
+                    document.getElementById('addImageSelect').value = '';
+                } else {
+                    alert('Error uploading image: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error uploading image: ' + error);
+            }
         }
 
         document.getElementById('addProductForm').addEventListener('submit', async (e) => {
@@ -157,6 +275,105 @@
             }
         });
 
+        // Edit Product Functions
+        async function editProduct(productId) {
+            try {
+                const response = await fetch(`/admin/product/edit/${productId}`);
+                const product = await response.json();
+
+                document.getElementById('editProductId').value = product.id;
+                document.getElementById('editProductName').value = product.name;
+                document.getElementById('editProductDescription').value = product.description;
+                document.getElementById('editProductPrice').value = product.price;
+                document.getElementById('editImageUrlInput').value = product.image_url;
+                
+                // Show current image
+                document.getElementById('editCurrentImageImg').src = '/static/' + product.image_url;
+                document.getElementById('editCurrentImage').classList.remove('hidden');
+                document.getElementById('editImagePreview').classList.add('hidden');
+                document.getElementById('editImageFile').value = '';
+                
+                // Set select value
+                const imageSelect = document.getElementById('editImageSelect');
+                if (product.image_url.includes('uploads/')) {
+                    imageSelect.value = '';
+                } else {
+                    imageSelect.value = product.image_url;
+                }
+
+                document.getElementById('editModal').classList.remove('hidden');
+            } catch (error) {
+                alert('Error loading product: ' + error);
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editProductForm').reset();
+            document.getElementById('editImagePreview').classList.add('hidden');
+        }
+
+        function updateEditImagePreview(imageUrl) {
+            if (imageUrl) {
+                const previewImg = document.getElementById('editCurrentImageImg');
+                previewImg.src = '/static/' + imageUrl;
+            }
+        }
+
+        async function handleEditImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/admin/product/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('editImagePreviewImg').src = result.url;
+                    document.getElementById('editImageUrl').textContent = 'Uploaded: ' + result.image_url;
+                    document.getElementById('editImageUrlInput').value = result.image_url;
+                    document.getElementById('editImagePreview').classList.remove('hidden');
+                    document.getElementById('editImageSelect').value = '';
+                } else {
+                    alert('Error uploading image: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error uploading image: ' + error);
+            }
+        }
+
+        document.getElementById('editProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            const productId = document.getElementById('editProductId').value;
+
+            try {
+                const response = await fetch(`/admin/product/edit/${productId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Product updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error updating product: ' + error);
+            }
+        });
+
+        // Delete Product Function
         async function deleteProduct(productId, productName) {
             if (!confirm(`Delete "${productName}"? This action cannot be undone.`)) return;
 
@@ -181,6 +398,3 @@
 
 </body>
 </html>
-
-
-

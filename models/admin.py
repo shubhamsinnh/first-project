@@ -18,7 +18,7 @@ class Admin(db.Model):
         self.password_hash = generate_password_hash(password).decode('utf-8')
     
     def check_password(self, password):
-        return check_password_hash(self.password_hash.encode('utf-8'), password)
+        return check_password_hash(self.password_hash, password)
     
     def to_dict(self):
         return {
