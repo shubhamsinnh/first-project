@@ -1,0 +1,181 @@
+{% extends "user/base.html" %}
+
+{% block title %}Dashboard - PujaPath{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold gradient-text">My Dashboard</h1>
+    <p class="text-gray-600">Welcome back! Here's your activity summary.</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="stat-card bg-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+                <i class="fas fa-shopping-bag text-xl"></i>
+            </div>
+            <div>
+                <p class="text-gray-500">Total Orders</p>
+                <h3 class="text-2xl font-bold" id="total-orders">0</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card bg-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                <i class="fas fa-calendar-check text-xl"></i>
+            </div>
+            <div>
+                <p class="text-gray-500">Total Bookings</p>
+                <h3 class="text-2xl font-bold" id="total-bookings">0</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card bg-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                <i class="fas fa-rupee-sign text-xl"></i>
+            </div>
+            <div>
+                <p class="text-gray-500">Total Spent</p>
+                <h3 class="text-2xl font-bold" id="total-spent">₹0</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Recent Orders -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">Recent Orders</h2>
+            <a href="/user/orders" class="text-purple-600 hover:text-purple-800">View All</a>
+        </div>
+        <div id="recent-orders">
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-shopping-cart text-4xl mb-4"></i>
+                <p>No orders yet</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bookings -->
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">Recent Bookings</h2>
+            <a href="/user/bookings" class="text-purple-600 hover:text-purple-800">View All</a>
+        </div>
+        <div id="recent-bookings">
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-calendar-alt text-4xl mb-4"></i>
+                <p>No bookings yet</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="mt-8 bg-white rounded-xl shadow-lg p-6">
+    <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="/#pandits"
+            class="block p-4 border border-purple-200 rounded-lg text-center hover:bg-purple-50 transition">
+            <i class="fas fa-user-friends text-2xl text-purple-600 mb-2"></i>
+            <h3 class="font-semibold">Book a Pandit</h3>
+            <p class="text-sm text-gray-600">Schedule your next puja</p>
+        </a>
+        <a href="/#shop" class="block p-4 border border-green-200 rounded-lg text-center hover:bg-green-50 transition">
+            <i class="fas fa-shopping-cart text-2xl text-green-600 mb-2"></i>
+            <h3 class="font-semibold">Shop Essentials</h3>
+            <p class="text-sm text-gray-600">Buy puja materials</p>
+        </a>
+        <a href="/user/profile"
+            class="block p-4 border border-blue-200 rounded-lg text-center hover:bg-blue-50 transition">
+            <i class="fas fa-user-edit text-2xl text-blue-600 mb-2"></i>
+            <h3 class="font-semibold">Update Profile</h3>
+            <p class="text-sm text-gray-600">Edit your information</p>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Fetch dashboard data
+    async function loadDashboard() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await fetch('/api/user/dashboard', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                alert('Your session has expired. Please login again.');
+                window.location.href = '/';
+                return;
+            }
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Update stats
+                document.getElementById('total-orders').textContent = data.stats.total_orders;
+                document.getElementById('total-bookings').textContent = data.stats.total_bookings;
+                document.getElementById('total-spent').textContent = `₹${data.stats.total_spent}`;
+
+                // Update recent orders
+                const ordersContainer = document.getElementById('recent-orders');
+                if (data.recent_orders && data.recent_orders.length > 0) {
+                    ordersContainer.innerHTML = data.recent_orders.map(order => `
+                        <div class="flex items-center justify-between py-3 border-b last:border-b-0">
+                            <div>
+                                <h4 class="font-semibold">${order.order_number}</h4>
+                                <p class="text-sm text-gray-600">${new Date(order.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">₹${order.total_amount}</p>
+                                <span class="px-2 py-1 text-xs rounded-full ${order.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                    ${order.status}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Update recent bookings
+                const bookingsContainer = document.getElementById('recent-bookings');
+                if (data.recent_bookings && data.recent_bookings.length > 0) {
+                    bookingsContainer.innerHTML = data.recent_bookings.map(booking => `
+                        <div class="flex items-center justify-between py-3 border-b last:border-b-0">
+                            <div>
+                                <h4 class="font-semibold">${booking.puja_type}</h4>
+                                <p class="text-sm text-gray-600">With ${booking.pandit_name}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm">${booking.date}</p>
+                                <span class="px-2 py-1 text-xs rounded-full ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                    ${booking.status}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+        }
+    }
+
+    // Load dashboard when page loads
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+{% endblock %}

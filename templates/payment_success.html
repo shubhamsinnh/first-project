@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Payment Successful - PujaPath</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .success-icon {
+            color: green;
+            font-size: 60px;
+        }
+
+        .order-details {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="success-icon">✓</div>
+    <h1>Payment Successful</h1>
+    <p>Thank you for your payment. Your order has been confirmed.</p>
+
+    <div class="order-details">
+        <h3>Order Details</h3>
+        <p><strong>Order Number:</strong> {{ order.order_number }}</p>
+        <p><strong>Amount Paid:</strong> ₹{{ order.total_amount }}</p>
+        <p><strong>Payment ID:</strong> {{ payment.cf_payment_id }}</p>
+        <p><strong>Payment Time:</strong> {{ payment.payment_time }}</p>
+    </div>
+
+    <p>You will receive a confirmation email shortly.</p>
+
+    <a href="{{ url_for('home') }}">Return to Home</a> |
+    <a href="{{ url_for('order_confirmation', order_number=order.order_number) }}">View Order Details</a>
+</body>
+
+</html>
