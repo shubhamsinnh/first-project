@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Account - PujaPath{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="/" class="flex items-center">
+                    <span class="text-2xl font-bold gradient-text">PujaPath</span>
+                </a>
+                <div class="flex items-center space-x-6">
+                    <a href="/user/dashboard" class="text-gray-700 hover:text-purple-600">
+                        <i class="fas fa-user-circle mr-2"></i>My Account
+                    </a>
+                    <a href="/" class="text-gray-700 hover:text-purple-600">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                    <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-6 py-8">
+        <div class="flex">
+            <!-- Sidebar -->
+            <div class="w-1/4 pr-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center mb-6">
+                        <div class="w-16 h-16 rounded-full gradient-bg flex items-center justify-center text-white text-2xl font-bold"
+                            id="userInitial">
+                            U
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-bold text-lg" id="userName">Loading...</h3>
+                            <p class="text-gray-500 text-sm" id="userEmail">Loading...</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <a href="/user/dashboard"
+                            class="block sidebar-link p-3 rounded-lg {% if request.path == '/user/dashboard' %}bg-purple-50 text-purple-600{% endif %}">
+                            <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                        </a>
+                        <a href="/user/profile"
+                            class="block sidebar-link p-3 rounded-lg {% if request.path == '/user/profile' %}bg-purple-50 text-purple-600{% endif %}">
+                            <i class="fas fa-user-edit mr-3"></i>Profile
+                        </a>
+                        <a href="/user/orders"
+                            class="block sidebar-link p-3 rounded-lg {% if request.path == '/user/orders' %}bg-purple-50 text-purple-600{% endif %}">
+                            <i class="fas fa-shopping-bag mr-3"></i>Orders
+                        </a>
+                        <a href="/user/bookings"
+                            class="block sidebar-link p-3 rounded-lg {% if request.path == '/user/bookings' %}bg-purple-50 text-purple-600{% endif %}">
+                            <i class="fas fa-calendar-check mr-3"></i>Bookings
+                        </a>
+                        <a href="/user/settings"
+                            class="block sidebar-link p-3 rounded-lg {% if request.path == '/user/settings' %}bg-purple-50 text-purple-600{% endif %}">
+                            <i class="fas fa-cog mr-3"></i>Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="w-3/4">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+
+        // Check if user is logged in
+        const token = localStorage.getItem('token');
+        if (!token && window.location.pathname.includes('/user/')) {
+            window.location.href = '/';
+        }
+
+        // Populate user information from localStorage
+        const userDataStr = localStorage.getItem('user');
+        if (userDataStr) {
+            try {
+                const userData = JSON.parse(userDataStr);
+
+                // Update user initial
+                const fullName = userData.full_name || userData.username || '';
+                const initial = fullName ? fullName[0].toUpperCase() : 'U';
+                document.getElementById('userInitial').textContent = initial;
+
+                // Update user name
+                document.getElementById('userName').textContent = userData.full_name || userData.username || 'User';
+
+                // Update user email
+                document.getElementById('userEmail').textContent = userData.email || '';
+            } catch (e) {
+                console.error('Error loading user data:', e);
+            }
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

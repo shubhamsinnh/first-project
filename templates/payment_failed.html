@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Payment Failed - PujaPath</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .failure-icon {
+            color: red;
+            font-size: 60px;
+        }
+
+        .order-details {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .button {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px;
+        }
+
+        .button-secondary {
+            background: #6c757d;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="failure-icon">✗</div>
+    <h1>Payment Failed</h1>
+    <p>We were unable to process your payment. Please try again.</p>
+
+    <div class="order-details">
+        <h3>Order Details</h3>
+        <p><strong>Order Number:</strong> {{ order.order_number }}</p>
+        <p><strong>Amount:</strong> ₹{{ order.total_amount }}</p>
+        <p><strong>Payment Status:</strong> {{ payment.order_status }}</p>
+        {% if payment.payment_message %}
+        <p><strong>Reason:</strong> {{ payment.payment_message }}</p>
+        {% endif %}
+    </div>
+
+    <a class="button" href="{{ url_for('payment_page', order_number=order.order_number) }}">Try Payment Again</a>
+    <a class="button button-secondary" href="{{ url_for('home') }}">Return to Home</a>
+</body>
+
+</html>

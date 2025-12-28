@@ -1,51 +1,158 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Confirmation - PujaPath</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             font-family: 'Poppins', sans-serif;
         }
-        
+
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        
+
         .gradient-text {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        
+
         @keyframes checkmark {
             0% {
                 transform: scale(0);
             }
+
             50% {
                 transform: scale(1.2);
             }
+
             100% {
                 transform: scale(1);
             }
         }
-        
+
         .checkmark {
             animation: checkmark 0.6s ease-in-out;
         }
+
+        /* Razorpay Payment Success Styling */
+        .razorpay-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 16px;
+            margin: 25px 0;
+            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.25);
+            border-left: 6px solid #2f855a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .razorpay-success::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        .razorpay-success h3 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .razorpay-success h3 i {
+            font-size: 1.8rem;
+            animation: pulse 2s infinite;
+        }
+
+        .razorpay-success p {
+            margin: 10px 0;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .razorpay-success strong {
+            font-weight: 600;
+            opacity: 0.95;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .payment-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .payment-detail-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .razorpay-badge {
+            background: #F37254;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 10px;
+        }
     </style>
 </head>
+
 <body class="bg-gray-50">
     <!-- Navigation -->
     <nav class="bg-white shadow-md sticky top-0 z-50">
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <a href="{{ url_for('home') }}" class="text-2xl font-bold gradient-text">PujaPath</a>
-                <a href="{{ url_for('home') }}" class="text-gray-600 hover:text-gray-900">← Back to Home</a>
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('home') }}" class="text-gray-600 hover:text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a href="/user/dashboard" class="text-gray-600 hover:text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-user"></i> Dashboard
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
@@ -65,117 +172,351 @@
         <!-- Order Details Card -->
         <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
             <div class="border-b border-gray-200 pb-4 mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Order Details</h2>
-                <p class="text-gray-600">Order Number: <span class="font-bold text-purple-600">{{ order.order_number }}</span></p>
-                <p class="text-sm text-gray-500">Placed on {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Order Details</h2>
+                        <p class="text-gray-600">Order Number:
+                            <span class="font-bold text-purple-600">{{ order.order_number }}</span>
+                            <span class="razorpay-badge">
+                                <i class="fas fa-shield-alt"></i> Razorpay
+                            </span>
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            <i class="far fa-clock mr-1"></i>
+                            Placed on {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-green-600">₹{{ "%.2f"|format(order.total_amount) }}</div>
+                        <div class="text-sm text-gray-500">Total Amount</div>
+                    </div>
+                </div>
             </div>
+
+            <!-- ✅ Razorpay Payment Success Section -->
+            {% if order.payment_status == 'paid' and order.payment_reference %}
+            <div class="razorpay-success">
+                <h3>
+                    <i class="fas fa-check-circle"></i>
+                    Payment Successful via Razorpay
+                </h3>
+
+                <div class="payment-details-grid">
+                    <div class="payment-detail-item">
+                        <div class="text-sm opacity-80">Payment ID</div>
+                        <div class="font-mono text-lg truncate" title="{{ order.payment_reference }}">
+                            {{ order.payment_reference[:10] }}...
+                        </div>
+                    </div>
+
+                    <div class="payment-detail-item">
+                        <div class="text-sm opacity-80">Paid On</div>
+                        <div class="text-lg">
+                            <i class="far fa-calendar-alt mr-2"></i>
+                            {{ order.payment_date.strftime('%d %b %Y') }}
+                        </div>
+                    </div>
+
+                    <div class="payment-detail-item">
+                        <div class="text-sm opacity-80">Time</div>
+                        <div class="text-lg">
+                            <i class="far fa-clock mr-2"></i>
+                            {{ order.payment_date.strftime('%I:%M %p') }}
+                        </div>
+                    </div>
+
+                    <div class="payment-detail-item">
+                        <div class="text-sm opacity-80">Amount</div>
+                        <div class="text-2xl font-bold">
+                            ₹{{ "%.2f"|format(order.total_amount) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-white/20">
+                    <p class="text-sm flex items-center gap-2">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> Payment processed securely by Razorpay.
+                        Transaction ID: {{ order.payment_reference }}
+                    </p>
+                </div>
+            </div>
+            {% elif order.payment_status == 'pending' %}
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg mb-6">
+                <h3 class="font-bold text-yellow-800 mb-2 flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i> Payment Pending
+                </h3>
+                <p class="text-yellow-700">
+                    Your order has been created but payment is still pending.
+                    Please complete the payment to confirm your order.
+                </p>
+                <a href="{{ url_for('payment_page', order_number=order.order_number) }}"
+                    class="mt-3 inline-flex items-center gap-2 bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700 transition">
+                    <i class="fas fa-credit-card"></i> Complete Payment
+                </a>
+            </div>
+            {% endif %}
 
             <!-- Order Items -->
             <div class="mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Items Ordered</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-shopping-bag mr-2"></i>Items Ordered
+                </h3>
                 <div class="space-y-4">
                     {% for item in order.items %}
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div
+                        class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                         <div class="flex-1">
                             <h4 class="font-semibold text-gray-800">{{ item.product_name }}</h4>
-                            <p class="text-sm text-gray-600">₹{{ item.product_price }} × {{ item.quantity }}</p>
+                            <p class="text-sm text-gray-600">
+                                <i class="fas fa-rupee-sign mr-1"></i>{{ item.product_price }} × {{ item.quantity }}
+                            </p>
                         </div>
-                        <p class="font-bold text-green-600">₹{{ item.subtotal }}</p>
+                        <div class="text-right">
+                            <p class="font-bold text-green-600">₹{{ item.subtotal }}</p>
+                            <p class="text-xs text-gray-500">Item Total</p>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
             <!-- Order Summary -->
-            <div class="border-t border-gray-200 pt-4">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-gray-600">Subtotal:</span>
-                    <span class="font-semibold">₹{{ order.total_amount }}</span>
-                </div>
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-gray-600">Shipping:</span>
-                    <span class="font-semibold text-green-600">FREE</span>
-                </div>
-                <div class="flex justify-between items-center text-xl font-bold pt-4 border-t border-gray-200">
-                    <span>Total Amount:</span>
-                    <span class="text-green-600">₹{{ order.total_amount }}</span>
+            <div class="border-t border-gray-200 pt-6">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4">Order Summary</h4>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Subtotal:</span>
+                        <span class="font-semibold">₹{{ order.total_amount }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Shipping:</span>
+                        <span class="font-semibold text-green-600">FREE</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Tax (GST):</span>
+                        <span class="font-semibold">₹0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xl font-bold pt-4 border-t border-gray-200">
+                        <span>Total Amount:</span>
+                        <span class="text-green-600">₹{{ "%.2f"|format(order.total_amount) }}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Shipping Information -->
         <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Shipping Information</h2>
-            <div class="space-y-2 text-gray-700">
-                <p><strong>Name:</strong> {{ order.customer_name }}</p>
-                <p><strong>Email:</strong> {{ order.customer_email }}</p>
-                <p><strong>Phone:</strong> {{ order.customer_phone }}</p>
-                <p><strong>Address:</strong> {{ order.shipping_address }}</p>
-                <p><strong>City:</strong> {{ order.city }}, <strong>State:</strong> {{ order.state }}</p>
-                <p><strong>Pincode:</strong> {{ order.pincode }}</p>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-truck mr-2"></i>Shipping Information
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-700">
+                <div class="space-y-3">
+                    <div>
+                        <div class="text-sm text-gray-500">Customer Name</div>
+                        <div class="font-medium">{{ order.customer_name }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Email Address</div>
+                        <div class="font-medium">{{ order.customer_email }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Phone Number</div>
+                        <div class="font-medium">{{ order.customer_phone }}</div>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <div class="text-sm text-gray-500">Shipping Address</div>
+                        <div class="font-medium">{{ order.shipping_address }}</div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <div class="text-sm text-gray-500">City</div>
+                            <div class="font-medium">{{ order.city }}</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm text-gray-500">State</div>
+                            <div class="font-medium">{{ order.state }}</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Pincode</div>
+                        <div class="font-medium">{{ order.pincode }}</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Order Status -->
-        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg mb-6">
-            <h3 class="font-bold text-blue-800 mb-2">Order Status</h3>
-            <p class="text-blue-700">
-                <strong>Current Status:</strong> 
-                <span class="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm font-semibold">
-                    {{ order.status.title() }}
-                </span>
-            </p>
-            <p class="text-blue-700 mt-2">
-                <strong>Payment Status:</strong> 
-                <span class="px-3 py-1 bg-yellow-200 text-yellow-800 rounded-full text-sm font-semibold">
-                    {{ order.payment_status.title() }}
-                </span>
-            </p>
-            <p class="text-sm text-blue-600 mt-4">
-                We'll contact you shortly to confirm payment details and delivery schedule.
-            </p>
-        </div>
+        <!-- Order Status & Next Steps -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Order Status -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg">
+                <h3 class="font-bold text-blue-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-sync-alt"></i> Order Status
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <div class="text-sm text-blue-700 mb-1">Current Status</div>
+                        <span
+                            class="px-4 py-2 bg-blue-200 text-blue-800 rounded-full text-sm font-semibold inline-flex items-center gap-2">
+                            <i class="fas fa-circle text-xs"></i>
+                            {{ order.status.title() }}
+                        </span>
+                    </div>
+                    <div>
+                        <div class="text-sm text-blue-700 mb-1">Payment Status</div>
+                        {% if order.payment_status == 'paid' %}
+                        <span
+                            class="px-4 py-2 bg-green-200 text-green-800 rounded-full text-sm font-semibold inline-flex items-center gap-2">
+                            <i class="fas fa-check-circle"></i>
+                            {{ order.payment_status.title() }}
+                        </span>
+                        {% else %}
+                        <span
+                            class="px-4 py-2 bg-yellow-200 text-yellow-800 rounded-full text-sm font-semibold inline-flex items-center gap-2">
+                            <i class="fas fa-clock"></i>
+                            {{ order.payment_status.title() }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <p class="text-sm text-blue-600 mt-4 flex items-start gap-2">
+                    <i class="fas fa-info-circle mt-1"></i>
+                    We'll contact you shortly to confirm payment details and delivery schedule.
+                </p>
+            </div>
 
-        <!-- Next Steps -->
-        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 mb-6">
-            <h3 class="font-bold text-gray-800 mb-4">What's Next?</h3>
-            <ul class="space-y-3 text-gray-700">
-                <li class="flex items-start">
-                    <span class="text-green-600 font-bold mr-3">✓</span>
-                    <span>You'll receive an email confirmation at <strong>{{ order.customer_email }}</strong></span>
-                </li>
-                <li class="flex items-start">
-                    <span class="text-green-600 font-bold mr-3">✓</span>
-                    <span>Our team will contact you on <strong>{{ order.customer_phone }}</strong> within 24 hours</span>
-                </li>
-                <li class="flex items-start">
-                    <span class="text-green-600 font-bold mr-3">✓</span>
-                    <span>Your order will be processed and shipped within 2-3 business days</span>
-                </li>
-            </ul>
+            <!-- Next Steps -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
+                <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-list-check"></i> What's Next?
+                </h3>
+                <ul class="space-y-4">
+                    <li class="flex items-start">
+                        <span class="text-green-600 text-xl mr-3">✓</span>
+                        <div>
+                            <div class="font-medium">Email Confirmation</div>
+                            <div class="text-sm text-gray-600">Sent to <strong>{{ order.customer_email }}</strong></div>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-green-600 text-xl mr-3">✓</span>
+                        <div>
+                            <div class="font-medium">Phone Confirmation</div>
+                            <div class="text-sm text-gray-600">Call on <strong>{{ order.customer_phone }}</strong>
+                                within 24 hours</div>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-green-600 text-xl mr-3">✓</span>
+                        <div>
+                            <div class="font-medium">Processing & Shipping</div>
+                            <div class="text-sm text-gray-600">Order will be processed within 2-3 business days</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex flex-col sm:flex-row gap-4">
-            <a href="{{ url_for('home') }}" 
-               class="flex-1 bg-gradient-to-r from-green-600 to-emerald-700 text-white py-4 rounded-xl font-bold text-center hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl">
-                Continue Shopping
+        <div class="flex flex-col sm:flex-row gap-4 mt-8">
+            <a href="{{ url_for('home') }}"
+                class="flex-1 bg-gradient-to-r from-green-600 to-emerald-700 text-white py-4 rounded-xl font-bold text-center hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3">
+                <i class="fas fa-shopping-cart"></i> Continue Shopping
             </a>
-            <button onclick="window.print()" 
-                    class="flex-1 bg-gray-200 text-gray-800 py-4 rounded-xl font-bold hover:bg-gray-300 transition-all">
-                Print Order Details
+            <a href="/user/orders"
+                class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl font-bold text-center hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3">
+                <i class="fas fa-history"></i> View All Orders
+            </a>
+            <button onclick="window.print()"
+                class="flex-1 bg-gray-200 text-gray-800 py-4 rounded-xl font-bold hover:bg-gray-300 transition-all flex items-center justify-center gap-3">
+                <i class="fas fa-print"></i> Print Receipt
             </button>
+        </div>
+
+        <!-- Support Info -->
+        <div class="mt-8 text-center text-gray-600 text-sm">
+            <p class="mb-2">Need help with your order?</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{{ url_for('contact') }}"
+                    class="text-purple-600 hover:text-purple-800 flex items-center justify-center gap-2">
+                    <i class="fas fa-headset"></i> Contact Support
+                </a>
+                <span class="hidden sm:inline">|</span>
+                <a href="{{ url_for('home') }}#faq"
+                    class="text-purple-600 hover:text-purple-800 flex items-center justify-center gap-2">
+                    <i class="fas fa-question-circle"></i> View FAQs
+                </a>
+            </div>
         </div>
     </div>
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-white mt-16 py-8">
-        <div class="container mx-auto px-4 text-center">
-            <p>&copy; 2024 PujaPath. All rights reserved.</p>
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-4">PujaPath</h3>
+                <p class="mb-4">Your trusted partner for spiritual needs</p>
+                <div class="flex justify-center gap-6 mb-4">
+                    <a href="#" class="hover:text-purple-300"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="hover:text-purple-300"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="hover:text-purple-300"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="hover:text-purple-300"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+                <p>&copy; 2024 PujaPath. All rights reserved.</p>
+            </div>
         </div>
     </footer>
+
+    <!-- JavaScript for Enhanced Features -->
+    <script>
+        // Copy Payment ID to clipboard
+        function copyPaymentId() {
+            const paymentId = "{{ order.payment_reference }}";
+            navigator.clipboard.writeText(paymentId).then(() => {
+                alert('Payment ID copied to clipboard!');
+            });
+        }
+
+        // Share order details
+        function shareOrder() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My PujaPath Order',
+                    text: `I just placed an order on PujaPath! Order #{{ order.order_number }}`,
+                    url: window.location.href,
+                });
+            } else {
+                alert('Share feature not supported on this browser.');
+            }
+        }
+
+        // Smooth scroll to payment section
+        document.addEventListener('DOMContentLoaded', function () {
+            // Add copy button to payment ID
+            const paymentSection = document.querySelector('.razorpay-success');
+            if (paymentSection) {
+                const paymentIdElement = paymentSection.querySelector('.font-mono');
+                if (paymentIdElement) {
+                    const copyBtn = document.createElement('button');
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                    copyBtn.className = 'ml-2 text-sm bg-white/20 hover:bg-white/30 p-1 rounded';
+                    copyBtn.title = 'Copy Payment ID';
+                    copyBtn.onclick = copyPaymentId;
+                    paymentIdElement.parentElement.appendChild(copyBtn);
+                }
+            }
+
+            // Auto-hide success message after 10 seconds (optional)
+            setTimeout(() => {
+                const successAlert = document.querySelector('.razorpay-success');
+                if (successAlert) {
+                    successAlert.style.opacity = '0.9';
+                }
+            }, 10000);
+        });
+    </script>
 </body>
+
 </html>
-
-
-

@@ -11,6 +11,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from flask_migrate import Migrate
 from datetime import datetime, timedelta
+import razorpay
+
 
 # Local imports
 from database import db
@@ -50,6 +52,12 @@ app.config.update(
     MAX_CONTENT_LENGTH=16 * 1024 * 1024  # 16MB file size limit
 )
 
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+
+if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
+    raise ValueError("Razorpay keys not set in environment variables")
+
 # Initialize extensions
 db.init_app(app) # Initialize database
 migrate = Migrate(app, db) # Initialize Flask-Migrate AFTER db
@@ -81,10 +89,10 @@ def home():
     try:
         return render_template(
             'home.html',
-            pandits=Pandit.query.filter_by(is_approved=True).all(),  # Only show approved pandits
-            materials=PujaMaterial.query.all(),
-            testimonials=Testimonial.query.all(),
-            bundles=Bundle.query.all()
+            pandits=Pandit.query.filter_by(is_approved=True).limit(4).all(),  # Limit to 4 featured pandits
+            materials=PujaMaterial.query.limit(8).all(),      # Limit to 8 featured materials
+            testimonials=Testimonial.query.limit(6).all(),    # Limit to 6 testimonials
+            bundles=Bundle.query.limit(4).all()               # Limit to 4 featured bundles
         )
     except SQLAlchemyError as e:
         app.logger.error(f"Database error: {str(e)}")
@@ -95,37 +103,69 @@ def home():
 
 @app.route('/api/register', methods=['POST'])
 def register():
-    """User registration endpoint"""
-    data = request.get_json()
-    if not data or 'username' not in data or 'password' not in data:
-        return jsonify({"error": "Username and password required"}), 400
-
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({"error": "User already exists"}), 409
-
     try:
+        data = request.json
+        
+        # Check if user exists
+        if User.query.filter_by(email=data.get('email')).first():
+            return jsonify({'error': 'Email already registered'}), 400
+        
+        if User.query.filter_by(username=data.get('username')).first():
+            return jsonify({'error': 'Username already taken'}), 400
+        
+        # Create new user with profile data
         user = User(
-            username=data['username'],
-            password=bcrypt.generate_password_hash(data['password']).decode('utf-8')
+            username=data.get('username'),
+            email=data.get('email'),
+            full_name=data.get('full_name', ''),
+            phone=data.get('phone', '')
         )
+        user.set_password(data.get('password'))
+        
         db.session.add(user)
         db.session.commit()
-        return jsonify({"message": "User created successfully"}), 201
+        
+        # Generate JWT token
+        access_token = create_access_token(identity=str(user.id))
+        
+        return jsonify({
+            'message': 'Registration successful',
+            'user': user.to_dict(),
+            'access_token': access_token
+        }), 201
+        
     except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 400
 
+# Update your `/api/login` endpoint
 @app.route('/api/login', methods=['POST'])
 def login():
-    """User authentication endpoint"""
-    data = request.get_json()
-    user = User.query.filter_by(username=data.get('username')).first()
-
-    if not user or not bcrypt.check_password_hash(user.password, data.get('password', '')):
-        return jsonify({"error": "Invalid credentials"}), 401
-
-    access_token = create_access_token(identity=user.id)
-    return jsonify(access_token=access_token), 200
+    try:
+        data = request.json
+        identifier = data.get('email') or data.get('username')
+        
+        if not identifier:
+            return jsonify({'error': 'Email or username is required'}), 400
+            
+        # Try to find user by email OR username
+        user = User.query.filter(
+            (User.email == identifier) | (User.username == identifier)
+        ).first()
+        
+        if user and user.check_password(data.get('password')):
+            access_token = create_access_token(identity=str(user.id))
+            
+            return jsonify({
+                'message': 'Login successful',
+                'user': user.to_dict(),
+                'access_token': access_token
+            }), 200
+        
+        return jsonify({'error': 'Invalid email/username or password'}), 401
+        
+    except Exception as e:
+        # Log the error for debugging: app.logger.error(f"Login error: {e}")
+        return jsonify({'error': 'An internal error occurred. Please try again.'}), 500
 
 @app.route('/api/upload', methods=['POST'])
 @jwt_required()
@@ -166,15 +206,26 @@ def product_detail(product_id):
     # Get some testimonials for reviews section
     testimonials = Testimonial.query.limit(6).all()
     # Get related products (other products excluding current) - fetch 4 for display
-    related_products = PujaMaterial.query.filter(PujaMaterial.id != product_id).limit(4).all()
+    related_products = PujaMaterial.query.limit(4).all()
     return render_template('product_detail.html', product=product, testimonials=testimonials, related_products=related_products)
+
 
 
 @app.route('/bundle/<int:bundle_id>')
 def bundle_detail(bundle_id):
     """Bundle detail page"""
     bundle = Bundle.query.get_or_404(bundle_id)
-    return render_template('bundle_detail.html', bundle=bundle)
+    
+    # Get related products for the "You May Also Like" section
+    related_products = PujaMaterial.query.limit(4).all()
+    
+    # OR if you want to exclude products that might be in the bundle:
+    # Get some products (excluding any that might be in the bundle)
+    # You need to know how your Bundle and PujaMaterial models are related
+    
+    return render_template('bundle_detail.html', 
+                         bundle=bundle, 
+                         related_products=related_products)  # Now passing related_products
 
 
 @app.route('/about')
@@ -466,7 +517,8 @@ def checkout_page():
         
         return render_template('checkout.html', cart=cart, total=total)
     
-    # POST - Process order
+    # POST - Process 
+
     try:
         data = request.form
         
@@ -544,8 +596,8 @@ def checkout_page():
             state=data.get('state'),
             pincode=data.get('pincode'),
             total_amount=total_amount,
-            status='confirmed',
-            payment_status='pending',  # In real app, integrate payment gateway
+            status='pending',
+            payment_status='initiated',  # In real app, integrate payment gateway
             notes=data.get('notes', '')
         )
         
@@ -567,7 +619,7 @@ def checkout_page():
         db.session.commit()
         
         # Redirect to order confirmation
-        return redirect(url_for('order_confirmation', order_number=order_number))
+        return redirect(url_for('payment_page', order_number=order.order_number))
         
     except Exception as e:
         db.session.rollback()
@@ -583,37 +635,248 @@ def order_confirmation(order_number):
     """Order confirmation page"""
     order = Order.query.filter_by(order_number=order_number).first_or_404()
     return render_template('order_confirmation.html', order=order)
+    # ✅ NEW: Check if payment was made
+    if order.payment_status != 'paid':
+        # Redirect to payment page if not paid
+        return redirect(url_for('payment_page', order_number=order_number))
+    
+    return render_template('order_confirmation.html', order=order)
 
 
-@app.route('/api/checkout', methods=['POST'])
-def checkout_api():
-    """API endpoint for checkout (legacy support)"""
+@app.route('/api/orders', methods=['POST'])
+@jwt_required(optional=True)
+def create_order():
+    """Create a new order (supports authenticated and guest users)"""
     try:
+        user_id = get_jwt_identity()
         data = request.get_json()
         
-        if 'items' not in data or not data['items']:
-            return jsonify({"error": "Cart is empty"}), 400
+        # Validate required fields
+        required_fields = ['customer_name', 'customer_email', 'customer_phone', 
+                          'shipping_address', 'city', 'state', 'pincode', 'cart']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({"error": f"Missing required field: {field}"}), 400
         
-        # Calculate total
-        total = 0
-        for item in data['items']:
-            product = PujaMaterial.query.get(item['id'])
-            if product:
-                total += product.price * item['quantity']
+        cart = data.get('cart')
+        if not cart:
+            return jsonify({"error": "Cart is empty"}), 400
+            
+        # Calculate total and validate products
+        total_amount = 0
+        order_items_data = []
+        
+        for item in cart:
+            item_type = item.get('type', 'product')
+            quantity = int(item.get('quantity', 1))
+            
+            if item_type == 'bundle':
+                bundle = Bundle.query.get(item.get('id'))
+                if not bundle:
+                    continue
+                
+                price = bundle.discounted_price
+                subtotal = price * quantity
+                total_amount += subtotal
+                
+                order_items_data.append({
+                    'bundle_id': bundle.id,
+                    'product_name': bundle.name,
+                    'product_price': price,
+                    'quantity': quantity,
+                    'subtotal': subtotal
+                })
+            else:
+                product = PujaMaterial.query.get(item.get('id'))
+                if not product:
+                    continue
+                
+                price = product.price
+                subtotal = price * quantity
+                total_amount += subtotal
+                
+                order_items_data.append({
+                    'product_id': product.id,
+                    'product_name': product.name,
+                    'product_price': price,
+                    'quantity': quantity,
+                    'subtotal': subtotal
+                })
+        
+        if not order_items_data:
+            return jsonify({"error": "No valid items in cart"}), 400
         
         # Generate order number
         order_number = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{Order.query.count() + 1}"
         
+        # Create order
+        order = Order(
+            order_number=order_number,
+            customer_name=data.get('customer_name'),
+            customer_email=data.get('customer_email'),
+            customer_phone=data.get('customer_phone'),
+            shipping_address=data.get('shipping_address'),
+            city=data.get('city'),
+            state=data.get('state'),
+            pincode=data.get('pincode'),
+            total_amount=total_amount,
+            status='pending',
+            payment_status='initiated',
+            notes=data.get('notes', '')
+        )
+        
+        if user_id:
+            order.user_id = user_id
+        
+        db.session.add(order)
+        db.session.flush()  # Get order ID
+        
+        # Create order items
+        for item_data in order_items_data:
+            order_item = OrderItem(
+                order_id=order.id,
+                product_id=item_data.get('product_id'),
+                bundle_id=item_data.get('bundle_id'),
+                product_name=item_data['product_name'],
+                product_price=item_data['product_price'],
+                quantity=item_data['quantity'],
+                subtotal=item_data['subtotal']
+            )
+            db.session.add(order_item)
+        
+        db.session.commit()
+        
         return jsonify({
-            "success": True,
-            "message": "Order placed successfully!",
+            "success": True, 
+            "message": "Order created. Please proceed to payment.",
             "order_number": order_number,
-            "total": total
+            "redirect_url": url_for('payment_page', order_number=order_number)
         }), 201
         
     except Exception as e:
-        app.logger.error(f"Error in checkout: {str(e)}")
-        return jsonify({"error": "Checkout failed"}), 500
+        db.session.rollback()
+        app.logger.error(f"Error in create_order: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+#Razorpay Payment Create
+
+@app.route('/api/payment/create', methods=['POST'])
+def create_razorpay_payment():
+    try:
+        data = request.get_json()
+        order_number = data.get("order_number")
+
+        # Get order from database
+        order = Order.query.filter_by(order_number=order_number).first()
+        if not order:
+            return jsonify({"error": "Order not found"}), 404
+
+        # Create Razorpay Order (amount in paise)
+        amount_in_paise = int(order.total_amount * 100)
+        
+        razorpay_order = razorpay_client.order.create({
+            "amount": amount_in_paise,
+            "currency": "INR",
+            "receipt": order_number,
+            "payment_capture": 1,  # Auto-capture
+            "notes": {
+                "order_number": order_number,
+                "customer_email": order.customer_email
+            }
+        })
+
+        # Update order with Razorpay ID
+        order.razorpay_order_id = razorpay_order['id']
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "order_id": razorpay_order['id'],
+            "amount": amount_in_paise,
+            "currency": "INR",
+            "key": os.getenv('RAZORPAY_KEY_ID'),  # Frontend needs this
+            "customer_name": order.customer_name,
+            "customer_email": order.customer_email,
+            "customer_phone": order.customer_phone,
+            "order_number": order_number
+        })
+
+    except Exception as e:
+        app.logger.error(f"Razorpay payment creation error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+#*******New Payment Rule ****
+
+
+@app.route('/payment/<order_number>')
+def payment_page(order_number):
+    """Show Razorpay payment page for an order"""
+    order = Order.query.filter_by(order_number=order_number).first_or_404()
+    
+    # Don't show payment page if already paid
+    if order.payment_status == 'paid':
+        return redirect(url_for('order_confirmation', order_number=order_number))
+    
+    return render_template('payment.html', 
+                         order=order,
+                         razorpay_key=os.getenv('RAZORPAY_KEY_ID'),
+                         amount_in_paise=int(order.total_amount * 100))
+
+
+@app.route('/payment/verify', methods=['POST'])
+def verify_razorpay_payment():
+    try:
+        data = request.get_json()
+        
+        # Get parameters from frontend
+        razorpay_payment_id = data.get('razorpay_payment_id')
+        razorpay_order_id = data.get('razorpay_order_id')
+        razorpay_signature = data.get('razorpay_signature')
+        order_number = data.get('order_number')
+
+        # Verify payment signature
+        params_dict = {
+            'razorpay_order_id': razorpay_order_id,
+            'razorpay_payment_id': razorpay_payment_id,
+            'razorpay_signature': razorpay_signature
+        }
+
+        razorpay_client.utility.verify_payment_signature(params_dict)
+        
+        # Signature verified - update order
+        order = Order.query.filter_by(order_number=order_number).first()
+        if order:
+            order.payment_status = 'paid'
+            order.status = 'confirmed'
+            order.payment_reference = razorpay_payment_id
+            order.payment_date = datetime.utcnow()
+            db.session.commit()
+
+            return jsonify({
+                "success": True,
+                "message": "Payment verified successfully",
+                "order_number": order_number,
+                "payment_id": razorpay_payment_id
+            })
+
+    except razorpay.errors.SignatureVerificationError as e:
+        app.logger.error(f"Signature verification failed: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": "Payment verification failed",
+            "details": "Invalid payment signature"
+        }), 400
+    except Exception as e:
+        app.logger.error(f"Payment verification error: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/checkout', methods=['POST'])
+def checkout_api():
+    """API endpoint for checkout (legacy support)"""
+    return create_order()
 
 
 # ==================== ADMIN PANEL ROUTES ====================
@@ -981,7 +1244,7 @@ def init_admin():
         # Create default admin
         admin = Admin(
             username="admin",
-            email="admin@pujapath.com",
+            email="shubhprsnl@gmail.com",
             is_super_admin=True
         )
         admin.set_password("admin123")  # Change this password!
@@ -1002,6 +1265,219 @@ def init_admin():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+    
+# USER DASHBOARD ENDPOINTS
+# ============================================ #
+
+@app.route('/api/user/dashboard', methods=['GET'])
+@jwt_required()
+def get_user_dashboard():
+    """Get user dashboard summary"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Get recent orders (limit to 5)
+        recent_orders = Order.query.filter_by(user_id=user_id)\
+            .order_by(Order.created_at.desc())\
+            .limit(5).all()
+        
+        # Get recent bookings (limit to 5)
+        recent_bookings = Booking.query.filter_by(user_id=user_id)\
+            .order_by(Booking.created_at.desc())\
+            .limit(5).all()
+        
+        # Calculate stats
+        total_orders = Order.query.filter_by(user_id=user_id).count()
+        total_bookings = Booking.query.filter_by(user_id=user_id).count()
+        total_spent = db.session.query(db.func.sum(Order.total_amount))\
+            .filter(Order.user_id == user_id)\
+            .scalar() or 0
+        
+        dashboard_data = {
+            'user': user.to_dict(),
+            'stats': {
+                'total_orders': total_orders,
+                'total_bookings': total_bookings,
+                'total_spent': total_spent
+            },
+            'recent_orders': [order.to_dict() for order in recent_orders],
+            'recent_bookings': [booking.to_dict() for booking in recent_bookings]
+        }
+        
+        return jsonify(dashboard_data), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user/orders', methods=['GET'])
+@jwt_required()
+def get_user_orders():
+    """Get all orders for the logged-in user"""
+    try:
+        user_id = get_jwt_identity()
+        orders = Order.query.filter_by(user_id=user_id)\
+            .order_by(Order.created_at.desc())\
+            .all()
+        
+        return jsonify({
+            'orders': [order.to_dict() for order in orders]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user/bookings', methods=['GET'])
+@jwt_required()
+def get_user_bookings():
+    """Get all bookings for the logged-in user"""
+    try:
+        user_id = get_jwt_identity()
+        bookings = Booking.query.filter_by(user_id=user_id)\
+            .order_by(Booking.created_at.desc())\
+            .all()
+        
+        return jsonify({
+            'bookings': [booking.to_dict() for booking in bookings]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user/bookings/<int:booking_id>/cancel', methods=['POST'])
+@jwt_required()
+def cancel_user_booking(booking_id):
+    """Cancel a booking"""
+    try:
+        user_id = get_jwt_identity()
+        booking = Booking.query.get(booking_id)
+        
+        if not booking:
+            return jsonify({'error': 'Booking not found'}), 404
+            
+        if booking.user_id != user_id:
+            return jsonify({'error': 'Unauthorized'}), 403
+            
+        if booking.status not in ['pending', 'confirmed']:
+            return jsonify({'error': 'Cannot cancel this booking'}), 400
+            
+        booking.status = 'cancelled'
+        db.session.commit()
+        
+        return jsonify({'message': 'Booking cancelled successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user/profile', methods=['GET'])
+@jwt_required()
+def get_user_profile():
+    """Get user profile"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        return jsonify({'user': user.to_dict()}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user/profile', methods=['PUT'])
+@jwt_required()
+def update_user_profile():
+    """Update user profile"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        data = request.json
+        
+        # Update fields if provided
+        if 'full_name' in data:
+            user.full_name = data['full_name']
+        if 'phone' in data:
+            user.phone = data['phone']
+        if 'email' in data and data['email'] != user.email:
+            # Check if new email is already taken
+            existing = User.query.filter_by(email=data['email']).first()
+            if existing and existing.id != user.id:
+                return jsonify({'error': 'Email already in use'}), 400
+            user.email = data['email']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Profile updated successfully',
+            'user': user.to_dict()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user/change-password', methods=['POST'])
+@jwt_required()
+def change_password():
+    """Change user password"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        data = request.json
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        # Verify current password
+        if not user.check_password(current_password):
+            return jsonify({'error': 'Current password is incorrect'}), 400
+        
+        # Set new password
+        user.set_password(new_password)
+        db.session.commit()
+        
+        return jsonify({'message': 'Password changed successfully'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500    
+
+
+@app.route('/user/dashboard')
+def user_dashboard_page():
+    """Render user dashboard HTML page"""
+    return render_template('user/dashboard.html')
+
+@app.route('/user/orders')
+def user_orders_page():
+    """Render user orders HTML page"""
+    return render_template('user/orders.html')
+
+@app.route('/user/profile')
+def user_profile_page():
+    """Render user profile HTML page"""
+    return render_template('user/profile.html')
+
+@app.route('/user/bookings')
+def user_bookings_page():
+    """Render user bookings HTML page"""
+    return render_template('user/bookings.html')    
+
+@app.route('/user/settings')
+def user_settings_page():
+    """Render user settings HTML page"""
+    return render_template('user/settings.html')    
+
 
 
 if __name__ == "__main__":
