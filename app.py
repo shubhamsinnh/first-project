@@ -58,6 +58,9 @@ RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
     raise ValueError("Razorpay keys not set in environment variables")
 
+# Intialise Razorpay Client
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
 # Initialize extensions
 db.init_app(app) # Initialize database
 migrate = Migrate(app, db) # Initialize Flask-Migrate AFTER db
