@@ -1,2 +1,5 @@
 [providers.python]
 pythonVersion = "3.12"
+
+[start]
+cmd = "gunicorn app:app --bind 0.0.0.0:$PORT"
