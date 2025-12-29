@@ -1,8 +1,2 @@
-[phases.setup]
-nixPkgs = ["python312"]
-
-[phases.install]
-cmds = ["python -m pip install --upgrade pip setuptools", "pip install -r requirements.txt"]
-
 [providers.python]
 pythonVersion = "3.12"
