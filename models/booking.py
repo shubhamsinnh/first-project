@@ -22,6 +22,15 @@ class Booking(db.Model):
     date = db.Column(db.Date, nullable=False)
     address = db.Column(db.Text, nullable=False)
     notes = db.Column(db.Text)
+    
+    # Payment fields
+    booking_number = db.Column(db.String(50), unique=True, nullable=True)
+    amount = db.Column(db.Float, default=999)  # Default booking fee
+    payment_status = db.Column(db.String(50), default='pending')  # pending, paid, refunded
+    razorpay_order_id = db.Column(db.String(100), nullable=True)
+    payment_reference = db.Column(db.String(100), nullable=True)
+    payment_date = db.Column(db.DateTime, nullable=True)
+    
     status = db.Column(db.String(50), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -40,6 +49,12 @@ class Booking(db.Model):
             'date': self.date.strftime('%Y-%m-%d') if self.date else None,
             'address': self.address,
             'notes': self.notes,
+            'booking_number': self.booking_number,
+            'amount': self.amount,
+            'payment_status': self.payment_status,
+            'razorpay_order_id': self.razorpay_order_id,
+            'payment_reference': self.payment_reference,
+            'payment_date': self.payment_date.strftime('%Y-%m-%d %H:%M') if self.payment_date else None,
             'status': self.status,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else None
         }

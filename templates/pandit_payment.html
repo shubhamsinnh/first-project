@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Payment - PujaPath</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .payment-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .order-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .amount {
+            font-size: 36px;
+            font-weight: bold;
+            color: #F37254;
+            margin: 20px 0;
+        }
+
+        .pay-button {
+            background: #F37254;
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 20px 0;
+        }
+
+        .pay-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(243, 114, 84, 0.3);
+        }
+
+        .pay-button:active {
+            transform: translateY(0);
+        }
+
+        .test-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 25px;
+            font-size: 14px;
+        }
+
+        .test-info h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="payment-container">
+        <h2>Complete Your Payment</h2>
+        <p>Booking #{{ booking.booking_number }}</p>
+
+        <div class="amount">₹{{ "%.2f"|format(booking.amount) }}</div>
+
+        <div class="order-info">
+            <div class="order-details">
+                <div class="detail-label">Pandit Ji:</div>
+                <div class="detail-value">{{ pandit.name }}</div>
+
+                <div class="detail-label">Customer Name:</div>
+                <div class="detail-value">{{ booking.customer_name }}</div>
+
+                <div class="detail-label">Phone:</div>
+                <div class="detail-value">{{ booking.phone }}</div>
+
+                <div class="detail-label">Puja Type:</div>
+                <div class="detail-value">{{ booking.puja_type }}</div>
+
+                <div class="detail-label">Date:</div>
+                <div class="detail-value">{{ booking.date.strftime('%d %B %Y') if booking.date else 'N/A' }}</div>
+            </div>
+        </div>
+
+        <button class="pay-button" onclick="payWithRazorpay()">
+            Pay Now
+        </button>
+
+        <div class="test-info">
+            <h4>⚠️ TEST MODE - USE TEST CARD DETAILS</h4>
+            <p><strong>Card Number:</strong> 4111 1111 1111 1111</p>
+            <p><strong>Expiry:</strong> Any future date (e.g., 12/30)</p>
+            <p><strong>CVV:</strong> Any 3 digits (e.g., 123)</p>
+            <p><strong>Name:</strong> Any name</p>
+            <p><em>No real money will be charged.</em></p>
+        </div>
+    </div>
+
+    <script>
+        const razorpayKey = "{{ razorpay_key }}";
+        const bookingNumber = "{{ booking.booking_number }}";
+        const amount = {{ amount_in_paise }};
+        const customerName = "{{ booking.customer_name }}";
+        const customerEmail = "{{ booking.email or '' }}";
+        const customerPhone = "{{ booking.phone }}";
+
+        async function payWithRazorpay() {
+            const button = document.querySelector('.pay-button');
+            button.disabled = true;
+            button.textContent = 'Processing...';
+
+            try {
+                // 1. Create Razorpay order on your server
+                const response = await fetch('/api/pandit-payment/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ booking_number: bookingNumber })
+                });
+
+                const paymentData = await response.json();
+
+                if (!paymentData.success) {
+                    throw new Error(paymentData.error || 'Failed to create payment');
+                }
+
+                // 2. Open Razorpay Checkout
+                const options = {
+                    "key": razorpayKey,
+                    "amount": paymentData.amount,
+                    "currency": paymentData.currency,
+                    "name": "PujaPath",
+                    "description": `Pandit Booking #${bookingNumber}`,
+                    "order_id": paymentData.order_id,
+                    "handler": async function (response) {
+                        // 3. Verify payment on your server
+                        const verificationResponse = await fetch('/api/pandit-payment/verify', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                                booking_number: bookingNumber
+                            })
+                        });
+
+                        const verificationResult = await verificationResponse.json();
+
+                        if (verificationResult.success) {
+                            // Redirect to success page
+                            window.location.href = `/pandit-booking-confirmation/${bookingNumber}`;
+                        } else {
+                            alert('Payment verification failed. Please contact support.');
+                            button.disabled = false;
+                            button.textContent = 'Pay Now';
+                        }
+                    },
+                    "prefill": {
+                        "name": customerName,
+                        "email": customerEmail,
+                        "contact": customerPhone
+                    },
+                    "theme": {
+                        "color": "#F37254"
+                    },
+                    "modal": {
+                        "ondismiss": function () {
+                            button.disabled = false;
+                            button.textContent = 'Pay Now';
+                        }
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert('Error processing payment: ' + error.message);
+                button.disabled = false;
+                button.textContent = 'Pay Now';
+            }
+        }
+    </script>
+</body>
+
+</html>
