@@ -1395,11 +1395,43 @@
         }
 
         // Booking Form Submission
-        document.getElementById('booking-form').addEventListener('submit', function (e) {
+        document.getElementById('booking-form').addEventListener('submit', async function (e) {
             e.preventDefault();
-            alert('Booking confirmed!\n\nOur team will contact you shortly to confirm the details.');
-            closeBookingModal();
-            this.reset();
+
+            // Get form values
+            const formData = {
+                pandit_id: document.getElementById('pandit-id').value,
+                name: this.querySelector('input[type="text"]').value,
+                phone: this.querySelector('input[type="tel"]').value,
+                email: this.querySelector('input[type="email"]').value,
+                puja_type: this.querySelector('select').value,
+                date: this.querySelector('input[type="date"]').value,
+                address: this.querySelector('textarea[required]').value,
+                notes: this.querySelectorAll('textarea')[1].value
+            };
+
+            try {
+                // Submit booking to API
+                const response = await fetch('/api/book-pandit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Redirect to payment page
+                    window.location.href = result.redirect_url;
+                } else {
+                    alert('Booking failed: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Booking error:', error);
+                alert('Booking failed. Please try again.');
+            }
         });
 
         // Initialize cart on page load

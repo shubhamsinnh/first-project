@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed - PujaPath</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        @keyframes checkmark {
+            0% {
+                transform: scale(0);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .checkmark {
+            animation: checkmark 0.6s ease-in-out;
+        }
+
+        .razorpay-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 16px;
+            margin: 25px 0;
+            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.25);
+            border-left: 6px solid #2f855a;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <a href="{{ url_for('home') }}" class="text-2xl font-bold gradient-text">PujaPath</a>
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('home') }}" class="text-gray-600 hover:text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a href="/user/bookings" class="text-gray-600 hover:text-gray-900 flex items-center gap-2">
+                        <i class="fas fa-calendar-check"></i> My Bookings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-12 max-w-4xl">
+        <!-- Success Icon -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-24 h-24 bg-green-100 rounded-full mb-6">
+                <svg class="w-16 h-16 text-green-600 checkmark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-bold gradient-text mb-2">Booking Confirmed!</h1>
+            <p class="text-gray-600 text-lg">Thank you for booking with PujaPath.</p>
+        </div>
+
+        <!-- Booking Details Card -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+            <div class="border-b border-gray-200 pb-4 mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Booking Details</h2>
+                        <p class="text-gray-600">Booking Number:
+                            <span class="font-bold text-purple-600">{{ booking.booking_number }}</span>
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            <i class="far fa-clock mr-1"></i>
+                            Booked on {{ booking.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-green-600">₹{{ "%.2f"|format(booking.amount) }}</div>
+                        <div class="text-sm text-gray-500">Booking Fee</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Success Section -->
+            {% if booking.payment_status == 'paid' and booking.payment_reference %}
+            <div class="razorpay-success">
+                <h3 class="flex items-center gap-2 text-xl font-bold mb-4">
+                    <i class="fas fa-check-circle"></i>
+                    Payment Successful via Razorpay
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <div class="text-sm opacity-80">Payment ID</div>
+                        <div class="font-mono text-sm truncate" title="{{ booking.payment_reference }}">
+                            {{ booking.payment_reference }}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-sm opacity-80">Paid On</div>
+                        <div>{{ booking.payment_date.strftime('%d %b %Y, %I:%M %p') }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Pandit Information -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-user-tie"></i> Pandit Details
+                </h3>
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
+                    <div class="flex items-center gap-4 mb-4">
+                        {% if pandit.image_url %}
+                        <img src="{{ url_for('static', filename='pandit/' + pandit.image_url) }}"
+                            alt="{{ pandit.name }}"
+                            class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md">
+                        {% else %}
+                        <div
+                            class="w-20 h-20 rounded-full bg-purple-500 text-white flex items-center justify-center text-3xl font-bold shadow-md">
+                            {{ pandit.name[0] }}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <h4 class="text-xl font-bold text-gray-800">{{ pandit.name }}</h4>
+                            <div class="text-yellow-400 flex items-center gap-1">
+                                {% for _ in range(pandit.rating or 5) %}★{% endfor %}
+                                <span class="text-gray-600 text-sm ml-1">({{ pandit.rating or 5 }}.0)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-sm text-gray-700">
+                        <div>
+                            <i class="fas fa-briefcase text-blue-600 mr-2"></i>{{ pandit.experience }}
+                        </div>
+                        <div>
+                            <i class="fas fa-language text-purple-600 mr-2"></i>{{ pandit.languages }}
+                        </div>
+                        <div>
+                            <i class="fas fa-map-marker-alt text-green-600 mr-2"></i>{{ pandit.location }}
+                        </div>
+                        <div>
+                            <i class="fas fa-star text-amber-600 mr-2"></i>{{ pandit.specialties }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Information -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-info-circle"></i> Puja Information
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-700">
+                    <div>
+                        <div class="text-sm text-gray-500">Customer Name</div>
+                        <div class="font-medium">{{ booking.customer_name }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Phone Number</div>
+                        <div class="font-medium">{{ booking.phone }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Email</div>
+                        <div class="font-medium">{{ booking.email or 'Not provided' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Puja Type</div>
+                        <div class="font-medium">{{ booking.puja_type }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Puja Date</div>
+                        <div class="font-medium text-blue-600">
+                            <i class="far fa-calendar mr-2"></i>
+                            {{ booking.date.strftime('%d %B %Y') if booking.date else 'N/A' }}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Status</div>
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                            {{ booking.status.title() }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address -->
+            <div>
+                <div class="text-sm text-gray-500 mb-1">Puja Address</div>
+                <div class="font-medium bg-gray-50 p-4 rounded-lg">{{ booking.address }}</div>
+                {% if booking.notes %}
+                <div class="text-sm text-gray-500 mt-3 mb-1">Additional Notes</div>
+                <div class="text-gray-700 bg-gray-50 p-4 rounded-lg">{{ booking.notes }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 mb-6">
+            <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-list-check"></i> What's Next?
+            </h3>
+            <ul class="space-y-4">
+                <li class="flex items-start">
+                    <span class="text-green-600 text-xl mr-3">✓</span>
+                    <div>
+                        <div class="font-medium">Confirmation Call</div>
+                        <div class="text-sm text-gray-600">Our team will call you within 24 hours to confirm the booking
+                            details</div>
+                    </div>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-600 text-xl mr-3">✓</span>
+                    <div>
+                        <div class="font-medium">Pandit Assigned</div>
+                        <div class="text-sm text-gray-600">{{ pandit.name }} will contact you before the puja date</div>
+                    </div>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-green-600 text-xl mr-3">✓</span>
+                    <div>
+                        <div class="font-medium">Puja Day</div>
+                        <div class="text-sm text-gray-600">Pandit Ji will arrive at your address on {{
+                            booking.date.strftime('%d %B %Y') if booking.date else 'scheduled date' }}</div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4">
+            <a href="{{ url_for('home') }}"
+                class="flex-1 bg-gradient-to-r from-green-600 to-emerald-700 text-white py-4 rounded-xl font-bold text-center hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+            <a href="/user/bookings"
+                class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl font-bold text-center hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3">
+                <i class="fas fa-calendar-check"></i> View All Bookings
+            </a>
+            <button onclick="window.print()"
+                class="flex-1 bg-gray-200 text-gray-800 py-4 rounded-xl font-bold hover:bg-gray-300 transition-all flex items-center justify-center gap-3">
+                <i class="fas fa-print"></i> Print Receipt
+            </button>
+        </div>
+
+        <!-- Support Info -->
+        <div class="mt-8 text-center text-gray-600 text-sm">
+            <p class="mb-2">Need help with your booking?</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{{ url_for('contact') }}"
+                    class="text-purple-600 hover:text-purple-800 flex items-center justify-center gap-2">
+                    <i class="fas fa-headset"></i> Contact Support
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16 py-8">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-4">PujaPath</h3>
+                <p class="mb-4">Your trusted partner for spiritual needs</p>
+                <p>&copy; 2024 PujaPath. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

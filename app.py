@@ -450,22 +450,58 @@ def book_pandit():
             if field not in data:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
         
-        # Here you would typically save to database
-        # For now, just return success
+        # Generate booking number
+        booking_number = f"BOOK{datetime.now().strftime('%Y%m%d%H%M%S')}{Booking.query.count() + 1}"
+        
+        # Parse the date string
+        from datetime import datetime as dt
+        try:
+            booking_date = dt.strptime(data['date'], '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+        
+        # Create booking
+        booking = Booking(
+            pandit_id=data['pandit_id'],
+            customer_name=data['name'],
+            phone=data['phone'],
+            email=data.get('email', ''),
+            puja_type=data['puja_type'],
+            date=booking_date,
+            address=data['address'],
+            notes=data.get('notes', ''),
+            booking_number=booking_number,
+            amount=999,  # Fixed price for now
+            payment_status='pending',
+            status='pending'
+        )
+        
+        # If user is logged in, associate booking with user
+        try:
+            from flask_jwt_extended import get_jwt_identity
+            user_id = get_jwt_identity()
+            if user_id:
+                booking.user_id = user_id
+        except:
+            pass  # Guest booking
+        
+        db.session.add(booking)
+        db.session.commit()
+        
         return jsonify({
             "success": True,
-            "message": "Booking confirmed! We will contact you shortly.",
-            "booking_id": "BK" + str(data['pandit_id']) + "001",
-            "pandit_id": data['pandit_id'],
-            "customer_name": data['name'],
-            "phone": data['phone'],
-            "puja_type": data['puja_type'],
-            "date": data['date']
+            "message": "Booking created. Please proceed to payment.",
+            "booking_number": booking_number,
+            "booking_id": booking.id,
+            "amount": booking.amount,
+            "redirect_url": url_for('pandit_payment_page', booking_number=booking_number)
         }), 201
         
     except Exception as e:
+        db.session.rollback()
         app.logger.error(f"Error in booking: {str(e)}")
         return jsonify({"error": "Booking failed. Please try again."}), 500
+
 
 
 @app.route('/api/cart/add', methods=['POST'])
@@ -880,6 +916,135 @@ def verify_razorpay_payment():
 def checkout_api():
     """API endpoint for checkout (legacy support)"""
     return create_order()
+
+
+# ==================== PANDIT BOOKING PAYMENT ROUTES ====================
+
+@app.route('/pandit-payment/<booking_number>')
+def pandit_payment_page(booking_number):
+    """Show Razorpay payment page for a pandit booking"""
+    booking = Booking.query.filter_by(booking_number=booking_number).first_or_404()
+    
+    # Don't show payment page if already paid
+    if booking.payment_status == 'paid':
+        return redirect(url_for('pandit_booking_confirmation', booking_number=booking_number))
+    
+    # Get pandit details
+    pandit = Pandit.query.get(booking.pandit_id)
+    
+    return render_template('pandit_payment.html', 
+                         booking=booking,
+                         pandit=pandit,
+                         razorpay_key=os.getenv('RAZORPAY_KEY_ID'),
+                         amount_in_paise=int(booking.amount * 100))
+
+
+@app.route('/api/pandit-payment/create', methods=['POST'])
+def create_pandit_razorpay_payment():
+    """Create Razorpay order for pandit booking"""
+    try:
+        data = request.get_json()
+        booking_number = data.get("booking_number")
+
+        # Get booking from database
+        booking = Booking.query.filter_by(booking_number=booking_number).first()
+        if not booking:
+            return jsonify({"error": "Booking not found"}), 404
+
+        # Create Razorpay Order (amount in paise)
+        amount_in_paise = int(booking.amount * 100)
+        
+        razorpay_order = razorpay_client.order.create({
+            "amount": amount_in_paise,
+            "currency": "INR",
+            "receipt": booking_number,
+            "payment_capture": 1,  # Auto-capture
+            "notes": {
+                "booking_number": booking_number,
+                "customer_name": booking.customer_name,
+                "puja_type": booking.puja_type
+            }
+        })
+
+        # Update booking with Razorpay ID
+        booking.razorpay_order_id = razorpay_order['id']
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "order_id": razorpay_order['id'],
+            "amount": amount_in_paise,
+            "currency": "INR",
+            "key": os.getenv('RAZORPAY_KEY_ID'),
+            "customer_name": booking.customer_name,
+            "customer_email": booking.email,
+            "customer_phone": booking.phone,
+            "booking_number": booking_number
+        })
+
+    except Exception as e:
+        app.logger.error(f"Razorpay payment creation error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/pandit-payment/verify', methods=['POST'])
+def verify_pandit_razorpay_payment():
+    """Verify Razorpay payment for pandit booking"""
+    try:
+        data = request.get_json()
+        
+        # Get parameters from frontend
+        razorpay_payment_id = data.get('razorpay_payment_id')
+        razorpay_order_id = data.get('razorpay_order_id')
+        razorpay_signature = data.get('razorpay_signature')
+        booking_number = data.get('booking_number')
+
+        # Verify payment signature
+        params_dict = {
+            'razorpay_order_id': razorpay_order_id,
+            'razorpay_payment_id': razorpay_payment_id,
+            'razorpay_signature': razorpay_signature
+        }
+
+        razorpay_client.utility.verify_payment_signature(params_dict)
+        
+        # Signature verified - update booking
+        booking = Booking.query.filter_by(booking_number=booking_number).first()
+        if booking:
+            booking.payment_status = 'paid'
+            booking.status = 'confirmed'
+            booking.payment_reference = razorpay_payment_id
+            booking.payment_date = datetime.utcnow()
+            db.session.commit()
+
+            return jsonify({
+                "success": True,
+                "message": "Payment verified successfully",
+                "booking_number": booking_number,
+                "payment_id": razorpay_payment_id
+            })
+
+    except razorpay.errors.SignatureVerificationError as e:
+        app.logger.error(f"Signature verification failed: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": "Payment verification failed",
+            "details": "Invalid payment signature"
+        }), 400
+    except Exception as e:
+        app.logger.error(f"Payment verification error: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/pandit-booking-confirmation/<booking_number>')
+def pandit_booking_confirmation(booking_number):
+    """Pandit booking confirmation page"""
+    booking = Booking.query.filter_by(booking_number=booking_number).first_or_404()
+    pandit = Pandit.query.get(booking.pandit_id)
+    return render_template('pandit_booking_confirmation.html', booking=booking, pandit=pandit)
 
 
 # ==================== ADMIN PANEL ROUTES ====================
