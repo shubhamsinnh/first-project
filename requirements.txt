@@ -10,3 +10,5 @@ python-dotenv==1.0.0
 razorpay==2.0.0
 psycopg2-binary==2.9.10
 gunicorn==23.0.0
+Flask-Mail==0.9.1
+icalendar==5.0.11
