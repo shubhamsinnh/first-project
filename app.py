@@ -61,7 +61,18 @@ if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
 # Intialise Razorpay Client
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
+# Configure Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME', 'noreply@pujapath.com')
+
 # Initialize extensions
+from flask_mail import Mail, Message
+mail = Mail(app)
+
 db.init_app(app) # Initialize database
 migrate = Migrate(app, db) # Initialize Flask-Migrate AFTER db
 bcrypt = Bcrypt(app)
@@ -85,6 +96,264 @@ def admin_required(f):
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated_function
+
+# ==================== HELPER FUNCTIONS ====================
+
+def send_booking_confirmation_email(booking, pandit):
+    """Send email with ICS calendar invite attached"""
+    try:
+        if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
+            print("WARNING: Email credentials not set. Skipping email.")
+            return
+
+        from icalendar import Calendar, Event
+        import io
+        from flask_mail import Message
+        import random
+        import string
+
+        # Generate a mock Google Meet link
+        meet_code = "-".join(["".join(random.choices(string.ascii_lowercase, k=x)) for x in [3, 4, 3]])
+        meet_link = f"https://meet.google.com/{meet_code}"
+
+        # 1. Create email object
+        msg = Message(
+            subject=f"Booking Confirmed: {booking.puja_type} with Pandit {pandit.name}",
+            recipients=[booking.email]
+        )
+        
+        # 2. Email Body (HTML + Plain Text Fallback)
+        msg.body = f"Namaste {booking.customer_name},\n\nYour booking for {booking.puja_type} has been confirmed.\nRef: {booking.booking_number}\nDate: {booking.date.strftime('%d %B %Y')}\nGoogle Meet: {meet_link}"
+        
+        msg.html = f"""
+        <html>
+        <head>
+            <script type="application/ld+json">
+            {{
+              "@context": "http://schema.org",
+              "@type": "Event",
+              "name": "PujaPath: {booking.puja_type}",
+              "startDate": "{booking.date.isoformat()}",
+              "endDate": "{(booking.date + timedelta(days=1)).isoformat()}",
+              "location": {{
+                "@type": "Place",
+                "name": "{booking.address}",
+                "address": {{
+                  "@type": "PostalAddress",
+                  "streetAddress": "{booking.address}"
+                }}
+              }},
+              "description": "Booking {booking.booking_number} with Pandit {pandit.name}. Video Link: {meet_link}",
+              "image": "https://pujapath.com/static/images/logo.png",
+              "organizer": {{
+                "@type": "Organization",
+                "name": "PujaPath",
+                "url": "https://pujapath.com"
+              }},
+              "eventStatus": "http://schema.org/EventScheduled",
+              "eventAttendanceMode": "http://schema.org/MixedEventAttendanceMode"
+            }}
+            </script>
+        </head>
+        <body>
+        <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                <h1 style="color: white; margin: 0;">Booking Confirmed</h1>
+            </div>
+            
+            <div style="padding: 20px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+                <p>Namaste <strong>{booking.customer_name}</strong>,</p>
+                
+                <p>We are delighted to confirm your booking for <strong style="color: #6b46c1;">{booking.puja_type}</strong>.</p>
+                
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6b46c1;">
+                    <h3 style="margin-top: 0; color: #4a5568;">Booking Details</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 5px 0; color: #718096;">Booking Ref:</td>
+                            <td style="padding: 5px 0; font-weight: bold;">{booking.booking_number}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0; color: #718096;">Pandit Ji:</td>
+                            <td style="padding: 5px 0; font-weight: bold;">{pandit.name} <span style="font-weight: normal; font-size: 0.9em;">({pandit.phone})</span></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0; color: #718096;">Date:</td>
+                            <td style="padding: 5px 0; font-weight: bold;">{booking.date.strftime('%d %B %Y')}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0; color: #718096; vertical-align: top;">Address:</td>
+                            <td style="padding: 5px 0; font-weight: bold;">{booking.address}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0; color: #718096; vertical-align: top;">Video Link:</td>
+                            <td style="padding: 5px 0; font-weight: bold;"><a href="{meet_link}" style="color: #667eea; text-decoration: none;">Join Google Meet</a></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <p style="background-color: #e6fffa; color: #047481; padding: 10px; border-radius: 6px; font-size: 0.9em;">
+                    📅 <strong>Note:</strong> We have attached a calendar invitation to this email. It will automatically add this auspicious event to your schedule.
+                </p>
+                
+                <p style="margin-top: 30px; font-size: 0.9em; color: #718096;">
+                    Om Shanti,<br>
+                    <strong>The PujaPath Team</strong>
+                </p>
+            </div>
+        </div>
+        </body>
+        </html>
+        """
+        
+        # 3. Generate ICS File
+        cal = Calendar()
+        cal.add('prodid', '-//PujaPath//pujapath.com//')
+        cal.add('version', '2.0')
+        
+        event = Event()
+        event.add('summary', f"PujaPath: {booking.puja_type}")
+        event.add('dtstart', booking.date) # All day event
+        event.add('dtend', booking.date + timedelta(days=1))
+        event.add('location', booking.address) # Physical location
+        
+        # Add Meet link to description
+        description = f"Booking {booking.booking_number} with {pandit.name}. Phone: {pandit.phone}\n\nGoogle Meet Link: {meet_link}"
+        event.add('description', description)
+        
+        # Add organizer
+        event.add('organizer', 'mailto:noreply@pujapath.com')
+        
+        cal.add_component(event)
+        
+        # 4. Attach ICS to email
+        # We need byte stream for attachment
+        f = io.BytesIO()
+        f.write(cal.to_ical())
+        f.seek(0)
+        
+        msg.attach(
+            "puja_booking.ics", 
+            "text/calendar", 
+            f.read()
+        )
+        
+        # 5. Send
+        mail.send(msg)
+        print(f"Email sent successfully to {booking.email}")
+        
+    except Exception as e:
+        print(f"Error sending email: {str(e)}")
+
+def send_order_confirmation_email(order):
+    """Send order confirmation email receipt"""
+    try:
+        if not app.config.get('MAIL_USERNAME'):
+            print("WARNING: Email credentials not set. Skipping email.")
+            return
+
+        from flask_mail import Message
+
+        # Determine recipient email
+        recipient_email = order.customer_email
+        if not recipient_email and order.user:
+            recipient_email = order.user.email
+            
+        if not recipient_email:
+            print(f"WARNING: No email found for order {order.order_number}. Skipping.")
+            return
+
+        # 1. Create email object
+        msg = Message(
+            subject=f"Order Confirmed: #{order.order_number}",
+            recipients=[recipient_email]
+        )
+        
+        items_html = ""
+        for item in order.items:
+            # Use safe access for item properties
+            try:
+                name = item.product_name
+                price = item.product_price
+                qty = item.quantity
+                subtotal = item.subtotal
+            except Exception as e:
+                print(f"Error processing item in email: {e}")
+                continue
+                
+            items_html += f"""
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{name}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{qty}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{price}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{subtotal}</td>
+            </tr>
+            """
+
+        msg.html = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-bottom: 3px solid #ff9933;">
+                <h2 style="color: #d35400; margin: 0;">Order Confirmation</h2>
+                <p style="margin-top: 5px;">Thank you for your purchase!</p>
+            </div>
+            
+            <div style="padding: 20px;">
+                <p>Namaste <strong>{order.customer_name}</strong>,</p>
+                <p>Your order has been confirmed and meets our quality standards. We will ship it shortly.</p>
+                
+                <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 5px 0;"><strong>Order Number:</strong> {order.order_number}</p>
+                    <p style="margin: 5px 0;"><strong>Date:</strong> {order.created_at.strftime('%d %B %Y')}</p>
+                    <p style="margin: 5px 0;"><strong>Payment Status:</strong> <span style="color: green; font-weight: bold;">{order.payment_status.upper()}</span></p>
+                </div>
+                
+                <h3>Items Ordered:</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #fcebe6;">
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e67e22;">Item</th>
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e67e22;">Qty</th>
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e67e22;">Price</th>
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e67e22;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {items_html}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" style="padding: 10px; text-align: right; font-weight: bold;">Grand Total:</td>
+                            <td style="padding: 10px; font-weight: bold; color: #d35400;">₹{order.total_amount}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                
+                <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <h3>Shipping Details:</h3>
+                    <p>
+                        {order.customer_name}<br>
+                        {order.shipping_address}<br>
+                        {order.city}, {order.state} - {order.pincode}<br>
+                        Phone: {order.customer_phone}
+                    </p>
+                </div>
+                
+                <p style="margin-top: 40px; text-align: center; color: #7f8c8d; font-size: 0.9em;">
+                    Om Shanti,<br>
+                    <strong>The PujaPath Team</strong>
+                </p>
+            </div>
+        </div>
+        """
+        
+        # 2. Send
+        mail.send(msg)
+        print(f"Order confirmation email sent successfully to {recipient_email}")
+        
+    except Exception as e:
+        print(f"Error sending order email: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 @app.route("/")
 def home():
@@ -891,6 +1160,12 @@ def verify_razorpay_payment():
             order.payment_date = datetime.utcnow()
             db.session.commit()
 
+            # Send Order Confirmation Email
+            try:
+                send_order_confirmation_email(order)
+            except Exception as e:
+                app.logger.error(f"Failed to trigger order email: {str(e)}")
+
             return jsonify({
                 "success": True,
                 "message": "Payment verified successfully",
@@ -1017,6 +1292,13 @@ def verify_pandit_razorpay_payment():
             booking.payment_date = datetime.utcnow()
             db.session.commit()
 
+            # Send Confirmation Email with Calendar Invite
+            # We run this in a try/except to ensure response returns even if email fails
+            try:
+                send_booking_confirmation_email(booking, booking.pandit)
+            except Exception as e:
+                app.logger.error(f"Failed to trigger email: {str(e)}")
+
             return jsonify({
                 "success": True,
                 "message": "Payment verified successfully",
@@ -1044,7 +1326,40 @@ def pandit_booking_confirmation(booking_number):
     """Pandit booking confirmation page"""
     booking = Booking.query.filter_by(booking_number=booking_number).first_or_404()
     pandit = Pandit.query.get(booking.pandit_id)
-    return render_template('pandit_booking_confirmation.html', booking=booking, pandit=pandit)
+    
+    # Generate Google Calendar Link
+    from urllib.parse import quote
+    from datetime import timedelta
+    
+    # Create event title and details
+    event_title = f"{booking.puja_type} with Pandit {pandit.name}"
+    event_details = (
+        f"Booking Ref: {booking.booking_number}\n"
+        f"Pandit: {pandit.name} ({pandit.phone})\n"
+        f"Puja Type: {booking.puja_type}\n"
+        f"Notes: {booking.notes or 'None'}"
+    )
+    
+    # Format dates for Google Calendar (YYYYMMDD)
+    # Since we only have a date, we make it an all-day event
+    # End date must be the next day for a single-day all-day event
+    start_date_str = booking.date.strftime('%Y%m%d')
+    end_date = booking.date + timedelta(days=1)
+    end_date_str = end_date.strftime('%Y%m%d')
+    
+    # Construct URL
+    google_calendar_url = (
+        f"https://www.google.com/calendar/render?action=TEMPLATE"
+        f"&text={quote(event_title)}"
+        f"&details={quote(event_details)}"
+        f"&location={quote(booking.address)}"
+        f"&dates={start_date_str}/{end_date_str}"
+    )
+    
+    return render_template('pandit_booking_confirmation.html', 
+                           booking=booking, 
+                           pandit=pandit,
+                           google_calendar_url=google_calendar_url)
 
 
 # ==================== ADMIN PANEL ROUTES ====================
