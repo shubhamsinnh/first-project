@@ -12,6 +12,7 @@ from sqlalchemy import func
 from flask_migrate import Migrate
 from datetime import datetime, timedelta
 import razorpay
+import threading
 
 
 # Local imports
@@ -238,12 +239,21 @@ def send_booking_confirmation_email(booking, pandit):
             f.read()
         )
         
-        # 5. Send
-        mail.send(msg)
-        print(f"Email sent successfully to {booking.email}")
+        # 5. Send Asynchronously
+        def send_async(app_obj, message):
+            with app_obj.app_context():
+                try:
+                    mail.send(message)
+                    print(f"Email sent successfully to {message.recipients}")
+                except Exception as e:
+                    print(f"Error sending email async: {e}")
+
+        email_thread = threading.Thread(target=send_async, args=(app, msg))
+        email_thread.start()
+        print(f"Email sending initiated in background to {booking.email}")
         
     except Exception as e:
-        print(f"Error sending email: {str(e)}")
+        print(f"Error preparing email: {str(e)}")
 
 def send_order_confirmation_email(order):
     """Send order confirmation email receipt"""
@@ -346,12 +356,21 @@ def send_order_confirmation_email(order):
         </div>
         """
         
-        # 2. Send
-        mail.send(msg)
-        print(f"Order confirmation email sent successfully to {recipient_email}")
+        # 2. Send Asynchronously
+        def send_async(app_obj, message):
+            with app_obj.app_context():
+                try:
+                    mail.send(message)
+                    print(f"Order confirmation email sent successfully to {message.recipients}")
+                except Exception as e:
+                    print(f"Error sending order email async: {e}")
+                    
+        email_thread = threading.Thread(target=send_async, args=(app, msg))
+        email_thread.start()
+        print(f"Order email sending initiated in background to {recipient_email}")
         
     except Exception as e:
-        print(f"Error sending order email: {str(e)}")
+        print(f"Error preparing order email: {str(e)}")
         import traceback
         traceback.print_exc()
 
