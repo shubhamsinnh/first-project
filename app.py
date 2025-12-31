@@ -244,8 +244,18 @@ def send_booking_confirmation_email(booking, pandit):
         def send_async(app_obj, message):
             with app_obj.app_context():
                 try:
-                    mail.send(message)
-                    print(f"Email sent successfully to {message.recipients}")
+                    # Monkey-patch socket to force IPv4
+                    import socket
+                    original_getaddrinfo = socket.getaddrinfo
+                    def ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+                        return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+                    
+                    socket.getaddrinfo = ipv4_getaddrinfo
+                    try:
+                        mail.send(message)
+                        print(f"Email sent successfully to {message.recipients}")
+                    finally:
+                        socket.getaddrinfo = original_getaddrinfo # Restore original
                 except Exception as e:
                     print(f"Error sending email async: {e}")
 
@@ -361,8 +371,18 @@ def send_order_confirmation_email(order):
         def send_async(app_obj, message):
             with app_obj.app_context():
                 try:
-                    mail.send(message)
-                    print(f"Order confirmation email sent successfully to {message.recipients}")
+                    # Monkey-patch socket to force IPv4
+                    import socket
+                    original_getaddrinfo = socket.getaddrinfo
+                    def ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+                        return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+                    
+                    socket.getaddrinfo = ipv4_getaddrinfo
+                    try:
+                        mail.send(message)
+                        print(f"Order confirmation email sent successfully to {message.recipients}")
+                    finally:
+                        socket.getaddrinfo = original_getaddrinfo # Restore original
                 except Exception as e:
                     print(f"Error sending order email async: {e}")
                     
