@@ -2003,6 +2003,61 @@ def user_settings_page():
 
 
 
+@app.route('/debug-email')
+def debug_email():
+    """Debug endpoint to test email configuration live"""
+    try:
+        # 1. Check Config
+        username = app.config.get('MAIL_USERNAME')
+        if not username:
+            return jsonify({"error": "MAIL_USERNAME is missing or empty in Environment Variables"}), 500
+            
+        # Mask email for security in response
+        masked_user = username[:3] + "***" + "@" + username.split('@')[-1] if '@' in username else "INVALID_FORMAT"
+        
+        # 2. Prepare Test Message
+        from flask_mail import Message
+        msg = Message(
+            subject="Test Email from Railway Debugger", 
+            recipients=[username], # Send to self
+            body="If you are reading this, your Railway email configuration is CORRECT!\n\nThis confirms that:\n1. Credentials are valid\n2. Network connection is open\n3. Port settings are correct"
+        )
+        
+        # 3. Attempt Send (Synchronous/Blocking to catch error)
+        # Apply the same IPv4 patch used in main logic
+        import socket
+        original_getaddrinfo = socket.getaddrinfo
+        def ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+            return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+        
+        socket.getaddrinfo = ipv4_getaddrinfo
+        
+        try:
+            mail.send(msg)
+        finally:
+            socket.getaddrinfo = original_getaddrinfo # Restore
+            
+        return jsonify({
+            "success": True, 
+            "message": f"Test email successfully sent to {masked_user}",
+            "debug_info": {
+                "server": app.config.get('MAIL_SERVER'),
+                "port": app.config.get('MAIL_PORT'),
+                "use_ssl": app.config.get('MAIL_USE_SSL'),
+                "username_set": bool(username),
+                "password_set": bool(app.config.get('MAIL_PASSWORD'))
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "help": "If Error is 'Username and Password not accepted', check your App Password. If 'Network is unreachable', check Port settings."
+        }), 500
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=os.getenv("FLASK_DEBUG", False))
 
