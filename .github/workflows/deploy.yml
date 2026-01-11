@@ -21,6 +21,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /var/www/pujapath
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
             source venv/bin/activate
-            sudo systemctl restart pujapath
+            sudo systemctl restart pujapath 
