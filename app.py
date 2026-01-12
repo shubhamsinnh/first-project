@@ -64,9 +64,8 @@ razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME', 'noreply@pujapath.com')
@@ -244,18 +243,8 @@ def send_booking_confirmation_email(booking, pandit):
         def send_async(app_obj, message):
             with app_obj.app_context():
                 try:
-                    # Monkey-patch socket to force IPv4
-                    import socket
-                    original_getaddrinfo = socket.getaddrinfo
-                    def ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-                        return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-                    
-                    socket.getaddrinfo = ipv4_getaddrinfo
-                    try:
-                        mail.send(message)
-                        print(f"Email sent successfully to {message.recipients}")
-                    finally:
-                        socket.getaddrinfo = original_getaddrinfo # Restore original
+                    mail.send(message)
+                    print(f"Email sent successfully to {message.recipients}")
                 except Exception as e:
                     print(f"Error sending email async: {e}")
 
@@ -371,18 +360,8 @@ def send_order_confirmation_email(order):
         def send_async(app_obj, message):
             with app_obj.app_context():
                 try:
-                    # Monkey-patch socket to force IPv4
-                    import socket
-                    original_getaddrinfo = socket.getaddrinfo
-                    def ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-                        return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-                    
-                    socket.getaddrinfo = ipv4_getaddrinfo
-                    try:
-                        mail.send(message)
-                        print(f"Order confirmation email sent successfully to {message.recipients}")
-                    finally:
-                        socket.getaddrinfo = original_getaddrinfo # Restore original
+                    mail.send(message)
+                    print(f"Order confirmation email sent successfully to {message.recipients}")
                 except Exception as e:
                     print(f"Error sending order email async: {e}")
                     
@@ -2002,61 +1981,6 @@ def user_settings_page():
     return render_template('user/settings.html')    
 
 
-
-@app.route('/debug-email')
-def debug_email():
-    """Debug endpoint to test email configuration live"""
-    try:
-        # 1. Check Config
-        username = app.config.get('MAIL_USERNAME')
-        if not username:
-            return jsonify({"error": "MAIL_USERNAME is missing or empty in Environment Variables"}), 500
-            
-        # Mask email for security in response
-        masked_user = username[:3] + "***" + "@" + username.split('@')[-1] if '@' in username else "INVALID_FORMAT"
-        
-        # 2. Prepare Test Message
-        from flask_mail import Message
-        msg = Message(
-            subject="Test Email from Railway Debugger", 
-            recipients=[username], # Send to self
-            body="If you are reading this, your Railway email configuration is CORRECT!\n\nThis confirms that:\n1. Credentials are valid\n2. Network connection is open\n3. Port settings are correct"
-        )
-        
-        # 3. Attempt Send (Synchronous/Blocking to catch error)
-        # Apply the same IPv4 patch used in main logic
-        import socket
-        original_getaddrinfo = socket.getaddrinfo
-        def ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-            return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-        
-        socket.getaddrinfo = ipv4_getaddrinfo
-        
-        try:
-            mail.send(msg)
-        finally:
-            socket.getaddrinfo = original_getaddrinfo # Restore
-            
-        return jsonify({
-            "success": True, 
-            "message": f"Test email successfully sent to {masked_user}",
-            "debug_info": {
-                "server": app.config.get('MAIL_SERVER'),
-                "port": app.config.get('MAIL_PORT'),
-                "use_ssl": app.config.get('MAIL_USE_SSL'),
-                "username_set": bool(username),
-                "password_set": bool(app.config.get('MAIL_PASSWORD'))
-            }
-        })
-        
-    except Exception as e:
-        import traceback
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-            "help": "If Error is 'Username and Password not accepted', check your App Password. If 'Network is unreachable', check Port settings."
-        }), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=os.getenv("FLASK_DEBUG", False))
