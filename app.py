@@ -263,6 +263,8 @@ def send_order_confirmation_email(order):
             return
 
         from flask_mail import Message
+        from icalendar import Calendar, Event
+        pass # To satisfy linter if needed, though imports are used below
 
         # Determine recipient email
         recipient_email = order.customer_email
@@ -273,6 +275,8 @@ def send_order_confirmation_email(order):
             print(f"WARNING: No email found for order {order.order_number}. Skipping.")
             return
 
+        print(f"Preparing order confirmation email for {recipient_email}")
+
         # 1. Create email object
         msg = Message(
             subject=f"Order Confirmed: #{order.order_number}",
@@ -280,6 +284,8 @@ def send_order_confirmation_email(order):
         )
         
         items_html = ""
+        events_to_attach = []
+
         for item in order.items:
             # Use safe access for item properties
             try:
@@ -287,6 +293,44 @@ def send_order_confirmation_email(order):
                 price = item.product_price
                 qty = item.quantity
                 subtotal = item.subtotal
+                
+                # Check for scheduled items to generate ICS
+                # Format: "Bundle Name [Date: YYYY-MM-DD, Time: Slot]"
+                if "Date:" in name:
+                    print(f"Found Date in product name: {name}")
+                    try:
+                        import re
+                        # More flexible regex to catch the date
+                        date_match = re.search(r"Date:\s*(\d{4}-\d{1,2}-\d{1,2})", name)
+                        time_match = re.search(r"Time:\s*(.*?)(\]|$)", name)
+                        
+                        if date_match:
+                            booking_date_str = date_match.group(1)
+                            # Convert to date object for All Day event (creates better UX in calendar apps)
+                            booking_date = datetime.strptime(booking_date_str, '%Y-%m-%d').date()
+                            time_slot = time_match.group(1) if time_match else "All Day"
+                            
+                            # Create ICS event
+                            cal = Calendar()
+                            cal.add('prodid', '-//PujaPath//pujapath.com//')
+                            cal.add('version', '2.0')
+                            
+                            event = Event()
+                            # Clean up name for summary
+                            summary_name = name.split('[')[0].strip()
+                            event.add('summary', f"PujaPath Ritual: {summary_name}")
+                            event.add('dtstart', booking_date) # All day event
+                            event.add('dtend', booking_date + timedelta(days=1))
+                            event.add('description', f"Order #{order.order_number}\nItem: {summary_name}\nTime Slot: {time_slot}")
+                            
+                            cal.add_component(event)
+                            events_to_attach.append({
+                                "filename": f"ritual_{booking_date_str}.ics",
+                                "data": cal.to_ical()
+                            })
+                    except Exception as e:
+                        print(f"Error creating ICS for item {name}: {e}")
+
             except Exception as e:
                 print(f"Error processing item in email: {e}")
                 continue
@@ -298,6 +342,15 @@ def send_order_confirmation_email(order):
                 <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{price}</td>
                 <td style="padding: 10px; border-bottom: 1px solid #eee;">₹{subtotal}</td>
             </tr>
+            """
+
+        # Add calendar note if events are attached
+        calendar_note = ""
+        if events_to_attach:
+            calendar_note = """
+            <p style="background-color: #e6fffa; color: #047481; padding: 10px; border-radius: 6px; font-size: 0.9em; margin-top: 20px;">
+                📅 <strong>Note:</strong> We have attached a calendar invitation to this email. It will automatically add this auspicious ritual to your schedule.
+            </p>
             """
 
         msg.html = f"""
@@ -338,6 +391,8 @@ def send_order_confirmation_email(order):
                     </tfoot>
                 </table>
                 
+                {calendar_note}
+                
                 <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
                     <h3>Shipping Details:</h3>
                     <p>
@@ -356,6 +411,14 @@ def send_order_confirmation_email(order):
         </div>
         """
         
+        # Attach ICS files
+        for ics in events_to_attach:
+            msg.attach(
+                ics['filename'], 
+                "text/calendar", 
+                ics['data']
+            )
+
         # 2. Send Asynchronously
         def send_async(app_obj, message):
             with app_obj.app_context():
@@ -727,6 +790,7 @@ def seed_data():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/book-pandit', methods=['POST'])
+@jwt_required(optional=True)
 def book_pandit():
     """API endpoint for booking a pandit"""
     try:
@@ -765,13 +829,10 @@ def book_pandit():
         )
         
         # If user is logged in, associate booking with user
-        try:
-            from flask_jwt_extended import get_jwt_identity
-            user_id = get_jwt_identity()
-            if user_id:
-                booking.user_id = user_id
-        except:
-            pass  # Guest booking
+        user_id = get_jwt_identity()
+        if user_id:
+            booking.user_id = int(user_id)
+        
         
         db.session.add(booking)
         db.session.commit()
@@ -996,6 +1057,7 @@ def create_order():
         for item in cart:
             item_type = item.get('type', 'product')
             quantity = int(item.get('quantity', 1))
+            schedule = item.get('schedule')
             
             if item_type == 'bundle':
                 bundle = Bundle.query.get(item.get('id'))
@@ -1006,9 +1068,13 @@ def create_order():
                 subtotal = price * quantity
                 total_amount += subtotal
                 
+                product_name = bundle.name
+                if schedule and schedule.get('date'):
+                     product_name += f" [Date: {schedule.get('date')}, Time: {schedule.get('time', 'Any')}]"
+                
                 order_items_data.append({
                     'bundle_id': bundle.id,
-                    'product_name': bundle.name,
+                    'product_name': product_name,
                     'product_price': price,
                     'quantity': quantity,
                     'subtotal': subtotal
@@ -1170,7 +1236,7 @@ def verify_razorpay_payment():
 
         razorpay_client.utility.verify_payment_signature(params_dict)
         
-        # Signature verified - update order
+            # Signature verified - update order
         order = Order.query.filter_by(order_number=order_number).first()
         if order:
             order.payment_status = 'paid'
@@ -1178,12 +1244,18 @@ def verify_razorpay_payment():
             order.payment_reference = razorpay_payment_id
             order.payment_date = datetime.utcnow()
             db.session.commit()
+            
+            print(f"Payment verified for Order {order_number}. Sending email...")
 
             # Send Order Confirmation Email
             try:
+                # Debug logging
+                print(f"Calling send_order_confirmation_email for order {order.id}")
                 send_order_confirmation_email(order)
             except Exception as e:
                 app.logger.error(f"Failed to trigger order email: {str(e)}")
+                import traceback
+                traceback.print_exc()
 
             return jsonify({
                 "success": True,

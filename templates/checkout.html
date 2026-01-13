@@ -53,22 +53,14 @@
                 <div class="bg-white rounded-xl shadow-lg p-6 sticky top-24">
                     <h2 class="text-2xl font-bold mb-6 text-gray-800">Order Summary</h2>
 
-                    <div class="space-y-4 mb-6 max-h-96 overflow-y-auto">
-                        {% for item in cart %}
-                        <div class="flex items-center gap-4 pb-4 border-b border-gray-200">
-                            <div class="flex-1">
-                                <h4 class="font-semibold text-gray-800">{{ item.name }}</h4>
-                                <p class="text-sm text-gray-600">₹{{ item.price }} × {{ item.quantity }}</p>
-                            </div>
-                            <p class="font-bold text-green-600">₹{{ item.price * item.quantity }}</p>
-                        </div>
-                        {% endfor %}
+                    <div id="cart-items-container" class="space-y-4 mb-6 max-h-96 overflow-y-auto">
+                        <!-- Items will be loaded dynamically -->
                     </div>
 
                     <div class="border-t-2 border-gray-200 pt-4">
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-gray-600">Subtotal:</span>
-                            <span class="font-semibold">₹{{ total }}</span>
+                            <span class="font-semibold" id="summary-subtotal">₹{{ total }}</span>
                         </div>
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-gray-600">Shipping:</span>
@@ -76,7 +68,7 @@
                         </div>
                         <div class="flex justify-between items-center text-xl font-bold pt-2 border-t border-gray-200">
                             <span>Total:</span>
-                            <span class="text-green-600">₹{{ total }}</span>
+                            <span class="text-green-600" id="summary-total">₹{{ total }}</span>
                         </div>
                     </div>
                 </div>
@@ -148,12 +140,6 @@
                             placeholder="Any special instructions or delivery preferences"></textarea>
                     </div>
 
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
-                        <p class="text-sm text-blue-700">
-                            <strong>Note:</strong> Payment integration will be added soon. For now, orders will be
-                            confirmed and you'll be contacted for payment details.
-                        </p>
-                    </div>
 
                     <button type="submit" id="submit-btn"
                         class="w-full bg-gradient-to-r from-green-600 to-emerald-700 text-white py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl">
@@ -174,17 +160,120 @@
     </footer>
 
     <script>
-        // Store cart data from server-side template
-        window.cartData = {{ cart | tojson }};
+        // Initialize cart data from server-side template or empty array
+        let cart = {{ cart | tojson }};
+
+        // Ensure cart is an array
+        if (!Array.isArray(cart)) {
+            cart = [];
+        }
+
+        // DOM Elements
+        const cartContainer = document.querySelector('.space-y-4.max-h-96'); // Container for items
+        const subtotalEl = document.querySelectorAll('.font-semibold')[0]; // First font-semibold in summary (Subtotal value)
+        const totalEl = document.querySelectorAll('.text-green-600')[1]; // Second text-green in summary (Total value)
+
+        // Render Cart Items
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            if (!container) return;
+
+            container.innerHTML = '';
+            let total = 0;
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">Your cart is empty</p>';
+                updateTotals(0);
+                return;
+            }
+
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+
+                const itemHtml = `
+                    <div class="flex items-center gap-4 pb-4 border-b border-gray-200 anime-fadeIn">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800">${item.name}</h4>
+                            <div class="flex items-center gap-3 mt-1">
+                                <p class="text-sm text-gray-600">₹${item.price}</p>
+                                <div class="flex items-center border border-gray-300 rounded-lg">
+                                    <button type="button" onclick="updateCheckoutQuantity(${index}, -1)" class="px-2 py-0.5 hover:bg-gray-100 text-gray-600">-</button>
+                                    <span class="px-2 text-sm font-medium border-x border-gray-300">${item.quantity}</span>
+                                    <button type="button" onclick="updateCheckoutQuantity(${index}, 1)" class="px-2 py-0.5 hover:bg-gray-100 text-gray-600">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <p class="font-bold text-green-600">₹${itemTotal}</p>
+                            <button type="button" onclick="removeItem(${index})" class="text-xs text-red-500 hover:text-red-700 underline">Remove</button>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', itemHtml);
+            });
+
+            updateTotals(total);
+        }
+
+        function updateTotals(total) {
+            const subtotalEl = document.getElementById('summary-subtotal');
+            const totalEl = document.getElementById('summary-total');
+
+            if (subtotalEl) subtotalEl.textContent = `₹${total}`;
+            if (totalEl) totalEl.textContent = `₹${total}`;
+        }
+
+        function updateCheckoutQuantity(index, change) {
+            if (cart[index]) {
+                const newQty = cart[index].quantity + change;
+                if (newQty > 0) {
+                    cart[index].quantity = newQty;
+                } else {
+                    // If quantity becomes 0, ask to remove? Or just set to 1? 
+                    // Usually safer to remove via explicit remove button, but let's allow removing via -
+                    if (confirm('Remove this item?')) {
+                        cart.splice(index, 1);
+                    } else {
+                        return; // Do nothing
+                    }
+                }
+                syncCart();
+            }
+        }
+
+        function removeItem(index) {
+            if (confirm('Are you sure you want to remove this item?')) {
+                cart.splice(index, 1);
+                syncCart();
+            }
+        }
+
+        function syncCart() {
+            renderCart();
+            // Update Global Cart in LocalStorage
+            localStorage.setItem('pujapath_cart', JSON.stringify(cart));
+            // Update global window variable for submission
+            window.cartData = cart;
+        }
 
         // Pre-fill user data if logged in
         document.addEventListener('DOMContentLoaded', function () {
+            // Render initial cart
+            renderCart();
+
             const userData = localStorage.getItem('user');
             if (userData) {
                 try {
                     const user = JSON.parse(userData);
-                    if (user.full_name) document.getElementById('customer_name').value = user.full_name;
-                    if (user.email) document.getElementById('customer_email').value = user.email;
+                    if (user.full_name) {
+                        const nameInput = document.getElementById('customer_name');
+                        if (nameInput) nameInput.value = user.full_name;
+                    }
+                    if (user.email) {
+                        const emailInput = document.getElementById('customer_email');
+                        if (emailInput) emailInput.value = user.email;
+                    }
                 } catch (e) {
                     console.error('Error parsing user data:', e);
                 }
@@ -198,6 +287,11 @@
             const errorDiv = document.getElementById('order-error');
             const form = event.target;
 
+            if (cart.length === 0) {
+                alert('Your cart is empty');
+                return;
+            }
+
             // Disable button
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
@@ -209,10 +303,7 @@
                 const orderData = Object.fromEntries(formData.entries());
 
                 // Add cart data
-                orderData.cart = window.cartData;
-                if (!orderData.cart || orderData.cart.length === 0) {
-                    throw new Error('Cart is empty');
-                }
+                orderData.cart = cart;
 
                 // Get auth token
                 const token = localStorage.getItem('token');

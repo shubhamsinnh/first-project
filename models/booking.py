@@ -42,12 +42,15 @@ class Booking(db.Model):
             'id': self.id,
             'user_id': self.user_id,
             'pandit_id': self.pandit_id,
+            'pandit_name': self.pandit.name if self.pandit else 'Unknown Pandit',
             'customer_name': self.customer_name,
             'phone': self.phone,
             'email': self.email,
             'puja_type': self.puja_type,
             'date': self.date.strftime('%Y-%m-%d') if self.date else None,
+            'time': 'All Day',  # Defaulting time since it's not in DB yet
             'address': self.address,
+            'location': self.address,  # Frontend expects location
             'notes': self.notes,
             'booking_number': self.booking_number,
             'amount': self.amount,

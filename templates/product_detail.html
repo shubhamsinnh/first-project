@@ -150,7 +150,7 @@
 
             <!-- Cart Area -->
             <div class="flex items-center gap-4">
-                <button onclick="window.location.href='{{ url_for('home') }}#cart-section'"
+                <button onclick="viewCart()"
                     class="relative p-2 rounded-full hover:bg-gray-100 transition-colors group">
                     <svg class="w-6 h-6 text-gray-700 group-hover:text-purple-600" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">
@@ -304,7 +304,7 @@
                             </label>
                         </div>
                         <div id="special-instructions-input" class="hidden mt-3">
-                            <textarea
+                            <textarea id="special-instructions-text"
                                 placeholder="Add any special instructions or requirements for your ritual (max 200 characters)"
                                 class="w-full px-3 py-2 text-sm border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
                                 rows="3" maxlength="200"></textarea>
@@ -315,34 +315,7 @@
                         </div>
                     </div>
 
-                    <!-- Schedule Your Ritual -->
-                    <div
-                        class="mb-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <i class="fas fa-calendar-alt text-amber-600"></i> Schedule Your Ritual
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Date</label>
-                                <input type="date" id="ritual-date"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent schedule-input">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Time Slot</label>
-                                <select id="ritual-time"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent schedule-input">
-                                    <option value="">Select Time</option>
-                                    <option>Morning (7 AM - 12 PM)</option>
-                                    <option>Afternoon (12 PM - 4 PM)</option>
-                                    <option>Evening (4 PM - 8 PM)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-4 text-xs text-gray-600 bg-white/50 p-2 rounded-lg">
-                            <i class="fas fa-info-circle mr-1 text-amber-500"></i> Our pandit will contact you within 24
-                            hours to confirm the schedule
-                        </div>
-                    </div>
+
 
 
                     <!-- Quantity -->
@@ -361,17 +334,16 @@
                         </div>
                     </div>
 
-                    <!-- CTA Buttons (Desktop) -->
                     <div class="hidden lg:grid grid-cols-2 gap-4 mb-10">
                         <button onclick="addToCart()"
                             class="bg-gradient-to-r from-orange-500 to-red-600 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2">
                             <i class="fas fa-shopping-cart"></i>
                             ADD TO CART
                         </button>
-                        <button onclick="scheduleBundle()"
+                        <button onclick="buyNow()"
                             class="bg-gradient-to-r from-green-600 to-emerald-700 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                            <i class="fas fa-calendar-check"></i>
-                            Book Now
+                            <i class="fas fa-bolt"></i>
+                            Buy Now
                         </button>
                     </div>
 
@@ -803,18 +775,29 @@
                 class="flex-1 py-3 px-2 rounded-lg text-[10px] sm:text-xs font-bold bg-gradient-to-r from-orange-500 to-red-600 text-white uppercase tracking-wide shadow-lg hover:shadow-xl transition-all whitespace-nowrap">
                 ADD TO CART
             </button>
-            <button onclick="scheduleBundle()"
+            <button onclick="buyNow()"
                 class="flex-1 py-3 px-2 rounded-lg text-[10px] sm:text-xs font-bold bg-gradient-to-r from-green-600 to-emerald-700 text-white uppercase tracking-wide shadow-lg hover:shadow-xl transition-all whitespace-nowrap">
-                Book Now
+                Buy Now
             </button>
         </div>
     </div>
 
     <!-- Scripts -->
     <script>
+
         const productId = {{ product.id }};
         const productName = '{{ product.name }}';
         const productPrice = {{ product.price }};
+
+        function toggleSpecialInstructions() {
+            const inputDiv = document.getElementById('special-instructions-input');
+            const checkbox = document.getElementById('special-instructions');
+            if (checkbox.checked) {
+                inputDiv.classList.remove('hidden');
+            } else {
+                inputDiv.classList.add('hidden');
+            }
+        }
 
         function updateQuantity(change) {
             const input = document.getElementById('quantity');
@@ -847,9 +830,16 @@
             let cart = getCart();
             const existingItem = cart.find(item => item.id === productId && item.type === 'product');
 
-            if (existingItem) { existingItem.quantity += qty; }
+            if (existingItem) {
+                existingItem.quantity += qty;
+                if (document.getElementById('special-instructions-text')) {
+                    const instructions = document.getElementById('special-instructions-text').value;
+                    if (instructions) existingItem.specialInstructions = instructions;
+                }
+            }
             else {
-                cart.push({ id: productId, name: productName, price: productPrice, quantity: qty, type: 'product' });
+                const instructions = document.getElementById('special-instructions-text') ? document.getElementById('special-instructions-text').value : '';
+                cart.push({ id: productId, name: productName, price: productPrice, quantity: qty, type: 'product', specialInstructions: instructions });
             }
             saveCart(cart);
 
@@ -869,6 +859,12 @@
 
         function buyNow() {
             addToCart();
+            const cart = getCart();
+            const cartData = encodeURIComponent(JSON.stringify(cart));
+            window.location.href = `/checkout?cart=${cartData}`;
+        }
+
+        function viewCart() {
             const cart = getCart();
             const cartData = encodeURIComponent(JSON.stringify(cart));
             window.location.href = `/checkout?cart=${cartData}`;

@@ -557,52 +557,6 @@
             </div>
         </section>
 
-        <!-- Testimonials Section -->
-        <section id="testimonials" class="py-16 bg-gradient-to-b from-white to-gray-50 scroll-reveal">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                    <span
-                        class="inline-block px-4 py-2 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold mb-4">Customer
-                        Reviews</span>
-                    <h2 class="text-3xl md:text-5xl font-extrabold mb-4"><span class="gradient-text">Delighted</span>
-                        Customers</h2>
-                    <p class="text-xl text-gray-600">See what our satisfied customers have to say</p>
-                </div>
-                {% if testimonials %}
-                <div class="swiper testimonials-slider relative">
-                    <div class="swiper-wrapper">
-                        {% for testimonial in testimonials %}
-                        <div class="swiper-slide">
-                            <div
-                                class="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-2xl shadow-lg border-l-4 border-blue-600 h-full">
-                                <div class="flex items-center mb-4">
-                                    <img src="{{ url_for('static', filename=testimonial.author_image) }}"
-                                        alt="{{ testimonial.author }}"
-                                        class="w-14 h-14 rounded-full object-cover border-2 border-blue-600">
-                                    <div class="ml-4">
-                                        <p class="font-bold text-lg">{{ testimonial.author }}</p>
-                                        <p class="text-sm text-gray-600">{{ testimonial.location }}</p>
-                                    </div>
-                                </div>
-                                <div class="flex text-yellow-400 text-xl mb-3">
-                                    {% for _ in range(testimonial.rating) %}★{% endfor %}
-                                </div>
-                                <p class="text-gray-700 italic leading-relaxed">"{{ testimonial.content }}"</p>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <div class="swiper-button-next testimonials-next"></div>
-                    <div class="swiper-button-prev testimonials-prev"></div>
-                    <div class="swiper-pagination testimonials-pagination"></div>
-                </div>
-                {% else %}
-                <div class="text-center py-12">
-                    <p class="text-gray-600">Be the first to share your experience!</p>
-                </div>
-                {% endif %}
-            </div>
-        </section>
 
         <!-- Ritual Bundles Section -->
         <section id="bundles" class="py-16 bg-white scroll-reveal">
@@ -674,6 +628,53 @@
                 {% else %}
                 <div class="text-center py-12">
                     <p class="text-gray-600">New ritual bundles coming soon!</p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Testimonials Section -->
+        <section id="testimonials" class="py-16 bg-gradient-to-b from-white to-gray-50 scroll-reveal">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <span
+                        class="inline-block px-4 py-2 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold mb-4">Customer
+                        Reviews</span>
+                    <h2 class="text-3xl md:text-5xl font-extrabold mb-4"><span class="gradient-text">Delighted</span>
+                        Customers</h2>
+                    <p class="text-xl text-gray-600">See what our satisfied customers have to say</p>
+                </div>
+                {% if testimonials %}
+                <div class="swiper testimonials-slider relative">
+                    <div class="swiper-wrapper">
+                        {% for testimonial in testimonials %}
+                        <div class="swiper-slide">
+                            <div
+                                class="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-2xl shadow-lg border-l-4 border-blue-600 h-full">
+                                <div class="flex items-center mb-4">
+                                    <img src="{{ url_for('static', filename=testimonial.author_image) }}"
+                                        alt="{{ testimonial.author }}"
+                                        class="w-14 h-14 rounded-full object-cover border-2 border-blue-600">
+                                    <div class="ml-4">
+                                        <p class="font-bold text-lg">{{ testimonial.author }}</p>
+                                        <p class="text-sm text-gray-600">{{ testimonial.location }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex text-yellow-400 text-xl mb-3">
+                                    {% for _ in range(testimonial.rating) %}★{% endfor %}
+                                </div>
+                                <p class="text-gray-700 italic leading-relaxed">"{{ testimonial.content }}"</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="swiper-button-next testimonials-next"></div>
+                    <div class="swiper-button-prev testimonials-prev"></div>
+                    <div class="swiper-pagination testimonials-pagination"></div>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <p class="text-gray-600">Be the first to share your experience!</p>
                 </div>
                 {% endif %}
             </div>
@@ -1411,12 +1412,21 @@
             };
 
             try {
+                // Get token if user is logged in
+                const token = localStorage.getItem('token');
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+
+                // Add Authorization header if token exists
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
                 // Submit booking to API
                 const response = await fetch('/api/book-pandit', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: headers,
                     body: JSON.stringify(formData)
                 });
 
@@ -1604,7 +1614,7 @@
                     // Redirect to dashboard after 1 second
                     setTimeout(() => {
                         closeLoginModal();
-                        window.location.href = '/user/dashboard';
+                        window.location.href = '/';
                     }, 1000);
 
                 } else {
