@@ -111,6 +111,84 @@
             font-size: 10px;
             font-weight: bold;
         }
+
+        /* Side Drawer & Overlay */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100%;
+            background: white;
+            z-index: 1001;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .side-drawer.active {
+            left: 0;
+        }
+
+        /* Bottom Navigation Bar */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background: rgba(255, 255, 255, 1);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 9999;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #64748b;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .bottom-nav-item.active {
+            color: #7c3aed;
+        }
+
+        .bottom-nav-item i {
+            font-size: 1.25rem;
+            margin-bottom: 2px;
+        }
+
+        /* Glassmorphism Sticky Header */
+        .sticky-header-modern {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
     </style>
 </head>
 
@@ -118,38 +196,50 @@
 
     <!-- Fixed Announcement Bar (Matched Home) -->
     <div
-        class="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white text-center py-3 px-4 text-sm sticky top-0 z-50 font-semibold shadow-lg">
+        class="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white text-center py-3 px-4 text-sm relative z-50 font-semibold shadow-lg">
         <span class="animate-pulse">SPECIAL OFFER!</span> Get 20% OFF on first booking + FREE delivery on orders above
         ₹500!
     </div>
 
-    <!-- Navigation (Matched Home) -->
-    <nav class="bg-white shadow-sm sticky top-10 z-40 border-b border-gray-100">
+    <!-- Navigation (Standardized) -->
+    <nav class="bg-white shadow-sm sticky top-0 z-40 border-b border-gray-100 transition-all duration-300"
+        id="main-nav">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-            <!-- Mobile Menu -->
-            <button class="lg:hidden text-gray-800"><i class="fas fa-bars text-xl"></i></button>
+            <!-- Mobile Menu Trigger -->
+            <button class="lg:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
+                onclick="toggleSideDrawer()">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
 
             <!-- Logo Area -->
-            <a href="{{ url_for('home') }}" class="flex items-center space-x-3">
+            <a href="{{ url_for('home') }}" class="flex items-center space-x-2 md:space-x-3">
                 <div
                     class="w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-md">
                     ॐ
                 </div>
-                <span class="text-xl font-bold gradient-text hidden sm:inline-block">PujaPath</span>
+                <span class="text-xl font-bold gradient-text">PujaPath</span>
             </a>
 
             <!-- Desktop Links -->
             <div class="hidden lg:flex items-center gap-8">
                 <a href="{{ url_for('home') }}"
-                    class="text-sm font-medium text-gray-600 hover:text-purple-600 uppercase tracking-wide">Home</a>
+                    class="text-lg font-medium text-gray-700 hover:text-purple-600 transition-colors">Home</a>
                 <a href="{{ url_for('home') }}#essentials"
-                    class="text-sm font-medium text-gray-600 hover:text-purple-600 uppercase tracking-wide">Essentials</a>
+                    class="text-lg font-medium text-gray-700 hover:text-purple-600 transition-colors">Essentials</a>
                 <a href="{{ url_for('home') }}#bundles"
-                    class="text-sm font-medium text-gray-600 hover:text-purple-600 uppercase tracking-wide">Rituals</a>
+                    class="text-lg font-medium text-gray-700 hover:text-purple-600 transition-colors">Rituals</a>
             </div>
 
-            <!-- Cart Area -->
-            <div class="flex items-center gap-4">
+            <!-- Header Actions -->
+            <div class="flex items-center gap-1 md:gap-4">
+                <button class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </button>
                 <button onclick="viewCart()"
                     class="relative p-2 rounded-full hover:bg-gray-100 transition-colors group">
                     <svg class="w-6 h-6 text-gray-700 group-hover:text-purple-600" fill="none" stroke="currentColor"
@@ -162,6 +252,79 @@
             </div>
         </div>
     </nav>
+
+    <!-- Side Drawer & Overlay (Standardized) -->
+    <div class="drawer-overlay" id="drawer-overlay" onclick="toggleSideDrawer()"></div>
+    <div class="side-drawer" id="side-drawer">
+        <div class="bg-gradient-to-br from-purple-600 to-indigo-700 p-8 text-white">
+            <div id="mobile-user-section" class="hidden">
+                <div class="flex items-center space-x-4 mb-4">
+                    <div
+                        class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white font-bold text-2xl border border-white/30">
+                        <span id="mobile-user-avatar">U</span>
+                    </div>
+                    <div>
+                        <p id="mobile-user-name" class="font-bold text-lg">User Name</p>
+                        <p id="mobile-user-email" class="text-xs text-purple-100">user@email.com</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <a href="/user/dashboard"
+                        class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full backdrop-blur-sm transition-colors">View
+                        Profile</a>
+                </div>
+            </div>
+            <div id="mobile-guest-section">
+                <p class="text-2xl font-bold mb-2">Welcome Guest</p>
+                <button onclick="toggleSideDrawer(); window.location.href='/#home';"
+                    class="w-full bg-white text-purple-700 font-bold py-3 rounded-xl shadow-lg mt-4">Login / Sign
+                    Up</button>
+            </div>
+        </div>
+        <div class="p-6">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Navigation</p>
+            <div class="space-y-4">
+                <a href="{{ url_for('home') }}"
+                    class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors">
+                    <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                            class="fas fa-home"></i></div>
+                    <span>Home</span>
+                </a>
+                <a href="{{ url_for('home') }}#essentials"
+                    class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors">
+                    <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                            class="fas fa-shopping-basket"></i></div>
+                    <span>Puja Essentials</span>
+                </a>
+                <a href="{{ url_for('home') }}#bundles"
+                    class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors">
+                    <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                            class="fas fa-box-open"></i></div>
+                    <span>Ritual Bundles</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar (Mobile Only) -->
+    <div class="bottom-nav lg:hidden">
+        <a href="{{ url_for('home') }}" class="bottom-nav-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="{{ url_for('home') }}#essentials" class="bottom-nav-item">
+            <i class="fas fa-store"></i>
+            <span>Shop</span>
+        </a>
+        <a href="{{ url_for('home') }}#bundles" class="bottom-nav-item">
+            <i class="fas fa-boxes"></i>
+            <span>Rituals</span>
+        </a>
+        <a href="/user/dashboard" class="bottom-nav-item">
+            <i class="fas fa-user"></i>
+            <span>Account</span>
+        </a>
+    </div>
 
     <!-- Breadcrumb -->
     <div class="container mx-auto px-4 py-4 pt-6">
@@ -757,9 +920,9 @@
     </footer>
 
 
-    <!-- Mobile Fixed Bottom Bar -->
+    <!-- Mobile Fixed Bottom Bar (Adjusted for Bottom Nav) -->
     <div
-        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-3 lg:hidden z-50 flex items-center justify-between shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+        class="fixed bottom-[65px] left-0 right-0 bg-white border-t border-gray-100 p-3 lg:hidden z-50 flex items-center justify-between shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
         <!-- Thumbnail & Info -->
         <div class="flex items-center gap-3">
             <img src="{{ url_for('static', filename=product.image_url) }}"
@@ -788,6 +951,42 @@
         const productId = {{ product.id }};
         const productName = '{{ product.name }}';
         const productPrice = {{ product.price }};
+
+        // Side Drawer Toggle
+        function toggleSideDrawer() {
+            document.getElementById('side-drawer').classList.toggle('active');
+            document.getElementById('drawer-overlay').classList.toggle('active');
+            document.body.style.overflow = document.getElementById('side-drawer').classList.contains('active') ? 'hidden' : '';
+        }
+
+        // Sticky Header scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('main-nav');
+            if (window.scrollY > 40) {
+                nav.classList.add('sticky-header-modern', 'shadow-md');
+            } else {
+                nav.classList.remove('sticky-header-modern', 'shadow-md');
+            }
+        });
+
+        // User Auth Status (Simplified for PDP)
+        function checkAuthStatus() {
+            const token = localStorage.getItem('token');
+            const userData = localStorage.getItem('user');
+            const mobileGuest = document.getElementById('mobile-guest-section');
+            const mobileUser = document.getElementById('mobile-user-section');
+
+            if (token && userData && mobileGuest && mobileUser) {
+                mobileGuest.classList.add('hidden');
+                mobileUser.classList.remove('hidden');
+                try {
+                    const user = JSON.parse(userData);
+                    document.getElementById('mobile-user-avatar').textContent = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
+                    document.getElementById('mobile-user-name').textContent = user.full_name || user.username || 'User';
+                    document.getElementById('mobile-user-email').textContent = user.email || '';
+                } catch (e) { }
+            }
+        }
 
         function toggleSpecialInstructions() {
             const inputDiv = document.getElementById('special-instructions-input');

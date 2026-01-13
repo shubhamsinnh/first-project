@@ -253,13 +253,13 @@
 
     <!-- Fixed Announcement Bar -->
     <div
-        class="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white text-center py-3 px-4 text-sm sticky top-0 z-50 font-semibold shadow-lg">
+        class="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white text-center py-3 px-4 text-sm relative z-50 font-semibold shadow-lg">
         <span class="animate-pulse">SPECIAL OFFER!</span> Get 20% OFF on first booking + FREE delivery on orders above
         ₹500!
     </div>
 
     <!-- Navigation -->
-    <nav class="bg-white shadow-sm sticky top-10 z-40 border-b border-gray-100">
+    <nav class="bg-white shadow-sm sticky top-0 z-40 border-b border-gray-100">
         <div class="container mx-auto px-4 py-3 flex items-center justify-between">
             <!-- Mobile Menu -->
             <button class="lg:hidden text-gray-800" onclick="toggleMobileMenu()">
@@ -278,11 +278,11 @@
             <!-- Desktop Links -->
             <div class="hidden lg:flex items-center gap-8">
                 <a href="{{ url_for('home') }}"
-                    class="text-sm font-medium text-gray-600 hover:text-purple-600 uppercase tracking-wide transition-colors duration-300">Home</a>
+                    class="text-lg font-medium text-gray-700 hover:text-purple-600 transition-colors">Home</a>
                 <a href="{{ url_for('home') }}#essentials"
-                    class="text-sm font-medium text-gray-600 hover:text-purple-600 uppercase tracking-wide transition-colors duration-300">Essentials</a>
+                    class="text-lg font-medium text-gray-700 hover:text-purple-600 transition-colors">Essentials</a>
                 <a href="{{ url_for('home') }}#bundles"
-                    class="text-sm font-medium text-gray-600 hover:text-purple-600 uppercase tracking-wide transition-colors duration-300">Rituals</a>
+                    class="text-lg font-medium text-gray-700 hover:text-purple-600 transition-colors">Rituals</a>
             </div>
 
             <!-- Cart Area -->

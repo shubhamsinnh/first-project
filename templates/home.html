@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
         * {
             font-family: 'Poppins', sans-serif;
@@ -197,6 +198,85 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* Side Drawer & Overlay */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100%;
+            background: white;
+            z-index: 1001;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .side-drawer.active {
+            left: 0;
+        }
+
+        /* Bottom Navigation Bar */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background: rgba(255, 255, 255, 1);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 9999;
+            /* Ensure it's above everything */
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #64748b;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .bottom-nav-item.active {
+            color: #7c3aed;
+        }
+
+        .bottom-nav-item i {
+            font-size: 1.25rem;
+            margin-bottom: 2px;
+        }
+
+        /* Glassmorphism Sticky Header */
+        .sticky-header-modern {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
     </style>
 </head>
 
@@ -204,21 +284,29 @@
 
     <!-- Fixed Announcement Bar -->
     <div
-        class="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white text-center py-3 px-4 text-sm fixed top-0 w-full z-50 font-semibold shadow-lg">
+        class="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white text-center py-3 px-4 text-sm relative z-50 font-semibold shadow-lg">
         <span class="animate-pulse">SPECIAL OFFER!</span> Get 20% OFF on first booking + FREE delivery on orders above
         ₹500!
     </div>
 
     <!-- Sticky Navbar -->
-    <nav class="bg-white shadow-lg py-4 px-6 fixed top-8 w-full z-50">
+    <nav class="bg-white shadow-lg py-4 px-6 sticky top-0 w-full z-40 transition-all duration-300" id="main-nav">
         <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-3">
+            <!-- Mobile Menu Trigger -->
+            <button class="md:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
+                onclick="toggleSideDrawer()">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+
+            <a href="/" class="flex items-center space-x-2 md:space-x-3">
                 <div
-                    class="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                    class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-lg">
                     ॐ
                 </div>
-                <span class="text-2xl font-bold gradient-text">PujaPath</span>
-            </div>
+                <span class="text-xl md:text-2xl font-bold gradient-text">PujaPath</span>
+            </a>
 
             <!-- Desktop Navigation -->
             <div class="hidden md:flex flex-1 justify-center absolute left-1/2 transform -translate-x-1/2">
@@ -236,17 +324,14 @@
                 </ul>
             </div>
 
-            <!-- Cart and Mobile Menu -->
-            <div class="flex items-center space-x-4">
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-1 md:space-x-4">
                 <!-- User Account / Login - Desktop Only -->
                 <div id="user-auth-container" class="hidden md:block">
-                    <!-- Initially show login button -->
                     <button id="login-button" onclick="openLoginModal()"
                         class="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium">
                         <i class="fas fa-user-circle mr-2"></i> Login
                     </button>
-
-                    <!-- Will be shown when logged in -->
                     <div id="user-menu" class="hidden items-center space-x-3">
                         <div class="relative">
                             <button onclick="toggleUserMenu()"
@@ -286,93 +371,146 @@
                     </div>
                 </div>
 
-                <!-- Shopping Cart Icon1 -->
+                <!-- Web/Mobile Cart and Search -->
+                <button class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </button>
                 <button onclick="toggleCart()" class="relative p-2 rounded-full hover:bg-gray-100 transition-colors">
-                    <svg class="w-7 h-7 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                     <span id="cart-count" class="cart-badge hidden">0</span>
                 </button>
-
-                <!-- Mobile Menu Button -->
-                <button class="md:hidden p-2 rounded-lg hover:bg-gray-100 mobile-menu-button">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16m-16 6h16" />
-                    </svg>
-                </button>
             </div>
-
-
-            <!-- Mobile Menu (Hidden by default) -->
-            <div class="hidden md:hidden mobile-menu absolute top-full left-0 right-0 bg-white shadow-lg">
-                <div class="px-4 py-3">
-                    <!-- Mobile User Section -->
-                    <div id="mobile-user-section" class="hidden border-b border-gray-200 pb-3 mb-3">
-                        <div class="flex items-center mb-3">
-                            <div
-                                class="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
-                                <span id="mobile-user-avatar">U</span>
-                            </div>
-                            <div class="ml-3">
-                                <p id="mobile-user-name" class="font-semibold text-gray-800">User</p>
-                                <p id="mobile-user-email" class="text-xs text-gray-500">user@email.com</p>
-                            </div>
-                        </div>
-                        <div class="space-y-1">
-                            <a href="/user/dashboard"
-                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg">
-                                <i class="fas fa-tachometer-alt mr-2 w-4"></i>Dashboard
-                            </a>
-                            <a href="/user/profile"
-                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg">
-                                <i class="fas fa-user-edit mr-2 w-4"></i>Profile
-                            </a>
-                            <a href="/user/orders"
-                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg">
-                                <i class="fas fa-shopping-bag mr-2 w-4"></i>Orders
-                            </a>
-                            <a href="/user/bookings"
-                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg">
-                                <i class="fas fa-calendar-check mr-2 w-4"></i>Bookings
-                            </a>
-                            <button onclick="logout()"
-                                class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg">
-                                <i class="fas fa-sign-out-alt mr-2 w-4"></i>Logout
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Mobile Login Button -->
-                    <button id="mobile-login-button" onclick="openLoginModal()"
-                        class="w-full mb-3 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium text-sm">
-                        <i class="fas fa-user-circle mr-2"></i> Login
-                    </button>
-
-                    <!-- Navigation Links -->
-                    <ul class="space-y-1">
-                        <li><a href="#home"
-                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Home</a></li>
-                        <li><a href="#pandits"
-                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Pandit Ji</a>
-                        </li>
-                        <li><a href="#essentials"
-                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Puja
-                                Essentials</a></li>
-                        <li><a href="#bundles"
-                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Ritual
-                                Bundles</a></li>
-                        <li><a href="/careers"
-                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Join Team</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+        </div>
     </nav>
 
+    <!-- Side Drawer & Overlay -->
+    <div class="drawer-overlay" id="drawer-overlay" onclick="toggleSideDrawer()"></div>
+    <div class="side-drawer" id="side-drawer">
+        <!-- Drawer Header / User Section -->
+        <div class="bg-gradient-to-br from-purple-600 to-indigo-700 p-8 text-white">
+            <div id="mobile-user-section" class="hidden">
+                <div class="flex items-center space-x-4 mb-4">
+                    <div
+                        class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white font-bold text-2xl border border-white/30">
+                        <span id="mobile-user-avatar">U</span>
+                    </div>
+                    <div>
+                        <p id="mobile-user-name" class="font-bold text-lg">User Name</p>
+                        <p id="mobile-user-email" class="text-xs text-purple-100">user@email.com</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <a href="/user/dashboard"
+                        class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full backdrop-blur-sm transition-colors">View
+                        Profile</a>
+                </div>
+            </div>
+            <div id="mobile-guest-section">
+                <p class="text-2xl font-bold mb-2">Welcome Guest</p>
+                <p class="text-sm text-purple-100 mb-6">Experience Vedic traditions with ease.</p>
+                <button onclick="toggleSideDrawer(); openLoginModal();"
+                    class="w-full bg-white text-purple-700 font-bold py-3 rounded-xl shadow-lg">Login / Sign Up</button>
+            </div>
+        </div>
+
+        <!-- Menu Links -->
+        <div class="p-6">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Categories</p>
+            <div class="space-y-4">
+                <a href="#home"
+                    class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                    onclick="toggleSideDrawer()">
+                    <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                            class="fas fa-home"></i></div>
+                    <span>Home</span>
+                </a>
+                <a href="#pandits"
+                    class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                    onclick="toggleSideDrawer()">
+                    <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                            class="fas fa-user-tie"></i></div>
+                    <span>Book Pandit Ji</span>
+                </a>
+                <a href="#essentials"
+                    class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                    onclick="toggleSideDrawer()">
+                    <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                            class="fas fa-shopping-basket"></i></div>
+                    <span>Puja Essentials</span>
+                </a>
+                <a href="#bundles"
+                    class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                    onclick="toggleSideDrawer()">
+                    <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                            class="fas fa-box-open"></i></div>
+                    <span>Ritual Bundles</span>
+                </a>
+            </div>
+
+            <div class="mt-10 pt-10 border-t border-gray-100">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Account</p>
+                <div class="space-y-4">
+                    <a href="/user/orders"
+                        class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                        onclick="toggleSideDrawer()">
+                        <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-500"><i
+                                class="fas fa-shopping-bag"></i></div>
+                        <span>My Orders</span>
+                    </a>
+                    <a href="/user/bookings"
+                        class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                        onclick="toggleSideDrawer()">
+                        <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-500"><i
+                                class="fas fa-calendar-alt"></i></div>
+                        <span>My Bookings</span>
+                    </a>
+                    <button onclick="logout(); toggleSideDrawer();"
+                        class="flex items-center space-x-4 text-red-600 font-medium w-full text-left"
+                        id="mobile-logout-btn" style="display: none;">
+                        <div class="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center"><i
+                                class="fas fa-sign-out-alt"></i></div>
+                        <span>Logout</span>
+                    </button>
+                    <a href="/careers"
+                        class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                        onclick="toggleSideDrawer()">
+                        <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-500"><i
+                                class="fas fa-briefcase"></i></div>
+                        <span>Join Our Team</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar (Mobile Only) -->
+    <div class="bottom-nav md:hidden">
+        <a href="#home" class="bottom-nav-item active">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="#essentials" class="bottom-nav-item">
+            <i class="fas fa-store"></i>
+            <span>Shop</span>
+        </a>
+        <a href="#bundles" class="bottom-nav-item">
+            <i class="fas fa-boxes"></i>
+            <span>Rituals</span>
+        </a>
+        <a href="/user/dashboard" class="bottom-nav-item">
+            <i class="fas fa-user"></i>
+            <span>Account</span>
+        </a>
+    </div>
+
     <!-- Main Content -->
-    <main id="main-content" class="pt-24">
+    <main id="main-content" class="pt-8">
 
         <!-- Hero Section -->
         <section id="home"
@@ -1557,19 +1695,25 @@
 
             const loginButton = document.getElementById('login-button');
             const userMenu = document.getElementById('user-menu');
-            const mobileLoginButton = document.getElementById('mobile-login-button');
+            const mobileGuestSection = document.getElementById('mobile-guest-section');
             const mobileUserSection = document.getElementById('mobile-user-section');
+            const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
 
             if (token && userData) {
                 // User is logged in
-                loginButton.classList.add('hidden');
-                loginButton.classList.remove('md:flex');
-                userMenu.classList.remove('hidden');
-                userMenu.classList.add('flex');
+                if (loginButton) {
+                    loginButton.classList.add('hidden');
+                    loginButton.classList.remove('md:flex');
+                }
+                if (userMenu) {
+                    userMenu.classList.remove('hidden');
+                    userMenu.classList.add('flex');
+                }
 
-                // Mobile menu - hide login button, show user section
-                mobileLoginButton.classList.add('hidden');
-                mobileUserSection.classList.remove('hidden');
+                // Mobile drawer
+                if (mobileGuestSection) mobileGuestSection.classList.add('hidden');
+                if (mobileUserSection) mobileUserSection.classList.remove('hidden');
+                if (mobileLogoutBtn) mobileLogoutBtn.style.display = 'flex';
 
                 // Update user info
                 try {
@@ -1578,28 +1722,52 @@
                     const fullName = user.full_name || user.username || 'User';
 
                     // Desktop user menu
-                    document.getElementById('user-avatar').textContent = initial;
-                    document.getElementById('user-name').textContent = fullName;
+                    if (document.getElementById('user-avatar')) document.getElementById('user-avatar').textContent = initial;
+                    if (document.getElementById('user-name')) document.getElementById('user-name').textContent = fullName;
 
                     // Mobile user menu
-                    document.getElementById('mobile-user-avatar').textContent = initial;
-                    document.getElementById('mobile-user-name').textContent = fullName;
-                    document.getElementById('mobile-user-email').textContent = user.email || '';
+                    if (document.getElementById('mobile-user-avatar')) document.getElementById('mobile-user-avatar').textContent = initial;
+                    if (document.getElementById('mobile-user-name')) document.getElementById('mobile-user-name').textContent = fullName;
+                    if (document.getElementById('mobile-user-email')) document.getElementById('mobile-user-email').textContent = user.email || '';
                 } catch (e) {
                     console.error('Error parsing user data:', e);
                 }
             } else {
                 // User is not logged in
-                loginButton.classList.remove('hidden');
-                loginButton.classList.add('md:flex');
-                userMenu.classList.add('hidden');
-                userMenu.classList.remove('flex');
+                if (loginButton) {
+                    loginButton.classList.remove('hidden');
+                    loginButton.classList.add('md:flex');
+                }
+                if (userMenu) {
+                    userMenu.classList.add('hidden');
+                    userMenu.classList.remove('flex');
+                }
 
-                // Mobile menu - show login button, hide user section
-                mobileLoginButton.classList.remove('hidden');
-                mobileUserSection.classList.add('hidden');
+                // Mobile drawer
+                if (mobileGuestSection) mobileGuestSection.classList.remove('hidden');
+                if (mobileUserSection) mobileUserSection.classList.add('hidden');
+                if (mobileLogoutBtn) mobileLogoutBtn.style.display = 'none';
             }
         }
+
+        // Side Drawer Toggle
+        function toggleSideDrawer() {
+            document.getElementById('side-drawer').classList.toggle('active');
+            document.getElementById('drawer-overlay').classList.toggle('active');
+            document.body.style.overflow = document.getElementById('side-drawer').classList.contains('active') ? 'hidden' : '';
+        }
+
+        // Sticky Header scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('main-nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('sticky-header-modern', 'shadow-md', 'py-2');
+                nav.classList.remove('py-4');
+            } else {
+                nav.classList.remove('sticky-header-modern', 'shadow-md', 'py-2');
+                nav.classList.add('py-4');
+            }
+        });
 
         // Login Modal Functions
         function openLoginModal() {
