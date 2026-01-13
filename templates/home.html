@@ -238,11 +238,11 @@
 
             <!-- Cart and Mobile Menu -->
             <div class="flex items-center space-x-4">
-                <!-- User Account / Login -->
-                <div id="user-auth-container">
+                <!-- User Account / Login - Desktop Only -->
+                <div id="user-auth-container" class="hidden md:block">
                     <!-- Initially show login button -->
                     <button id="login-button" onclick="openLoginModal()"
-                        class="hidden md:flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium">
+                        class="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium">
                         <i class="fas fa-user-circle mr-2"></i> Login
                     </button>
 
@@ -255,7 +255,7 @@
                                     class="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
                                     <span id="user-avatar">U</span>
                                 </div>
-                                <span id="user-name" class="font-medium hidden md:inline">User</span>
+                                <span id="user-name" class="font-medium">User</span>
                                 <i class="fas fa-chevron-down text-gray-500"></i>
                             </button>
                             <div id="user-dropdown"
@@ -306,19 +306,68 @@
 
 
             <!-- Mobile Menu (Hidden by default) -->
-            <div class="hidden md:hidden mobile-menu">
-                <ul class="flex flex-col space-y-4 p-6 bg-white border-t">
-                    <li><a href="#home" class="text-lg text-gray-700 hover:text-blue-600 transition-colors">Home</a>
-                    </li>
-                    <li><a href="#pandits" class="text-lg text-gray-700 hover:text-blue-600 transition-colors">Pandit
-                            Ji</a></li>
-                    <li><a href="#essentials" class="text-lg text-gray-700 hover:text-blue-600 transition-colors">Puja
-                            Essentials</a></li>
-                    <li><a href="#bundles" class="text-lg text-gray-700 hover:text-blue-600 transition-colors">Ritual
-                            Bundles</a></li>
-                    <li><a href="/careers" class="text-lg text-gray-700 hover:text-blue-600 transition-colors">Join
-                            Team</a></li>
-                </ul>
+            <div class="hidden md:hidden mobile-menu absolute top-full left-0 right-0 bg-white shadow-lg">
+                <div class="px-4 py-3">
+                    <!-- Mobile User Section -->
+                    <div id="mobile-user-section" class="hidden border-b border-gray-200 pb-3 mb-3">
+                        <div class="flex items-center mb-3">
+                            <div
+                                class="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
+                                <span id="mobile-user-avatar">U</span>
+                            </div>
+                            <div class="ml-3">
+                                <p id="mobile-user-name" class="font-semibold text-gray-800">User</p>
+                                <p id="mobile-user-email" class="text-xs text-gray-500">user@email.com</p>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <a href="/user/dashboard"
+                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg">
+                                <i class="fas fa-tachometer-alt mr-2 w-4"></i>Dashboard
+                            </a>
+                            <a href="/user/profile"
+                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg">
+                                <i class="fas fa-user-edit mr-2 w-4"></i>Profile
+                            </a>
+                            <a href="/user/orders"
+                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg">
+                                <i class="fas fa-shopping-bag mr-2 w-4"></i>Orders
+                            </a>
+                            <a href="/user/bookings"
+                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-600 rounded-lg">
+                                <i class="fas fa-calendar-check mr-2 w-4"></i>Bookings
+                            </a>
+                            <button onclick="logout()"
+                                class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg">
+                                <i class="fas fa-sign-out-alt mr-2 w-4"></i>Logout
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Login Button -->
+                    <button id="mobile-login-button" onclick="openLoginModal()"
+                        class="w-full mb-3 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium text-sm">
+                        <i class="fas fa-user-circle mr-2"></i> Login
+                    </button>
+
+                    <!-- Navigation Links -->
+                    <ul class="space-y-1">
+                        <li><a href="#home"
+                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Home</a></li>
+                        <li><a href="#pandits"
+                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Pandit Ji</a>
+                        </li>
+                        <li><a href="#essentials"
+                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Puja
+                                Essentials</a></li>
+                        <li><a href="#bundles"
+                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Ritual
+                                Bundles</a></li>
+                        <li><a href="/careers"
+                                class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">Join Team</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
     </nav>
 
@@ -1508,6 +1557,8 @@
 
             const loginButton = document.getElementById('login-button');
             const userMenu = document.getElementById('user-menu');
+            const mobileLoginButton = document.getElementById('mobile-login-button');
+            const mobileUserSection = document.getElementById('mobile-user-section');
 
             if (token && userData) {
                 // User is logged in
@@ -1516,11 +1567,24 @@
                 userMenu.classList.remove('hidden');
                 userMenu.classList.add('flex');
 
+                // Mobile menu - hide login button, show user section
+                mobileLoginButton.classList.add('hidden');
+                mobileUserSection.classList.remove('hidden');
+
                 // Update user info
                 try {
                     const user = JSON.parse(userData);
-                    document.getElementById('user-avatar').textContent = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
-                    document.getElementById('user-name').textContent = user.full_name || user.username || 'User';
+                    const initial = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
+                    const fullName = user.full_name || user.username || 'User';
+
+                    // Desktop user menu
+                    document.getElementById('user-avatar').textContent = initial;
+                    document.getElementById('user-name').textContent = fullName;
+
+                    // Mobile user menu
+                    document.getElementById('mobile-user-avatar').textContent = initial;
+                    document.getElementById('mobile-user-name').textContent = fullName;
+                    document.getElementById('mobile-user-email').textContent = user.email || '';
                 } catch (e) {
                     console.error('Error parsing user data:', e);
                 }
@@ -1530,6 +1594,10 @@
                 loginButton.classList.add('md:flex');
                 userMenu.classList.add('hidden');
                 userMenu.classList.remove('flex');
+
+                // Mobile menu - show login button, hide user section
+                mobileLoginButton.classList.remove('hidden');
+                mobileUserSection.classList.add('hidden');
             }
         }
 

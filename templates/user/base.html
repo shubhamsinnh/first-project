@@ -44,7 +44,9 @@
                 <a href="/" class="flex items-center">
                     <span class="text-2xl font-bold gradient-text">PujaPath</span>
                 </a>
-                <div class="flex items-center space-x-6">
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-6">
                     <a href="/user/dashboard" class="text-gray-700 hover:text-purple-600">
                         <i class="fas fa-user-circle mr-2"></i>My Account
                     </a>
@@ -55,14 +57,32 @@
                         <i class="fas fa-sign-out-alt mr-2"></i>Logout
                     </button>
                 </div>
+
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-gray-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16m-16 6h16" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Mobile Menu Dropdown -->
+            <div id="mobile-nav-menu" class="hidden md:hidden mt-4 pb-4 border-t border-gray-200 pt-4">
+                <a href="/" class="block py-2 text-gray-700 hover:text-purple-600">
+                    <i class="fas fa-home mr-2"></i>Home
+                </a>
+                <button onclick="logout()" class="w-full text-left py-2 text-red-600 hover:text-red-700">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
             </div>
         </div>
     </nav>
 
-    <div class="container mx-auto px-6 py-8">
-        <div class="flex">
+    <div class="container mx-auto px-4 md:px-6 py-8">
+        <div class="flex flex-col md:flex-row gap-6">
             <!-- Sidebar -->
-            <div class="w-1/4 pr-8">
+            <div class="w-full md:w-1/4">
                 <div class="bg-white rounded-xl shadow-lg p-6">
                     <div class="flex items-center mb-6">
                         <div class="w-16 h-16 rounded-full gradient-bg flex items-center justify-center text-white text-2xl font-bold"
@@ -101,13 +121,18 @@
             </div>
 
             <!-- Main Content -->
-            <div class="w-3/4">
+            <div class="w-full md:w-3/4">
                 {% block content %}{% endblock %}
             </div>
         </div>
     </div>
 
     <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-nav-menu');
+            menu.classList.toggle('hidden');
+        }
+
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
