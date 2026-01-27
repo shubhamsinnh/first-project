@@ -1,0 +1,99 @@
+<!-- Sticky Navbar -->
+<nav class="bg-white shadow-lg py-4 px-6 sticky top-0 w-full z-40 transition-all duration-300" id="main-nav">
+    <div class="container mx-auto flex justify-between items-center">
+        <!-- Mobile Menu Trigger -->
+        <button class="md:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
+            onclick="toggleSideDrawer()">
+            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+        </button>
+
+        <a href="/" class="flex items-center space-x-2 md:space-x-3">
+            <div
+                class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-lg">
+                ॐ
+            </div>
+            <span class="text-xl md:text-2xl font-bold gradient-text">PujaPath</span>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex flex-1 justify-center absolute left-1/2 transform -translate-x-1/2">
+            <ul class="flex space-x-10 font-medium">
+                <li><a href="/#home" class="text-lg text-gray-700 hover:text-blue-600 transition-colors">Home</a>
+                </li>
+                <li><a href="/#pandits" class="text-lg text-gray-700 hover:text-blue-600 transition-colors">Pandit
+                        Ji</a></li>
+                <li><a href="/#essentials" class="text-lg text-gray-700 hover:text-blue-600 transition-colors">Puja
+                        Essentials</a></li>
+                <li><a href="/#bundles" class="text-lg text-gray-700 hover:text-blue-600 transition-colors">Ritual
+                        Bundles</a></li>
+                <li><a href="/careers" class="text-lg text-gray-700 hover:text-blue-600 transition-colors">Join
+                        Team</a></li>
+            </ul>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="flex items-center space-x-1 md:space-x-4">
+            <!-- User Account / Login - Desktop Only -->
+            <div id="user-auth-container" class="hidden md:block">
+                <button id="login-button" onclick="openLoginModal()"
+                    class="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium">
+                    <i class="fas fa-user-circle mr-2"></i> Login
+                </button>
+                <div id="user-menu" class="hidden items-center space-x-3">
+                    <div class="relative">
+                        <button onclick="toggleUserMenu()"
+                            class="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded-lg transition">
+                            <div
+                                class="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
+                                <span id="user-avatar">U</span>
+                            </div>
+                            <span id="user-name" class="font-medium">User</span>
+                            <i class="fas fa-chevron-down text-gray-500"></i>
+                        </button>
+                        <div id="user-dropdown"
+                            class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50 hidden">
+                            <a href="/user/dashboard"
+                                class="block px-4 py-2 text-gray-700 hover:bg-purple-50 hover:text-purple-600">
+                                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                            </a>
+                            <a href="/user/profile"
+                                class="block px-4 py-2 text-gray-700 hover:bg-purple-50 hover:text-purple-600">
+                                <i class="fas fa-user-edit mr-2"></i>Profile
+                            </a>
+                            <a href="/user/orders"
+                                class="block px-4 py-2 text-gray-700 hover:bg-purple-50 hover:text-purple-600">
+                                <i class="fas fa-shopping-bag mr-2"></i>Orders
+                            </a>
+                            <a href="/user/bookings"
+                                class="block px-4 py-2 text-gray-700 hover:bg-purple-50 hover:text-purple-600">
+                                <i class="fas fa-calendar-check mr-2"></i>Bookings
+                            </a>
+                            <hr class="my-2">
+                            <button onclick="logout()"
+                                class="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Web/Mobile Cart and Search -->
+            <button class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </button>
+            <button onclick="toggleCart()" class="relative p-2 rounded-full hover:bg-gray-100 transition-colors">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span id="cart-count" class="cart-badge hidden">0</span>
+            </button>
+        </div>
+    </div>
+</nav>

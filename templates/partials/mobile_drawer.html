@@ -1,0 +1,99 @@
+<!-- Side Drawer & Overlay -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="toggleSideDrawer()"></div>
+<div class="side-drawer" id="side-drawer">
+    <!-- Drawer Header / User Section -->
+    <div class="bg-gradient-to-br from-purple-600 to-indigo-700 p-8 text-white">
+        <div id="mobile-user-section" class="hidden">
+            <div class="flex items-center space-x-4 mb-4">
+                <div
+                    class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white font-bold text-2xl border border-white/30">
+                    <span id="mobile-user-avatar">U</span>
+                </div>
+                <div>
+                    <p id="mobile-user-name" class="font-bold text-lg">User Name</p>
+                    <p id="mobile-user-email" class="text-xs text-purple-100">user@email.com</p>
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <a href="/user/dashboard"
+                    class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full backdrop-blur-sm transition-colors">View
+                    Profile</a>
+            </div>
+        </div>
+        <div id="mobile-guest-section">
+            <p class="text-2xl font-bold mb-2">Welcome Guest</p>
+            <p class="text-sm text-purple-100 mb-6">Experience Vedic traditions with ease.</p>
+            <button onclick="toggleSideDrawer(); openLoginModal();"
+                class="w-full bg-white text-purple-700 font-bold py-3 rounded-xl shadow-lg">Login / Sign Up</button>
+        </div>
+    </div>
+
+    <!-- Menu Links -->
+    <div class="p-6">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Categories</p>
+        <div class="space-y-4">
+            <a href="/#home"
+                class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                onclick="toggleSideDrawer()">
+                <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                        class="fas fa-home"></i></div>
+                <span>Home</span>
+            </a>
+            <a href="/#pandits"
+                class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                onclick="toggleSideDrawer()">
+                <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                        class="fas fa-user-tie"></i></div>
+                <span>Book Pandit Ji</span>
+            </a>
+            <a href="/#essentials"
+                class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                onclick="toggleSideDrawer()">
+                <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                        class="fas fa-shopping-basket"></i></div>
+                <span>Puja Essentials</span>
+            </a>
+            <a href="/#bundles"
+                class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                onclick="toggleSideDrawer()">
+                <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-purple-600"><i
+                        class="fas fa-box-open"></i></div>
+                <span>Ritual Bundles</span>
+            </a>
+        </div>
+
+        <div class="mt-10 pt-10 border-t border-gray-100">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Account</p>
+            <div class="space-y-4">
+                <a href="/user/orders"
+                    class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                    onclick="toggleSideDrawer()">
+                    <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-500"><i
+                            class="fas fa-shopping-bag"></i></div>
+                    <span>My Orders</span>
+                </a>
+                <a href="/user/bookings"
+                    class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                    onclick="toggleSideDrawer()">
+                    <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-500"><i
+                            class="fas fa-calendar-alt"></i></div>
+                    <span>My Bookings</span>
+                </a>
+                <button onclick="logout(); toggleSideDrawer();"
+                    class="flex items-center space-x-4 text-red-600 font-medium w-full text-left"
+                    id="mobile-logout-btn" style="display: none;">
+                    <div class="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center"><i
+                            class="fas fa-sign-out-alt"></i></div>
+                    <span>Logout</span>
+                </button>
+                <a href="/careers"
+                    class="flex items-center space-x-4 text-gray-700 hover:text-purple-600 font-medium transition-colors"
+                    onclick="toggleSideDrawer()">
+                    <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-500"><i
+                            class="fas fa-briefcase"></i></div>
+                    <span>Join Our Team</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

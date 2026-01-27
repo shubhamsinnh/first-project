@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Email - PujaPath{% endblock %}
+
+{% block meta_description %}Verify your email address to complete registration on PujaPath.{% endblock %}
+
+{% block extra_styles %}
+.otp-input {
+    width: 50px;
+    height: 60px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    outline: none;
+    transition: all 0.3s;
+}
+.otp-input:focus {
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+.otp-input.filled {
+    border-color: #22c55e;
+    background-color: #f0fdf4;
+}
+{% endblock %}
+
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<div class="bg-gradient-to-br from-orange-50 via-white to-amber-50 min-h-[80vh] flex items-center justify-center px-4 py-12">
+    <div class="max-w-md w-full">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <div class="inline-flex w-16 h-16 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full items-center justify-center text-white font-bold text-3xl shadow-2xl mb-4">
+                <span>&#x0950;</span>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Verify Your Email</h1>
+            <p class="text-gray-600">We've sent a 6-digit code to</p>
+            <p class="text-orange-600 font-semibold" id="emailDisplay">{{ email }}</p>
+        </div>
+
+        <!-- OTP Card -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8">
+            <!-- Error Message -->
+            <div id="errorMessage" class="hidden bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded mb-6">
+                <p class="font-semibold" id="errorText"></p>
+            </div>
+
+            <!-- Success Message -->
+            <div id="successMessage" class="hidden bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded mb-6">
+                <p class="font-semibold" id="successText"></p>
+            </div>
+
+            <form id="otpForm" class="space-y-6">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-4 text-center">Enter Verification Code</label>
+                    <div class="flex justify-center gap-3" id="otpInputs">
+                        <input type="text" maxlength="1" class="otp-input" data-index="0" inputmode="numeric" pattern="[0-9]*">
+                        <input type="text" maxlength="1" class="otp-input" data-index="1" inputmode="numeric" pattern="[0-9]*">
+                        <input type="text" maxlength="1" class="otp-input" data-index="2" inputmode="numeric" pattern="[0-9]*">
+                        <input type="text" maxlength="1" class="otp-input" data-index="3" inputmode="numeric" pattern="[0-9]*">
+                        <input type="text" maxlength="1" class="otp-input" data-index="4" inputmode="numeric" pattern="[0-9]*">
+                        <input type="text" maxlength="1" class="otp-input" data-index="5" inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                    <input type="hidden" id="otpCode" name="otp_code">
+                    <input type="hidden" id="email" name="email" value="{{ email }}">
+                </div>
+
+                <!-- Timer -->
+                <div class="text-center text-gray-500 text-sm">
+                    <span id="timerText">Code expires in <span id="timer" class="font-bold text-orange-600">5:00</span></span>
+                </div>
+
+                <button type="submit" id="verifyBtn"
+                        class="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white py-4 rounded-xl font-bold hover:from-orange-600 hover:to-pink-600 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                    Verify Email
+                </button>
+            </form>
+
+            <!-- Resend Section -->
+            <div class="mt-6 pt-6 border-t border-gray-200 text-center">
+                <p class="text-gray-600 mb-3">Didn't receive the code?</p>
+                <button id="resendBtn"
+                        class="text-orange-600 hover:text-orange-700 font-semibold disabled:text-gray-400 disabled:cursor-not-allowed"
+                        disabled>
+                    Resend Code <span id="resendTimer">(60s)</span>
+                </button>
+            </div>
+        </div>
+
+        <p class="text-center text-gray-500 text-sm mt-6">
+            <a href="/" class="hover:text-orange-600">Back to Home</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const otpEmail = document.getElementById('email').value;
+    const otpInputs = document.querySelectorAll('.otp-input');
+    const otpCodeField = document.getElementById('otpCode');
+    const otpForm = document.getElementById('otpForm');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const resendBtn = document.getElementById('resendBtn');
+    const resendTimerSpan = document.getElementById('resendTimer');
+    const timerSpan = document.getElementById('timer');
+    const errorMessage = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+    const successMessage = document.getElementById('successMessage');
+    const successText = document.getElementById('successText');
+
+    let otpExpireTime = 5 * 60; // 5 minutes
+    let resendCooldown = 60; // 1 minute
+
+    // OTP Input handling
+    otpInputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            const value = e.target.value.replace(/[^0-9]/g, '');
+            e.target.value = value;
+
+            if (value) {
+                e.target.classList.add('filled');
+                if (index < otpInputs.length - 1) {
+                    otpInputs[index + 1].focus();
+                }
+            } else {
+                e.target.classList.remove('filled');
+            }
+            updateOtpCode();
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                otpInputs[index - 1].focus();
+            }
+        });
+
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pastedData = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+            pastedData.split('').forEach((char, i) => {
+                if (otpInputs[i]) {
+                    otpInputs[i].value = char;
+                    otpInputs[i].classList.add('filled');
+                }
+            });
+            updateOtpCode();
+            if (pastedData.length === 6) {
+                otpInputs[5].focus();
+            }
+        });
+    });
+
+    function updateOtpCode() {
+        const code = Array.from(otpInputs).map(input => input.value).join('');
+        otpCodeField.value = code;
+    }
+
+    // OTP Expiry Timer
+    function startExpiryTimer() {
+        const interval = setInterval(() => {
+            otpExpireTime--;
+            const minutes = Math.floor(otpExpireTime / 60);
+            const seconds = otpExpireTime % 60;
+            timerSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            if (otpExpireTime <= 0) {
+                clearInterval(interval);
+                timerSpan.textContent = 'Expired';
+                timerSpan.classList.remove('text-orange-600');
+                timerSpan.classList.add('text-red-600');
+                verifyBtn.disabled = true;
+            }
+        }, 1000);
+    }
+
+    // Resend Cooldown Timer
+    function startResendTimer() {
+        resendBtn.disabled = true;
+        resendCooldown = 60;
+
+        const interval = setInterval(() => {
+            resendCooldown--;
+            resendTimerSpan.textContent = `(${resendCooldown}s)`;
+
+            if (resendCooldown <= 0) {
+                clearInterval(interval);
+                resendBtn.disabled = false;
+                resendTimerSpan.textContent = '';
+            }
+        }, 1000);
+    }
+
+    // Form Submit
+    otpForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const otpCode = otpCodeField.value;
+        if (otpCode.length !== 6) {
+            showOtpError('Please enter the complete 6-digit code');
+            return;
+        }
+
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = 'Verifying...';
+
+        try {
+            const response = await fetch('/api/verify-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: otpEmail, otp_code: otpCode })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showOtpSuccess('Email verified successfully! Redirecting...');
+                setTimeout(() => {
+                    window.location.href = '/?verified=true';
+                }, 2000);
+            } else {
+                showOtpError(data.error || 'Verification failed');
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify Email';
+            }
+        } catch (error) {
+            showOtpError('An error occurred. Please try again.');
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = 'Verify Email';
+        }
+    });
+
+    // Resend OTP
+    resendBtn.addEventListener('click', async () => {
+        resendBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/resend-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: otpEmail })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showOtpSuccess('New code sent to your email!');
+                otpExpireTime = 5 * 60;
+                startResendTimer();
+                otpInputs.forEach(input => {
+                    input.value = '';
+                    input.classList.remove('filled');
+                });
+                verifyBtn.disabled = false;
+                timerSpan.classList.remove('text-red-600');
+                timerSpan.classList.add('text-orange-600');
+            } else {
+                showOtpError(data.error || 'Failed to resend code');
+                if (data.wait_seconds) {
+                    resendCooldown = data.wait_seconds;
+                    startResendTimer();
+                }
+            }
+        } catch (error) {
+            showOtpError('An error occurred. Please try again.');
+        }
+    });
+
+    function showOtpError(message) {
+        errorText.textContent = message;
+        errorMessage.classList.remove('hidden');
+        successMessage.classList.add('hidden');
+    }
+
+    function showOtpSuccess(message) {
+        successText.textContent = message;
+        successMessage.classList.remove('hidden');
+        errorMessage.classList.add('hidden');
+    }
+
+    // Initialize
+    startExpiryTimer();
+    startResendTimer();
+    otpInputs[0].focus();
+</script>
+{% endblock %}

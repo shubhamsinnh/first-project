@@ -13,11 +13,12 @@ from flask_migrate import Migrate
 from datetime import datetime, timedelta
 import razorpay
 import threading
+from authlib.integrations.flask_client import OAuth
 
 
 # Local imports
 from database import db
-from models import User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking, Order, OrderItem
+from models import User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking, Order, OrderItem, OTP
 
 # Load environment variables
 load_dotenv()
@@ -51,6 +52,20 @@ app.config.update(
     UPLOAD_FOLDER=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/uploads'),
     ALLOWED_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif'},
     MAX_CONTENT_LENGTH=16 * 1024 * 1024  # 16MB file size limit
+)
+
+# Initialize OAuth AFTER app configuration
+oauth = OAuth(app)
+
+# Configure Google OAuth
+google = oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={
+        'scope': 'openid email profile'
+    }
 )
 
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
@@ -437,6 +452,86 @@ def send_order_confirmation_email(order):
         import traceback
         traceback.print_exc()
 
+def send_otp_email(email, otp_code):
+    """Send OTP verification email"""
+    try:
+        if not app.config.get('MAIL_USERNAME') or not app.config.get('MAIL_PASSWORD'):
+            print("WARNING: Email credentials not set. Skipping OTP email.")
+            return False
+
+        from flask_mail import Message
+
+        msg = Message(
+            subject="Your PujaPath Verification Code",
+            recipients=[email]
+        )
+
+        # Plain text version
+        msg.body = f"""
+Your verification code is: {otp_code}
+
+This code will expire in 5 minutes.
+
+If you did not request this code, please ignore this email.
+
+- Team PujaPath
+"""
+
+        # HTML version
+        msg.html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #ff6b35, #f7931e); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+        .content {{ background: #fff; padding: 30px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; }}
+        .otp-code {{ font-size: 32px; font-weight: bold; color: #ff6b35; letter-spacing: 8px; text-align: center; padding: 20px; background: #fff5f0; border-radius: 8px; margin: 20px 0; }}
+        .footer {{ text-align: center; color: #888; font-size: 12px; margin-top: 20px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🙏 PujaPath</h1>
+            <p>Email Verification</p>
+        </div>
+        <div class="content">
+            <p>Namaste!</p>
+            <p>Please use the following verification code to complete your registration:</p>
+            <div class="otp-code">{otp_code}</div>
+            <p><strong>⏰ This code will expire in 5 minutes.</strong></p>
+            <p>If you did not request this code, please ignore this email.</p>
+            <div class="footer">
+                <p>🙏 Team PujaPath</p>
+                <p>Connecting you with sacred traditions</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+        # Send email asynchronously for faster response
+        def send_async_email(flask_app, message):
+            with flask_app.app_context():
+                try:
+                    mail.send(message)
+                    print(f"OTP email sent successfully to {message.recipients}")
+                except Exception as e:
+                    print(f"Error sending OTP email: {e}")
+
+        thread = threading.Thread(target=send_async_email, args=(app._get_current_object(), msg))
+        thread.daemon = True
+        thread.start()
+        print(f"OTP email queued for {email}")
+        return True
+
+    except Exception as e:
+        print(f"Error preparing OTP email: {str(e)}")
+        return False
+
 @app.route("/")
 def home():
     """Main landing page route"""
@@ -459,36 +554,49 @@ def home():
 def register():
     try:
         data = request.json
-        
+        email = data.get('email')
+
         # Check if user exists
-        if User.query.filter_by(email=data.get('email')).first():
+        if User.query.filter_by(email=email).first():
             return jsonify({'error': 'Email already registered'}), 400
-        
+
         if User.query.filter_by(username=data.get('username')).first():
             return jsonify({'error': 'Username already taken'}), 400
-        
-        # Create new user with profile data
+
+        # Create new user with profile data (email_verified defaults to False)
         user = User(
             username=data.get('username'),
-            email=data.get('email'),
+            email=email,
             full_name=data.get('full_name', ''),
-            phone=data.get('phone', '')
+            phone=data.get('phone', ''),
+            email_verified=False
         )
         user.set_password(data.get('password'))
-        
+
         db.session.add(user)
         db.session.commit()
-        
+
+        # Generate and send OTP for email verification
+        new_otp = OTP(email=email)
+        db.session.add(new_otp)
+        db.session.commit()
+        print(f"DEBUG: About to send OTP {new_otp.otp_code} to {email}")
+        email_sent = send_otp_email(email, new_otp.otp_code)
+        print(f"DEBUG: OTP email initiated: {email_sent}")
+
         # Generate JWT token
         access_token = create_access_token(identity=str(user.id))
-        
+
         return jsonify({
-            'message': 'Registration successful',
+            'message': 'Registration successful. Please verify your email.',
             'user': user.to_dict(),
-            'access_token': access_token
+            'access_token': access_token,
+            'requires_verification': True,
+            'verification_url': f'/verify-email?email={email}'
         }), 201
-        
+
     except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 400
 
 # Update your `/api/login` endpoint
@@ -520,6 +628,197 @@ def login():
     except Exception as e:
         # Log the error for debugging: app.logger.error(f"Login error: {e}")
         return jsonify({'error': 'An internal error occurred. Please try again.'}), 500
+
+# OTP Verification Routes
+@app.route('/api/send-otp', methods=['POST'])
+def send_otp():
+    """Send OTP to user's email for verification"""
+    try:
+        data = request.json
+        email = data.get('email')
+
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+
+        # Invalidate any existing unused OTPs for this email
+        existing_otps = OTP.query.filter_by(email=email, is_used=False).all()
+        for otp in existing_otps:
+            otp.is_used = True
+
+        # Create new OTP
+        new_otp = OTP(email=email)
+        db.session.add(new_otp)
+        db.session.commit()
+
+        # Send OTP email
+        if send_otp_email(email, new_otp.otp_code):
+            return jsonify({
+                'message': 'OTP sent successfully',
+                'email': email
+            }), 200
+        else:
+            return jsonify({'error': 'Failed to send OTP email'}), 500
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Send OTP error: {str(e)}")
+        return jsonify({'error': 'Failed to send OTP'}), 500
+
+@app.route('/api/verify-otp', methods=['POST'])
+def verify_otp():
+    """Verify the OTP code entered by user"""
+    try:
+        data = request.json
+        email = data.get('email')
+        otp_code = data.get('otp_code')
+
+        if not email or not otp_code:
+            return jsonify({'error': 'Email and OTP code are required'}), 400
+
+        # Find the most recent valid OTP for this email
+        otp_record = OTP.query.filter_by(
+            email=email,
+            otp_code=otp_code,
+            is_used=False
+        ).order_by(OTP.created_at.desc()).first()
+
+        if not otp_record:
+            return jsonify({'error': 'Invalid OTP code'}), 400
+
+        if not otp_record.is_valid():
+            return jsonify({'error': 'OTP has expired. Please request a new one.'}), 400
+
+        # Mark OTP as used
+        otp_record.mark_as_used()
+
+        # Mark user's email as verified
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.email_verified = True
+
+        db.session.commit()
+
+        return jsonify({
+            'message': 'Email verified successfully',
+            'email_verified': True
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Verify OTP error: {str(e)}")
+        return jsonify({'error': 'Failed to verify OTP'}), 500
+
+@app.route('/api/resend-otp', methods=['POST'])
+def resend_otp():
+    """Resend a new OTP to user's email"""
+    try:
+        data = request.json
+        email = data.get('email')
+
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+
+        # Check rate limiting (optional: prevent spam)
+        recent_otp = OTP.query.filter_by(email=email).order_by(OTP.created_at.desc()).first()
+        if recent_otp:
+            time_diff = datetime.utcnow() - recent_otp.created_at
+            if time_diff.total_seconds() < 60:  # 1 minute cooldown
+                return jsonify({
+                    'error': 'Please wait before requesting another OTP',
+                    'wait_seconds': int(60 - time_diff.total_seconds())
+                }), 429
+
+        # Invalidate existing OTPs
+        existing_otps = OTP.query.filter_by(email=email, is_used=False).all()
+        for otp in existing_otps:
+            otp.is_used = True
+
+        # Create and send new OTP
+        new_otp = OTP(email=email)
+        db.session.add(new_otp)
+        db.session.commit()
+
+        if send_otp_email(email, new_otp.otp_code):
+            return jsonify({
+                'message': 'New OTP sent successfully',
+                'email': email
+            }), 200
+        else:
+            return jsonify({'error': 'Failed to send OTP email'}), 500
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Resend OTP error: {str(e)}")
+        return jsonify({'error': 'Failed to resend OTP'}), 500
+
+@app.route('/verify-email')
+def verify_email_page():
+    """Display OTP verification page"""
+    email = request.args.get('email', '')
+    if not email:
+        return redirect('/')
+    return render_template('verify_otp.html', email=email)
+
+# Google OAuth Routes
+@app.route('/auth/google')
+def google_login():
+    """Initiate Google OAuth login"""
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/auth/google/callback')
+def google_callback():
+    """Handle Google OAuth callback"""
+    try:
+        # Get OAuth token
+        token = google.authorize_access_token()
+        
+        # Get user info from Google
+        user_info = token.get('userinfo')
+        
+        if not user_info:
+            return jsonify({'error': 'Failed to get user info from Google'}), 400
+        
+        email = user_info.get('email')
+        name = user_info.get('name')
+        google_id = user_info.get('sub')
+        
+        # Check if user exists
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            # Create new user
+            # Generate username from email
+            username = email.split('@')[0]
+            # Ensure unique username
+            base_username = username
+            counter = 1
+            while User.query.filter_by(username=username).first():
+                username = f"{base_username}{counter}"
+                counter += 1
+            
+            user = User(
+                username=username,
+                email=email,
+                full_name=name,
+                role='customer'
+            )
+            # Set a random password (user won't use it, they'll login via Google)
+            import secrets
+            user.set_password(secrets.token_urlsafe(32))
+            
+            db.session.add(user)
+            db.session.commit()
+        
+        # Generate JWT token
+        access_token = create_access_token(identity=str(user.id))
+        
+        # Redirect to home with token in URL (frontend will handle storing it)
+        return redirect(f"/?token={access_token}&user={user.username}")
+        
+    except Exception as e:
+        app.logger.error(f"Google OAuth error: {str(e)}")
+        return redirect('/?error=oauth_failed')
 
 @app.route('/api/upload', methods=['POST'])
 @jwt_required()

@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}PujaPath - Your trusted platform for Vedic rituals and spiritual services{% endblock %}">
+    <title>{% block title %}PujaPath - Your Spiritual Journey Partner{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/swiper@8/swiper-bundle.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Smooth Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .animate-fadeInUp {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Card Hover Effects */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Shopping Cart Badge */
+        .cart-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        /* Swiper Navigation Buttons Styling */
+        .swiper-button-next,
+        .swiper-button-prev {
+            color: #2563eb !important;
+            background: white;
+            width: 45px !important;
+            height: 45px !important;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .swiper-button-next:after,
+        .swiper-button-prev:after {
+            font-size: 20px !important;
+            font-weight: bold;
+        }
+
+        .swiper-button-next:hover,
+        .swiper-button-prev:hover {
+            background: #2563eb;
+            color: white !important;
+            transform: scale(1.1);
+        }
+
+        /* Swiper Pagination Styling */
+        .swiper-pagination-bullet {
+            width: 12px;
+            height: 12px;
+            background: #cbd5e1;
+            opacity: 1;
+            transition: all 0.3s ease;
+        }
+
+        .swiper-pagination-bullet-active {
+            background: #2563eb;
+            width: 30px;
+            border-radius: 6px;
+        }
+
+        .swiper-pagination {
+            bottom: 10px !important;
+        }
+
+        /* Add space for pagination */
+        .swiper {
+            padding-bottom: 50px;
+        }
+
+        /* Featured slider specific styling */
+        .featured-slider .swiper-slide {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Button Pulse Animation */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .btn-pulse:hover {
+            animation: pulse 1s infinite;
+        }
+
+        /* Scroll Reveal */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease-out;
+        }
+
+        .scroll-reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Side Drawer & Overlay */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100%;
+            background: white;
+            z-index: 1001;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .side-drawer.active {
+            left: 0;
+        }
+
+        /* Bottom Navigation Bar */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background: rgba(255, 255, 255, 1);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 9999;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #64748b;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .bottom-nav-item.active {
+            color: #7c3aed;
+        }
+
+        .bottom-nav-item i {
+            font-size: 1.25rem;
+            margin-bottom: 2px;
+        }
+
+        /* Glassmorphism Sticky Header */
+        .sticky-header-modern {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        {% block extra_styles %}{% endblock %}
+    </style>
+</head>
+
+<body class="bg-gray-100">
+
+    {% include 'partials/announcement_bar.html' %}
+    {% include 'partials/navbar.html' %}
+    {% include 'partials/mobile_drawer.html' %}
+    {% include 'partials/bottom_nav.html' %}
+
+    <!-- Main Content -->
+    <main id="main-content" class="{% block main_class %}pt-8{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include 'partials/cart_drawer.html' %}
+    {% include 'partials/footer.html' %}
+    {% include 'partials/auth_modals.html' %}
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/swiper@8/swiper-bundle.min.js"></script>
+    <script>
+        // Shopping Cart Functionality
+        let cart = JSON.parse(localStorage.getItem('pujapath_cart')) || [];
+
+        // Handle Google OAuth callback
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const username = urlParams.get('user');
+        if (token) {
+            localStorage.setItem('access_token', token);
+            if (username) {
+                localStorage.setItem('username', username);
+            }
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            // Reload to update UI
+            window.location.reload();
+        }
+
+        function updateCartUI() {
+            const cartCount = document.getElementById('cart-count');
+            const cartItemCount = document.getElementById('cart-item-count');
+            const cartItems = document.getElementById('cart-items');
+            const cartSubtotal = document.getElementById('cart-subtotal');
+            const cartTotal = document.getElementById('cart-total');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            const emptyMessage = document.getElementById('empty-cart-message');
+
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+            if (cart.length === 0) {
+                if (cartCount) cartCount.classList.add('hidden');
+                if (emptyMessage) emptyMessage.classList.remove('hidden');
+                if (cartItemCount) cartItemCount.textContent = '0';
+                if (cartSubtotal) cartSubtotal.textContent = '0';
+                if (cartTotal) cartTotal.textContent = '0';
+                if (checkoutBtn) checkoutBtn.disabled = true;
+
+                // Clear items except empty message
+                if (cartItems) {
+                    const itemsToRemove = cartItems.querySelectorAll('.cart-item');
+                    itemsToRemove.forEach(item => item.remove());
+                }
+            } else {
+                if (cartCount) {
+                    cartCount.classList.remove('hidden');
+                    cartCount.textContent = totalItems;
+                }
+                if (cartItemCount) cartItemCount.textContent = totalItems;
+                if (emptyMessage) emptyMessage.classList.add('hidden');
+                if (checkoutBtn) checkoutBtn.disabled = false;
+
+                let subtotal = 0;
+                const itemsHTML = cart.map(item => {
+                    subtotal += item.price * item.quantity;
+                    return `
+                    <div class="cart-item flex items-center gap-4 bg-gray-50 p-4 rounded-xl hover:bg-gray-100 transition-colors">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-800">${item.name}</h4>
+                            <p class="text-orange-600 font-semibold text-sm">₹${item.price} × ${item.quantity}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="updateQuantity(${item.id}, -1)" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full font-bold transition-colors">-</button>
+                            <span class="w-8 text-center font-bold">${item.quantity}</span>
+                            <button onclick="updateQuantity(${item.id}, 1)" class="w-8 h-8 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-bold transition-colors">+</button>
+                        </div>
+                        <button onclick="removeFromCart(${item.id})" class="text-red-500 hover:text-red-700 font-bold transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                `;
+                }).join('');
+
+                if (cartItems) {
+                    cartItems.innerHTML = itemsHTML;
+                }
+
+                if (cartSubtotal) cartSubtotal.textContent = subtotal;
+                if (cartTotal) cartTotal.textContent = subtotal;
+            }
+
+            localStorage.setItem('pujapath_cart', JSON.stringify(cart));
+        }
+
+        function addToCart(id, name, price, type = 'product') {
+            const existingItem = cart.find(item => item.id === id && item.type === type);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                cart.push({ id, name, price, type, quantity: 1 });
+            }
+            updateCartUI();
+
+            // Auto-open cart drawer
+            const drawer = document.getElementById('cart-drawer');
+            const overlay = document.getElementById('cart-overlay');
+            if (drawer && drawer.classList.contains('translate-x-full')) {
+                drawer.classList.remove('translate-x-full');
+                overlay.classList.remove('opacity-0', 'invisible');
+            }
+
+            // Show success notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-24 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-fadeInUp';
+            notification.innerHTML = `<div class="flex items-center gap-3"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><div><strong>Added to cart!</strong><br><span class="text-sm">${name}</span></div></div>`;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function updateQuantity(id, change) {
+            const item = cart.find(item => item.id === id);
+            if (item) {
+                item.quantity += change;
+                if (item.quantity <= 0) {
+                    removeFromCart(id);
+                } else {
+                    updateCartUI();
+                }
+            }
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(item => item.id !== id);
+            updateCartUI();
+        }
+
+        function toggleCart() {
+            const drawer = document.getElementById('cart-drawer');
+            const overlay = document.getElementById('cart-overlay');
+
+            if (!drawer || !overlay) return;
+
+            const isOpen = !drawer.classList.contains('translate-x-full');
+
+            if (isOpen) {
+                drawer.classList.add('translate-x-full');
+                overlay.classList.add('opacity-0', 'invisible');
+            } else {
+                drawer.classList.remove('translate-x-full');
+                overlay.classList.remove('opacity-0', 'invisible');
+                updateCartUI();
+            }
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+            const cartData = encodeURIComponent(JSON.stringify(cart));
+            window.location.href = `/checkout?cart=${cartData}`;
+        }
+
+        // Initialize cart on page load
+        updateCartUI();
+
+        // ============================================
+        // USER AUTHENTICATION FUNCTIONS
+        // ============================================
+
+        function checkAuthStatus() {
+            const token = localStorage.getItem('token');
+            const userData = localStorage.getItem('user');
+
+            const loginButton = document.getElementById('login-button');
+            const userMenu = document.getElementById('user-menu');
+            const mobileGuestSection = document.getElementById('mobile-guest-section');
+            const mobileUserSection = document.getElementById('mobile-user-section');
+            const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
+
+            if (token && userData) {
+                if (loginButton) {
+                    loginButton.classList.add('hidden');
+                    loginButton.classList.remove('md:flex');
+                }
+                if (userMenu) {
+                    userMenu.classList.remove('hidden');
+                    userMenu.classList.add('flex');
+                }
+
+                if (mobileGuestSection) mobileGuestSection.classList.add('hidden');
+                if (mobileUserSection) mobileUserSection.classList.remove('hidden');
+                if (mobileLogoutBtn) mobileLogoutBtn.style.display = 'flex';
+
+                try {
+                    const user = JSON.parse(userData);
+                    const initial = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
+                    const fullName = user.full_name || user.username || 'User';
+
+                    if (document.getElementById('user-avatar')) document.getElementById('user-avatar').textContent = initial;
+                    if (document.getElementById('user-name')) document.getElementById('user-name').textContent = fullName;
+                    if (document.getElementById('mobile-user-avatar')) document.getElementById('mobile-user-avatar').textContent = initial;
+                    if (document.getElementById('mobile-user-name')) document.getElementById('mobile-user-name').textContent = fullName;
+                    if (document.getElementById('mobile-user-email')) document.getElementById('mobile-user-email').textContent = user.email || '';
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            } else {
+                if (loginButton) {
+                    loginButton.classList.remove('hidden');
+                    loginButton.classList.add('md:flex');
+                }
+                if (userMenu) {
+                    userMenu.classList.add('hidden');
+                    userMenu.classList.remove('flex');
+                }
+
+                if (mobileGuestSection) mobileGuestSection.classList.remove('hidden');
+                if (mobileUserSection) mobileUserSection.classList.add('hidden');
+                if (mobileLogoutBtn) mobileLogoutBtn.style.display = 'none';
+            }
+        }
+
+        function toggleSideDrawer() {
+            const drawer = document.getElementById('side-drawer');
+            const overlay = document.getElementById('drawer-overlay');
+            if (drawer) drawer.classList.toggle('active');
+            if (overlay) overlay.classList.toggle('active');
+            document.body.style.overflow = drawer && drawer.classList.contains('active') ? 'hidden' : '';
+        }
+
+        // Sticky Header scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('main-nav');
+            if (nav) {
+                if (window.scrollY > 50) {
+                    nav.classList.add('sticky-header-modern', 'shadow-md', 'py-2');
+                    nav.classList.remove('py-4');
+                } else {
+                    nav.classList.remove('sticky-header-modern', 'shadow-md', 'py-2');
+                    nav.classList.add('py-4');
+                }
+            }
+        });
+
+        function openLoginModal() {
+            const modal = document.getElementById('login-modal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeLoginModal() {
+            const modal = document.getElementById('login-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function showRegisterForm() {
+            closeLoginModal();
+            setTimeout(() => {
+                const modal = document.getElementById('register-modal');
+                if (modal) modal.classList.add('active');
+            }, 300);
+        }
+
+        function openRegisterModal() {
+            const modal = document.getElementById('register-modal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeRegisterModal() {
+            const modal = document.getElementById('register-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function showLoginForm() {
+            closeRegisterModal();
+            setTimeout(() => {
+                const modal = document.getElementById('login-modal');
+                if (modal) modal.classList.add('active');
+            }, 300);
+        }
+
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('user-dropdown');
+            if (dropdown) dropdown.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', function (event) {
+            const userMenu = document.getElementById('user-menu');
+            const dropdown = document.getElementById('user-dropdown');
+
+            if (userMenu && dropdown && !userMenu.contains(event.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            checkAuthStatus();
+            alert('Logged out successfully!');
+            window.location.href = '/';
+        }
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    document.querySelector('.mobile-menu')?.classList.add('hidden');
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Scroll Reveal Animation
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+
+        // Initialize auth forms
+        document.addEventListener('DOMContentLoaded', function () {
+            checkAuthStatus();
+
+            // Login form handler
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+
+                    try {
+                        const response = await fetch('/api/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            localStorage.setItem('token', data.access_token);
+                            localStorage.setItem('user', JSON.stringify(data.user));
+                            checkAuthStatus();
+
+                            const errorDiv = document.getElementById('login-error');
+                            errorDiv.className = 'bg-green-100 text-green-700 p-3 rounded mb-4 text-center text-sm font-medium';
+                            errorDiv.textContent = 'Login successful! Redirecting...';
+                            errorDiv.classList.remove('hidden');
+
+                            setTimeout(() => {
+                                closeLoginModal();
+                                window.location.href = '/';
+                            }, 1000);
+                        } else {
+                            const errorDiv = document.getElementById('login-error');
+                            errorDiv.className = 'bg-red-100 text-red-600 p-3 rounded mb-4 text-center text-sm font-medium';
+                            errorDiv.textContent = data.error || 'Invalid credentials';
+                            errorDiv.classList.remove('hidden');
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        alert('Network error. Please try again.');
+                    }
+                });
+            }
+
+            // Register form handler
+            const registerForm = document.getElementById('register-form');
+            if (registerForm) {
+                registerForm.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+
+                    const name = document.getElementById('register-name').value;
+                    const email = document.getElementById('register-email').value;
+                    const password = document.getElementById('register-password').value;
+                    const confirmPassword = document.getElementById('register-confirm').value;
+
+                    if (password !== confirmPassword) {
+                        const errorDiv = document.getElementById('register-error');
+                        errorDiv.className = 'bg-red-100 text-red-600 p-3 rounded mb-4 text-center text-sm font-medium';
+                        errorDiv.textContent = 'Passwords do not match!';
+                        errorDiv.classList.remove('hidden');
+                        return;
+                    }
+
+                    if (password.length < 6) {
+                        const errorDiv = document.getElementById('register-error');
+                        errorDiv.className = 'bg-red-100 text-red-600 p-3 rounded mb-4 text-center text-sm font-medium';
+                        errorDiv.textContent = 'Password must be at least 6 characters long';
+                        errorDiv.classList.remove('hidden');
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('/api/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                full_name: name,
+                                email: email,
+                                username: email.split('@')[0],
+                                password: password
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            localStorage.setItem('token', data.access_token);
+                            localStorage.setItem('user', JSON.stringify(data.user));
+                            checkAuthStatus();
+
+                            const errorDiv = document.getElementById('register-error');
+                            errorDiv.className = 'bg-green-100 text-green-700 p-3 rounded mb-4 text-center text-sm font-medium';
+                            errorDiv.textContent = 'Registration successful! Redirecting...';
+                            errorDiv.classList.remove('hidden');
+
+                            setTimeout(() => {
+                                closeRegisterModal();
+                                registerForm.reset();
+                                window.location.href = '/user/dashboard';
+                            }, 1500);
+                        } else {
+                            const errorDiv = document.getElementById('register-error');
+                            errorDiv.className = 'bg-red-100 text-red-600 p-3 rounded mb-4 text-center text-sm font-medium';
+                            errorDiv.textContent = data.error || 'Please try again';
+                            errorDiv.classList.remove('hidden');
+                        }
+                    } catch (error) {
+                        console.error('Registration error:', error);
+                        alert('Network error. Please try again.');
+                    }
+                });
+            }
+
+            // Close modals when clicking outside
+            const loginModal = document.getElementById('login-modal');
+            if (loginModal) {
+                loginModal.addEventListener('click', function (e) {
+                    if (e.target === this) closeLoginModal();
+                });
+            }
+
+            const registerModal = document.getElementById('register-modal');
+            if (registerModal) {
+                registerModal.addEventListener('click', function (e) {
+                    if (e.target === this) closeRegisterModal();
+                });
+            }
+        });
+
+        window.addEventListener('pageshow', checkAuthStatus);
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

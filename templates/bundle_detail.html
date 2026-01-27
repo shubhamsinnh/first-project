@@ -1,1475 +1,1193 @@
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ bundle.name }} | PujaPath</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Poppins', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            800: '#9a3412',
-                            900: '#7c2d12',
-                        },
-                        stone: {
-                            50: '#fafaf9',
-                            900: '#1c1917',
-                        },
-                        premium: {
-                            gold: '#f5e6d3',
-                            cream: '#fffaf0',
-                            bronze: '#cd7f32',
-                            sage: '#e8f5e9'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+{% block title %}{{ bundle.name }} | PujaPath{% endblock %}
 
-        /* Hide scrollbar for gallery */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
+{% block meta_description %}{{ bundle.description[:150] if bundle.description else 'Complete ritual bundle with all items included. Expert curated by our pandits.' }}{% endblock %}
 
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+{% block extra_styles %}
+/* Hide scrollbar for gallery */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
 
-        details>summary {
-            list-style: none;
-        }
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
 
-        details>summary::-webkit-details-marker {
-            display: none;
-        }
+details>summary {
+    list-style: none;
+}
 
-        details[open] summary~* {
-            animation: fadeIn 0.3s ease-in-out;
-        }
+details>summary::-webkit-details-marker {
+    display: none;
+}
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-5px);
-            }
+details[open] summary~* {
+    animation: fadeInDetails 0.3s ease-in-out;
+}
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+@keyframes fadeInDetails {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
 
-        .sticky-summary {
-            position: sticky;
-            top: 6rem;
-            /* Adjusted for sticky nav */
-        }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
-        body {
-            padding-bottom: 80px;
-        }
+.sticky-summary {
+    position: sticky;
+    top: 6rem;
+}
 
-        @media (min-width: 1024px) {
-            body {
-                padding-bottom: 0;
-            }
-        }
+body {
+    padding-bottom: 80px;
+}
 
-        .cart-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: bold;
-        }
+@media (min-width: 1024px) {
+    body {
+        padding-bottom: 0;
+    }
+}
 
-        /* Custom styles for new features */
-        .product-card {
-            transition: all 0.3s ease;
-        }
+/* Custom styles for bundle features */
+.product-card {
+    transition: all 0.3s ease;
+}
 
-        .product-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
 
-        .progress-bar {
-            animation: progress-fill 2s ease-out forwards;
-        }
+.progress-bar {
+    animation: progress-fill 2s ease-out forwards;
+}
 
-        @keyframes progress-fill {
-            from {
-                width: 0%;
-            }
-        }
+@keyframes progress-fill {
+    from {
+        width: 0%;
+    }
+}
 
-        .schedule-input:focus {
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
-        }
+.schedule-input:focus {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+}
 
-        .bundle-comparison tr:nth-child(even) {
-            background-color: #f9fafb;
-        }
+.bundle-comparison tr:nth-child(even) {
+    background-color: #f9fafb;
+}
 
-        .bundle-comparison tr:hover {
-            background-color: #fef3c7;
-        }
+.bundle-comparison tr:hover {
+    background-color: #fef3c7;
+}
 
-        .faq-item {
-            transition: all 0.3s ease;
-        }
+.faq-item {
+    transition: all 0.3s ease;
+}
 
-        .faq-item[open] {
-            background-color: #fefce8;
-        }
+.faq-item[open] {
+    background-color: #fefce8;
+}
 
-        .live-chat-btn {
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-        }
+.live-chat-btn {
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
 
-        .live-chat-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
-        }
+.live-chat-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
 
-        .special-toggle {
-            position: relative;
-            display: inline-block;
-        }
+.special-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
 
-        .special-toggle input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+.special-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
 
-        .special-toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #e5e7eb;
-            transition: .4s;
-            border-radius: 34px;
-        }
+.special-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #e5e7eb;
+    transition: .4s;
+    border-radius: 34px;
+}
 
-        .special-toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 2px;
-            bottom: 2px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
+.special-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
 
-        .special-toggle input:checked+.special-toggle-slider {
-            background-color: #10b981;
-        }
+.special-toggle input:checked+.special-toggle-slider {
+    background-color: #10b981;
+}
 
-        .special-toggle input:checked+.special-toggle-slider:before {
-            transform: translateX(20px);
-        }
+.special-toggle input:checked+.special-toggle-slider:before {
+    transform: translateX(20px);
+}
 
-        /* Premium bundle contents styling */
-        .premium-bundle-contents {
-            background: linear-gradient(135deg, #f9f3e9 0%, #fffaf0 100%);
-            border: 1px solid #e6dcc9;
-            box-shadow: 0 4px 20px rgba(205, 127, 50, 0.08);
-            position: relative;
-            overflow: hidden;
-        }
+/* Premium bundle contents styling */
+.premium-bundle-contents {
+    background: linear-gradient(135deg, #f9f3e9 0%, #fffaf0 100%);
+    border: 1px solid #e6dcc9;
+    box-shadow: 0 4px 20px rgba(205, 127, 50, 0.08);
+    position: relative;
+    overflow: hidden;
+}
 
-        .premium-bundle-contents::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #cd7f32, transparent);
-        }
+.premium-bundle-contents::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #cd7f32, transparent);
+}
 
-        .premium-item-card {
-            background: white;
-            border: 1px solid #f0e6d2;
-            transition: all 0.3s ease;
-        }
+.premium-item-card {
+    background: white;
+    border: 1px solid #f0e6d2;
+    transition: all 0.3s ease;
+}
 
-        .premium-item-card:hover {
-            border-color: #cd7f32;
-            box-shadow: 0 4px 12px rgba(205, 127, 50, 0.15);
-        }
+.premium-item-card:hover {
+    border-color: #cd7f32;
+    box-shadow: 0 4px 12px rgba(205, 127, 50, 0.15);
+}
 
-        .premium-badge {
-            background: linear-gradient(135deg, #d4af37 0%, #f5e6d3 100%);
-            color: #8b5a2b;
-            border: 1px solid #e6dcc9;
-        }
-    </style>
-</head>
+.premium-badge {
+    background: linear-gradient(135deg, #d4af37 0%, #f5e6d3 100%);
+    color: #8b5a2b;
+    border: 1px solid #e6dcc9;
+}
+{% endblock %}
 
-<body class="bg-white text-stone-900 min-h-screen">
+{% block main_class %}{% endblock %}
 
-    <!-- Fixed Announcement Bar -->
-    <div
-        class="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white text-center py-3 px-4 text-sm relative z-50 font-semibold shadow-lg">
-        <span class="animate-pulse">SPECIAL OFFER!</span> Get 20% OFF on first booking + FREE delivery on orders above
-        ₹500!
-    </div>
-
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm sticky top-0 z-40 border-b border-gray-100">
-        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-            <!-- Mobile Menu -->
-            <button class="lg:hidden text-gray-800" onclick="toggleMobileMenu()">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-
-            <!-- Logo Area -->
-            <a href="{{ url_for('home') }}" class="flex items-center space-x-3">
-                <div
-                    class="w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-md">
-                    ॐ
-                </div>
-                <span class="text-xl font-bold gradient-text hidden sm:inline-block">PujaPath</span>
-            </a>
-
-            <!-- Desktop Links -->
-            <div class="hidden lg:flex items-center gap-8">
-                <a href="{{ url_for('home') }}"
-                    class="text-lg font-medium text-gray-700 hover:text-purple-600 transition-colors">Home</a>
-                <a href="{{ url_for('home') }}#essentials"
-                    class="text-lg font-medium text-gray-700 hover:text-purple-600 transition-colors">Essentials</a>
-                <a href="{{ url_for('home') }}#bundles"
-                    class="text-lg font-medium text-gray-700 hover:text-purple-600 transition-colors">Rituals</a>
-            </div>
-
-            <!-- Cart Area -->
-            <div class="flex items-center gap-4">
-                <button onclick="viewCart()"
-                    class="relative p-2 rounded-full hover:bg-gray-100 transition-colors group">
-                    <svg class="w-6 h-6 text-gray-700 group-hover:text-purple-600 transition-colors duration-300"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <span id="cart-count" class="cart-badge hidden">0</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Mobile Menu Dropdown -->
-        <div id="mobile-menu" class="lg:hidden hidden bg-white shadow-lg border-t border-gray-100">
-            <div class="container mx-auto px-4 py-4 space-y-3">
-                <a href="{{ url_for('home') }}"
-                    class="block py-2 text-sm font-medium text-gray-600 hover:text-purple-600 uppercase tracking-wide transition-colors">Home</a>
-                <a href="{{ url_for('home') }}#essentials"
-                    class="block py-2 text-sm font-medium text-gray-600 hover:text-purple-600 uppercase tracking-wide transition-colors">Essentials</a>
-                <a href="{{ url_for('home') }}#bundles"
-                    class="block py-2 text-sm font-medium text-gray-600 hover:text-purple-600 uppercase tracking-wide transition-colors">Rituals</a>
-            </div>
-        </div>
+{% block content %}
+<!-- Breadcrumb -->
+<div class="container mx-auto px-4 py-4 pt-6">
+    <nav class="text-xs text-gray-500 uppercase tracking-wider font-medium flex items-center">
+        <a href="{{ url_for('home') }}" class="hover:text-purple-600 transition-colors">Home</a>
+        <i class="fas fa-chevron-right text-[10px] mx-2 text-gray-300"></i>
+        <a href="{{ url_for('home') }}#bundles" class="hover:text-purple-600 transition-colors">Bundles</a>
+        <i class="fas fa-chevron-right text-[10px] mx-2 text-gray-300"></i>
+        <span class="text-gray-900 font-semibold">{{ bundle.name }}</span>
     </nav>
+</div>
 
-    <!-- Breadcrumb -->
-    <div class="container mx-auto px-4 py-4 pt-6">
-        <nav class="text-xs text-gray-500 uppercase tracking-wider font-medium flex items-center">
-            <a href="{{ url_for('home') }}" class="hover:text-purple-600 transition-colors">Home</a>
-            <i class="fas fa-chevron-right text-[10px] mx-2 text-gray-300"></i>
-            <a href="{{ url_for('home') }}#bundles" class="hover:text-purple-600 transition-colors">Bundles</a>
-            <i class="fas fa-chevron-right text-[10px] mx-2 text-gray-300"></i>
-            <span class="text-gray-900 font-semibold">{{ bundle.name }}</span>
-        </nav>
-    </div>
+<!-- Main Bundle Section -->
+<div class="container mx-auto px-4 lg:px-8 max-w-7xl mt-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20">
 
-    <!-- Main Bundle Section -->
-    <div class="container mx-auto px-4 lg:px-8 max-w-7xl mt-4">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20">
+        <!-- Image Section -->
+        <div class="space-y-4">
+            <div
+                class="bg-gray-50 aspect-[4/5] rounded-xl overflow-hidden relative group shadow-lg border border-gray-100 product-card">
+                <img src="{{ url_for('static', filename=bundle.image_url) }}" alt="{{ bundle.name }}"
+                    class="w-full h-full object-cover object-center transition-transform duration-700 ease-in-out group-hover:scale-105">
 
-            <!-- Image Section -->
-            <div class="space-y-4">
+                <!-- Discount Badge -->
                 <div
-                    class="bg-gray-50 aspect-[4/5] rounded-xl overflow-hidden relative group shadow-lg border border-gray-100 product-card">
-                    <img src="{{ url_for('static', filename=bundle.image_url) }}" alt="{{ bundle.name }}"
-                        class="w-full h-full object-cover object-center transition-transform duration-700 ease-in-out group-hover:scale-105">
-
-                    <!-- Discount Badge -->
-                    <div
-                        class="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg uppercase tracking-wider animate-pulse">
-                        Save {{ ((bundle.original_price - bundle.discounted_price)/bundle.original_price *
-                        100)|round|int }}%
-                    </div>
-
-                    <!-- Stock Indicator -->
-                    <div
-                        class="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full">
-                        <i class="fas fa-fire text-orange-400 mr-1"></i>Hot Deal
-                    </div>
-
-                    <!-- Package Type Badge -->
-                    <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm">
-                        <span class="text-sm font-semibold text-gray-700">✨ Complete Package</span>
-                    </div>
-
-                    <!-- Quick View Button -->
-                    <div
-                        class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <button onclick="zoomImage()"
-                            class="bg-white text-gray-800 px-4 py-2 rounded-full font-bold text-sm shadow-lg transform -translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                            <i class="fas fa-expand-alt mr-2"></i>Quick View
-                        </button>
-                    </div>
+                    class="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg uppercase tracking-wider animate-pulse">
+                    Save {{ ((bundle.original_price - bundle.discounted_price)/bundle.original_price *
+                    100)|round|int }}%
                 </div>
 
-                <!-- Stock Progress Bar -->
-                <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
-                    <div class="flex justify-between text-xs text-gray-700 mb-2">
-                        <span class="font-bold">Limited Stock Available</span>
-                        <span class="font-bold text-amber-700">{% if bundle.stock_quantity %}{{ bundle.stock_quantity
-                            }}{% else %}12{% endif %} left</span>
-                    </div>
-                    <div class="w-full bg-amber-100 rounded-full h-2">
-                        <div class="bg-gradient-to-r from-amber-500 to-orange-600 h-2 rounded-full progress-bar"
-                            style="width: {% if bundle.stock_percentage %}{{ bundle.stock_percentage }}{% else %}75{% endif %}%">
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-600 mt-2 text-center">90% booked this week</p>
+                <!-- Stock Indicator -->
+                <div
+                    class="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full">
+                    <i class="fas fa-fire text-orange-400 mr-1"></i>Hot Deal
                 </div>
 
-                <!-- Grid of abstract "More Views" -->
-                <div class="grid grid-cols-3 gap-4">
-                    <div
-                        class="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 cursor-pointer opacity-80 hover:opacity-100 transition-all hover:border-purple-300">
-                        <img src="{{ url_for('static', filename=bundle.image_url) }}"
-                            class="w-full h-full object-cover object-top filter sepia-[.2] hover:filter-none transition-all">
-                    </div>
-                    <div
-                        class="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 cursor-pointer opacity-80 hover:opacity-100 transition-all hover:border-purple-300">
-                        <img src="{{ url_for('static', filename=bundle.image_url) }}"
-                            class="w-full h-full object-cover object-center transform scale-150 hover:scale-125 transition-transform duration-500">
-                    </div>
-                    <div
-                        class="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 cursor-pointer opacity-80 hover:opacity-100 transition-all hover:border-purple-300 flex items-center justify-center text-gray-400 hover:text-purple-500">
-                        <i class="fas fa-play text-2xl"></i>
-                    </div>
+                <!-- Package Type Badge -->
+                <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm">
+                    <span class="text-sm font-semibold text-gray-700">✨ Complete Package</span>
+                </div>
+
+                <!-- Quick View Button -->
+                <div
+                    class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <button onclick="zoomImage()"
+                        class="bg-white text-gray-800 px-4 py-2 rounded-full font-bold text-sm shadow-lg transform -translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                        <i class="fas fa-expand-alt mr-2"></i>Quick View
+                    </button>
                 </div>
             </div>
 
-            <!-- Details Section -->
-            <div class="relative">
-                <div class="sticky-summary lg:max-w-lg">
-                    <!-- Header -->
-                    <h1
-                        class="text-4xl lg:text-6xl font-serif font-bold text-gray-900 mb-4 leading-tight tracking-tight">
-                        {{ bundle.name }}
-                    </h1>
-
-                    <!-- Rating & Price -->
-                    <div class="flex items-center justify-between mb-8 border-b border-gray-100 pb-6">
-                        <div>
-                            <div class="flex items-baseline gap-3">
-                                <span class="text-3xl font-medium text-amber-600">₹{{ bundle.discounted_price }}</span>
-                                <span class="text-lg text-gray-400 line-through font-light">₹{{ bundle.original_price
-                                    }}</span>
-                                <span
-                                    class="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full inline-block align-middle ml-1 shadow-sm">
-                                    Save ₹{{ bundle.original_price - bundle.discounted_price }}
-                                </span>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-1">MRP incl. of all taxes</p>
-                        </div>
-                        <div class="text-right">
-                            <div class="flex text-amber-400 text-sm justify-end">
-                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
-                                    class="fas fa-star"></i><i class="fas fa-star"></i>
-                            </div>
-                            <p
-                                class="text-xs text-gray-500 underline mt-1 cursor-pointer hover:text-amber-600 transition-colors">
-                                Read 89 reviews
-                            </p>
-                        </div>
+            <!-- Stock Progress Bar -->
+            <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
+                <div class="flex justify-between text-xs text-gray-700 mb-2">
+                    <span class="font-bold">Limited Stock Available</span>
+                    <span class="font-bold text-amber-700">{% if bundle.stock_quantity %}{{ bundle.stock_quantity
+                        }}{% else %}12{% endif %} left</span>
+                </div>
+                <div class="w-full bg-amber-100 rounded-full h-2">
+                    <div class="bg-gradient-to-r from-amber-500 to-orange-600 h-2 rounded-full progress-bar"
+                        style="width: {% if bundle.stock_percentage %}{{ bundle.stock_percentage }}{% else %}75{% endif %}%">
                     </div>
+                </div>
+                <p class="text-xs text-gray-600 mt-2 text-center">90% booked this week</p>
+            </div>
 
-                    <!-- Stock & Shipping Info -->
-                    <div class="mb-6 flex items-center gap-4 text-sm">
-                        <div class="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
-                            <i class="fas fa-truck text-green-600"></i>
-                            <span class="text-gray-700 font-medium">Free Delivery in 2-3 days</span>
-                        </div>
-                        <div class="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
-                            <i class="fas fa-box text-blue-600"></i>
-                            <span class="text-gray-700 font-medium">Items: {% if bundle.item_count %}{{
-                                bundle.item_count }}{% else %}10-12{% endif %} pieces</span>
-                        </div>
-                    </div>
+            <!-- Grid of abstract "More Views" -->
+            <div class="grid grid-cols-3 gap-4">
+                <div
+                    class="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 cursor-pointer opacity-80 hover:opacity-100 transition-all hover:border-purple-300">
+                    <img src="{{ url_for('static', filename=bundle.image_url) }}"
+                        class="w-full h-full object-cover object-top filter sepia-[.2] hover:filter-none transition-all">
+                </div>
+                <div
+                    class="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 cursor-pointer opacity-80 hover:opacity-100 transition-all hover:border-purple-300">
+                    <img src="{{ url_for('static', filename=bundle.image_url) }}"
+                        class="w-full h-full object-cover object-center transform scale-150 hover:scale-125 transition-transform duration-500">
+                </div>
+                <div
+                    class="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 cursor-pointer opacity-80 hover:opacity-100 transition-all hover:border-purple-300 flex items-center justify-center text-gray-400 hover:text-purple-500">
+                    <i class="fas fa-play text-2xl"></i>
+                </div>
+            </div>
+        </div>
 
-                    <!-- Description -->
-                    <p class="text-gray-600 leading-relaxed mb-8 font-light text-lg">
-                        {{ bundle.description }}
-                    </p>
+        <!-- Details Section -->
+        <div class="relative">
+            <div class="sticky-summary lg:max-w-lg">
+                <!-- Header -->
+                <h1
+                    class="text-4xl lg:text-6xl font-serif font-bold text-gray-900 mb-4 leading-tight tracking-tight">
+                    {{ bundle.name }}
+                </h1>
 
-                    <!-- Benefits Grid -->
-                    <div
-                        class="grid grid-cols-4 gap-2 mb-8 text-center bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-200">
-                        <div class="flex flex-col items-center gap-2">
-                            <div
-                                class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-amber-500 border border-amber-100 hover:scale-110 transition-transform">
-                                <i class="fas fa-boxes text-xl"></i>
-                            </div>
+                <!-- Rating & Price -->
+                <div class="flex items-center justify-between mb-8 border-b border-gray-100 pb-6">
+                    <div>
+                        <div class="flex items-baseline gap-3">
+                            <span class="text-3xl font-medium text-amber-600">₹{{ bundle.discounted_price }}</span>
+                            <span class="text-lg text-gray-400 line-through font-light">₹{{ bundle.original_price
+                                }}</span>
                             <span
-                                class="text-[10px] font-bold uppercase tracking-wide text-gray-800 leading-tight">Complete<br>Package</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-2">
-                            <div
-                                class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-amber-500 border border-amber-100 hover:scale-110 transition-transform">
-                                <i class="fas fa-user-tie text-xl"></i>
-                            </div>
-                            <span
-                                class="text-[10px] font-bold uppercase tracking-wide text-gray-800 leading-tight">Expert<br>Curated</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-2">
-                            <div
-                                class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-amber-500 border border-amber-100 hover:scale-110 transition-transform">
-                                <i class="fas fa-rupee-sign text-xl"></i>
-                            </div>
-                            <span
-                                class="text-[10px] font-bold uppercase tracking-wide text-gray-800 leading-tight">Best<br>Value</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-2">
-                            <div
-                                class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-amber-500 border border-amber-100 hover:scale-110 transition-transform">
-                                <i class="fas fa-clock text-xl"></i>
-                            </div>
-                            <span
-                                class="text-[10px] font-bold uppercase tracking-wide text-gray-800 leading-tight">Time<br>Saving</span>
-                        </div>
-                    </div>
-
-                    <!-- Premium Bundle Contents -->
-                    <div class="mb-8 premium-bundle-contents rounded-xl p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="w-10 h-10 bg-gradient-to-br from-premium-gold to-premium-cream rounded-full flex items-center justify-center shadow-sm">
-                                    <i class="fas fa-gem text-premium-bronze text-lg"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-bold text-gray-800">Bundle Contents</h3>
-                                    <p class="text-xs text-gray-600">Premium curated items for your ritual</p>
-                                </div>
-                            </div>
-                            <span class="px-3 py-1 premium-badge rounded-full text-xs font-bold">
-                                {{ bundle.item_count or '12' }} Items
+                                class="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full inline-block align-middle ml-1 shadow-sm">
+                                Save ₹{{ bundle.original_price - bundle.discounted_price }}
                             </span>
                         </div>
-
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {% if bundle.contents %}
-                            {% for item in bundle.contents %}
-                            <div class="premium-item-card rounded-lg p-3">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 bg-gradient-to-br from-premium-cream to-premium-gold rounded-lg overflow-hidden flex-shrink-0 border border-amber-100">
-                                        <img src="{{ item.image_url }}" class="w-full h-full object-cover">
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-semibold text-gray-800 truncate">{{ item.name }}</p>
-                                        <p class="text-[10px] text-premium-bronze font-medium mt-1">
-                                            <i class="fas fa-check-circle mr-1"></i>Qty: {{ item.quantity }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                            {% else %}
-                            <!-- Fallback if contents not provided -->
-                            {% for item in bundle.includes.split(',') %}
-                            <div class="premium-item-card rounded-lg p-3">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-10 h-10 bg-gradient-to-br from-premium-cream to-premium-gold rounded-lg flex items-center justify-center flex-shrink-0 border border-amber-100">
-                                        <i class="fas fa-star text-premium-bronze text-sm"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-semibold text-gray-800 truncate">{{ item.strip() }}</p>
-                                        <p class="text-[10px] text-premium-bronze font-medium mt-1">
-                                            <i class="fas fa-award mr-1"></i>Premium Quality
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                            {% endif %}
+                        <p class="text-xs text-gray-500 mt-1">MRP incl. of all taxes</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="flex text-amber-400 text-sm justify-end">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                                class="fas fa-star"></i><i class="fas fa-star"></i>
                         </div>
+                        <p
+                            class="text-xs text-gray-500 underline mt-1 cursor-pointer hover:text-amber-600 transition-colors">
+                            Read 89 reviews
+                        </p>
+                    </div>
+                </div>
 
-                        <div class="mt-6 pt-4 border-t border-amber-100 text-center">
-                            <p class="text-xs text-gray-600">
-                                Total Value:
-                                <span class="line-through text-gray-400">₹{% if bundle.total_individual_value %}{{
-                                    bundle.total_individual_value }}{% else %}{{ bundle.original_price * 1.5 }}{% endif
-                                    %}</span>
-                                <span class="font-bold text-green-600 ml-2">
-                                    You Save: ₹{% if bundle.total_individual_value %}{{ bundle.total_individual_value -
-                                    bundle.discounted_price }}{% else %}{{ (bundle.original_price * 1.5) -
-                                    bundle.discounted_price }}{% endif %}
-                                </span>
-                            </p>
+                <!-- Stock & Shipping Info -->
+                <div class="mb-6 flex items-center gap-4 text-sm">
+                    <div class="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+                        <i class="fas fa-truck text-green-600"></i>
+                        <span class="text-gray-700 font-medium">Free Delivery in 2-3 days</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+                        <i class="fas fa-box text-blue-600"></i>
+                        <span class="text-gray-700 font-medium">Items: {% if bundle.item_count %}{{
+                            bundle.item_count }}{% else %}10-12{% endif %} pieces</span>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <p class="text-gray-600 leading-relaxed mb-8 font-light text-lg">
+                    {{ bundle.description }}
+                </p>
+
+                <!-- Benefits Grid -->
+                <div
+                    class="grid grid-cols-4 gap-2 mb-8 text-center bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-200">
+                    <div class="flex flex-col items-center gap-2">
+                        <div
+                            class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-amber-500 border border-amber-100 hover:scale-110 transition-transform">
+                            <i class="fas fa-boxes text-xl"></i>
                         </div>
+                        <span
+                            class="text-[10px] font-bold uppercase tracking-wide text-gray-800 leading-tight">Complete<br>Package</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <div
+                            class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-amber-500 border border-amber-100 hover:scale-110 transition-transform">
+                            <i class="fas fa-user-tie text-xl"></i>
+                        </div>
+                        <span
+                            class="text-[10px] font-bold uppercase tracking-wide text-gray-800 leading-tight">Expert<br>Curated</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <div
+                            class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-amber-500 border border-amber-100 hover:scale-110 transition-transform">
+                            <i class="fas fa-rupee-sign text-xl"></i>
+                        </div>
+                        <span
+                            class="text-[10px] font-bold uppercase tracking-wide text-gray-800 leading-tight">Best<br>Value</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <div
+                            class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-amber-500 border border-amber-100 hover:scale-110 transition-transform">
+                            <i class="fas fa-clock text-xl"></i>
+                        </div>
+                        <span
+                            class="text-[10px] font-bold uppercase tracking-wide text-gray-800 leading-tight">Time<br>Saving</span>
+                    </div>
+                </div>
+
+                <!-- Premium Bundle Contents -->
+                <div class="mb-8 premium-bundle-contents rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 bg-gradient-to-br from-premium-gold to-premium-cream rounded-full flex items-center justify-center shadow-sm">
+                                <i class="fas fa-gem text-premium-bronze text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800">Bundle Contents</h3>
+                                <p class="text-xs text-gray-600">Premium curated items for your ritual</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 premium-badge rounded-full text-xs font-bold">
+                            {{ bundle.item_count or '12' }} Items
+                        </span>
                     </div>
 
-                    <!-- Bundle Comparison Table -->
-                    <div class="mb-8">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <i class="fas fa-balance-scale text-purple-600"></i> Why Choose Bundle?
-                        </h3>
-                        <div class="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
-                            <table class="w-full text-sm bundle-comparison">
-                                <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
-                                    <tr>
-                                        <th class="py-3 px-4 text-left font-bold text-gray-700">Features</th>
-                                        <th class="py-3 px-4 text-left font-bold text-amber-600">This Bundle</th>
-                                        <th class="py-3 px-4 text-left font-bold text-gray-400">Buying Separately</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <tr>
-                                        <td class="py-3 px-4 font-medium text-gray-700">Total Items</td>
-                                        <td class="py-3 px-4 font-bold text-green-600">
-                                            <i class="fas fa-check-circle text-green-500 mr-1"></i>
-                                            {% if bundle.item_count %}{{ bundle.item_count }}{% else %}12{% endif %}
-                                            items included
-                                        </td>
-                                        <td class="py-3 px-4 text-gray-500">Purchase individually</td>
-                                    </tr>
-                                    <tr class="bg-gray-50/50">
-                                        <td class="py-3 px-4 font-medium text-gray-700">Price</td>
-                                        <td class="py-3 px-4 font-bold text-amber-600 text-lg">₹{{
-                                            bundle.discounted_price }}</td>
-                                        <td class="py-3 px-4 line-through text-gray-400">
-                                            ₹{% if bundle.total_individual_value %}{{ bundle.total_individual_value }}{%
-                                            else %}{{ bundle.original_price * 1.5 }}{% endif %}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-3 px-4 font-medium text-gray-700">Pandit Guidance</td>
-                                        <td class="py-3 px-4">
-                                            <i class="fas fa-check text-green-500 mr-1"></i>
-                                            <span class="font-medium">Included Free</span>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <i class="fas fa-times text-red-500 mr-1"></i>
-                                            <span class="text-gray-500">Extra ₹500-1000</span>
-                                        </td>
-                                    </tr>
-                                    <tr class="bg-gray-50/50">
-                                        <td class="py-3 px-4 font-medium text-gray-700">Time Required</td>
-                                        <td class="py-3 px-4">
-                                            <i class="fas fa-check text-green-500 mr-1"></i>
-                                            <span class="font-medium">Ready in 2-3 days</span>
-                                        </td>
-                                        <td class="py-3 px-4 text-gray-500">7-10 days (shopping + assembly)</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-3 px-4 font-medium text-gray-700">Quality Assurance</td>
-                                        <td class="py-3 px-4">
-                                            <i class="fas fa-check text-green-500 mr-1"></i>
-                                            <span class="font-medium">Certified Premium</span>
-                                        </td>
-                                        <td class="py-3 px-4 text-gray-500">Varies by vendor</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Special Instructions Option -->
-                    <div
-                        class="mb-6 p-4 bg-gradient-to-br from-sage to-emerald-50 rounded-xl border border-emerald-200">
-                        <div class="flex items-center justify-between">
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {% if bundle.contents %}
+                        {% for item in bundle.contents %}
+                        <div class="premium-item-card rounded-lg p-3">
                             <div class="flex items-center gap-3">
                                 <div
-                                    class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
-                                    <i class="fas fa-edit text-lg"></i>
+                                    class="w-10 h-10 bg-gradient-to-br from-premium-cream to-premium-gold rounded-lg overflow-hidden flex-shrink-0 border border-amber-100">
+                                    <img src="{{ item.image_url }}" class="w-full h-full object-cover">
                                 </div>
-                                <div>
-                                    <h4 class="font-bold text-gray-900 text-sm">Special Instructions</h4>
-                                    <p class="text-xs text-gray-600">Add any special requirements or instructions</p>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-semibold text-gray-800 truncate">{{ item.name }}</p>
+                                    <p class="text-[10px] text-premium-bronze font-medium mt-1">
+                                        <i class="fas fa-check-circle mr-1"></i>Qty: {{ item.quantity }}
+                                    </p>
                                 </div>
                             </div>
-                            <label class="special-toggle">
-                                <input type="checkbox" id="special-instructions" onchange="toggleSpecialInstructions()">
-                                <span class="special-toggle-slider"></span>
-                            </label>
                         </div>
-                        <div id="special-instructions-input" class="hidden mt-3">
-                            <textarea
-                                placeholder="Add any special instructions or requirements for your ritual (max 200 characters)"
-                                class="w-full px-3 py-2 text-sm border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
-                                rows="3" maxlength="200"></textarea>
-                            <p class="text-xs text-gray-500 mt-2">
-                                <i class="fas fa-info-circle text-emerald-500 mr-1"></i>
-                                Our pandits will review your instructions before the ritual
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Schedule Your Ritual -->
-                    <div
-                        class="mb-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <i class="fas fa-calendar-alt text-amber-600"></i> Schedule Your Ritual
-                        </h3>
-                        <div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Date</label>
-                                <input type="date" id="ritual-date"
-                                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent schedule-input">
+                        {% endfor %}
+                        {% else %}
+                        <!-- Fallback if contents not provided -->
+                        {% for item in bundle.includes.split(',') %}
+                        <div class="premium-item-card rounded-lg p-3">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 bg-gradient-to-br from-premium-cream to-premium-gold rounded-lg flex items-center justify-center flex-shrink-0 border border-amber-100">
+                                    <i class="fas fa-star text-premium-bronze text-sm"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-semibold text-gray-800 truncate">{{ item.strip() }}</p>
+                                    <p class="text-[10px] text-premium-bronze font-medium mt-1">
+                                        <i class="fas fa-award mr-1"></i>Premium Quality
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                        <div class="mt-4 text-xs text-gray-600 bg-white/50 p-2 rounded-lg">
-                            <i class="fas fa-info-circle mr-1 text-amber-500"></i> Our pandit will contact you within 24
-                            hours to confirm the schedule
-                        </div>
-                    </div>
-
-                    <!-- Quantity Selector (Fixed to 1) -->
-                    <div
-                        class="mb-8 p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 inline-block">
-                        <label
-                            class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Quantity</label>
-                        <div class="flex items-center gap-2">
-                            <div
-                                class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-900 border border-gray-100">
-                                <span class="text-lg font-bold font-serif">1</span>
-                            </div>
-                            <span class="text-sm font-medium text-gray-500 ml-2">Slot per booking</span>
-                            <input type="hidden" id="quantity" value="1">
-                        </div>
-                    </div>
-
-                    <!-- CTA Buttons (Desktop) -->
-                    <div class="hidden lg:grid grid-cols-2 gap-4 mb-10">
-                        <button onclick="addToCart()"
-                            class="bg-gradient-to-r from-orange-500 to-red-600 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2">
-                            <i class="fas fa-shopping-cart"></i>
-                            ADD TO CART
-                        </button>
-                        <button onclick="scheduleBundle()"
-                            class="bg-gradient-to-r from-green-600 to-emerald-700 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                            <i class="fas fa-calendar-check"></i>
-                            Book Now
-                        </button>
-                    </div>
-
-                    <!-- Customer Support Widget -->
-                    <div
-                        class="mb-8 p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div
-                                class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-purple-600">
-                                <i class="fas fa-headset text-xl"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-900 text-sm">Need Help?</h4>
-                                <p class="text-xs text-gray-600">Our pandits are here to assist</p>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <button onclick="openLiveChat()"
-                                class="w-full py-3 bg-white border border-purple-300 text-purple-700 text-sm font-bold rounded-lg hover:bg-purple-50 transition-colors live-chat-btn">
-                                <i class="fas fa-comment-dots mr-2"></i> Live Chat with Pandit
-                            </button>
-                            <button onclick="callPandit()"
-                                class="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md">
-                                <i class="fas fa-phone-alt mr-2"></i> Call Pandit (+91 9155095375)
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Large Trust Badges -->
-                    <div class="grid grid-cols-1 gap-4 mb-8">
-                        <div
-                            class="flex items-center gap-4 p-4 border border-blue-100 bg-blue-50/50 rounded-xl hover:shadow-sm transition-all">
-                            <div
-                                class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-blue-600">
-                                <i class="fas fa-user-tie text-xl"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-900 text-sm uppercase tracking-wide">Pandit Consultation
-                                </h4>
-                                <p class="text-xs text-gray-600">Includes guidance for proper ritual performance</p>
-                            </div>
-                        </div>
-                        <div
-                            class="flex items-center gap-4 p-4 border border-green-100 bg-green-50/50 rounded-xl hover:shadow-sm transition-all">
-                            <div
-                                class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-green-600">
-                                <i class="fas fa-box-open text-xl"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-900 text-sm uppercase tracking-wide">Everything Included
-                                </h4>
-                                <p class="text-xs text-gray-600">No need to buy anything separately</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- FAQ Section -->
-        <div class="mt-10 lg:mt-16 border-t border-gray-100 pt-10 mb-10">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl lg:text-4xl font-serif text-gray-900 mb-4">Frequently Asked Questions</h2>
-                <p class="text-gray-500">Get answers to common questions about our bundles</p>
-            </div>
-
-            <div class="space-y-3 max-w-3xl mx-auto">
-                <details class="faq-item group bg-gray-50 rounded-xl border border-gray-200 p-4">
-                    <summary class="flex justify-between items-center cursor-pointer">
-                        <span class="font-bold text-gray-800">Can I customize this bundle?</span>
-                        <i
-                            class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform duration-300"></i>
-                    </summary>
-                    <p class="mt-3 text-gray-600 text-sm pl-4 border-l-2 border-amber-500">
-                        Yes! Contact our pandit team for customizations. We can add/remove items based on your specific
-                        ritual requirements. Additional charges may apply for premium items.
-                    </p>
-                </details>
-
-                <details class="faq-item group bg-gray-50 rounded-xl border border-gray-200 p-4">
-                    <summary class="flex justify-between items-center cursor-pointer">
-                        <span class="font-bold text-gray-800">What if I need the bundle urgently?</span>
-                        <i
-                            class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform duration-300"></i>
-                    </summary>
-                    <p class="mt-3 text-gray-600 text-sm pl-4 border-l-2 border-amber-500">
-                        We offer express delivery for urgent requirements. Select "Express Delivery" at checkout for
-                        delivery within 24 hours (additional charges apply).
-                    </p>
-                </details>
-
-                <details class="faq-item group bg-gray-50 rounded-xl border border-gray-200 p-4">
-                    <summary class="flex justify-between items-center cursor-pointer">
-                        <span class="font-bold text-gray-800">Is pandit service included in all bundles?</span>
-                        <i
-                            class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform duration-300"></i>
-                    </summary>
-                    <p class="mt-3 text-gray-600 text-sm pl-4 border-l-2 border-amber-500">
-                        Most of our premium bundles include basic pandit guidance. For full ritual performance by a
-                        pandit, please select the "With Pandit Service" option at checkout.
-                    </p>
-                </details>
-
-                <details class="faq-item group bg-gray-50 rounded-xl border border-gray-200 p-4">
-                    <summary class="flex justify-between items-center cursor-pointer">
-                        <span class="font-bold text-gray-800">What is your cancellation policy?</span>
-                        <i
-                            class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform duration-300"></i>
-                    </summary>
-                    <p class="mt-3 text-gray-600 text-sm pl-4 border-l-2 border-amber-500">
-                        You can cancel your order up to 24 hours before the scheduled date for a full refund.
-                        Cancellations within 24 hours may incur a 20% processing fee.
-                    </p>
-                </details>
-            </div>
-
-            <div class="mt-10 text-center">
-                <button onclick="openAllFAQs()"
-                    class="bg-white border-2 border-gray-900 text-gray-900 py-3 px-8 rounded-full font-bold hover:bg-gray-900 hover:text-white transition-all duration-300">
-                    View All FAQs
-                </button>
-            </div>
-        </div>
-
-        <!-- Customer Reviews Section -->
-        <div class="mt-10 lg:mt-16 border-t border-gray-100 pt-10 mb-10">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl lg:text-4xl font-serif text-gray-900 mb-4">Customer Stories</h2>
-                <div class="flex items-center justify-center gap-2 mb-2">
-                    <div class="text-yellow-400 text-lg">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <span class="font-bold text-gray-900">4.9/5</span>
-                </div>
-                <p class="text-gray-500 text-sm">Based on 89+ Verified Reviews</p>
-            </div>
-
-            <!-- Masonry Grid Layout -->
-            <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-                <!-- Review Card 1 -->
-                <div
-                    class="break-inside-avoid bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300">
-                    <div class="flex items-center gap-1 text-yellow-400 text-xs mb-3">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas
-                            fa-star"></i><i class="fas fa-star"></i>
-                    </div>
-                    <h4 class="font-bold text-gray-900 mb-2">Complete Solution!</h4>
-                    <p class="text-gray-600 text-sm leading-relaxed mb-4">"Everything was perfectly arranged. The bundle
-                        saved me hours of shopping and ensured I had all the right items for my housewarming ceremony."
-                    </p>
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs">
-                            R</div>
-                        <div>
-                            <p class="text-xs font-bold text-gray-900">Rahul K.</p>
-                            <p class="text-[10px] text-green-600 font-medium"><i
-                                    class="fas fa-check-circle mr-1"></i>Verified
-                                Buyer</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Review Card 2 (With Image) -->
-                <div
-                    class="break-inside-avoid bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300">
-                    <div class="mb-4 overflow-hidden rounded-lg">
-                        <!-- Placeholder Image -->
-                        <div class="bg-gray-200 h-48 w-full flex items-center justify-center text-gray-400">
-                            <i class="fas fa-image text-3xl"></i>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-1 text-yellow-400 text-xs mb-3">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas
-                            fa-star"></i><i class="fas fa-star"></i>
-                    </div>
-                    <p class="text-gray-600 text-sm leading-relaxed mb-4">"The pandit consultation included was
-                        priceless. They guided us through the entire ritual. Highly recommended for first-timers!"</p>
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                            P</div>
-                        <div>
-                            <p class="text-xs font-bold text-gray-900">Priya M.</p>
-                            <p class="text-[10px] text-green-600 font-medium"><i
-                                    class="fas fa-check-circle mr-1"></i>Verified
-                                Buyer</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Review Card 3 -->
-                <div
-                    class="break-inside-avoid bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300">
-                    <div class="flex items-center gap-1 text-yellow-400 text-xs mb-3">
-                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas
-                            fa-star"></i><i class="fas fa-star"></i>
-                    </div>
-                    <h4 class="font-bold text-gray-900 mb-2">Perfect for Weddings</h4>
-                    <p class="text-gray-600 text-sm leading-relaxed mb-4">"We used this for our wedding rituals. The
-                        quality of items was exceptional and saved us so much time. Everything arrived perfectly
-                        packaged."</p>
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xs">
-                            S</div>
-                        <div>
-                            <p class="text-xs font-bold text-gray-900">Sunita R.</p>
-                            <p class="text-[10px] text-green-600 font-medium"><i
-                                    class="fas fa-check-circle mr-1"></i>Verified
-                                Buyer</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-10 text-center">
-                <button
-                    class="bg-white border-2 border-gray-900 text-gray-900 py-3 px-8 rounded-full font-bold hover:bg-gray-900 hover:text-white transition-all duration-300">
-                    Read All Reviews
-                </button>
-            </div>
-        </div>
-
-        <!-- You May Also Like (Product Recommendations) -->
-        {% if related_products %}
-        <div class="mt-10 lg:mt-16 border-t border-gray-100 pt-10">
-            <h2
-                class="text-4xl lg:text-5xl font-serif text-center mb-16 tracking-tight text-gray-900 relative inline-block w-full">
-                <span class="relative z-10">You May Also Like</span>
-                <span class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-purple-100 -z-10"></span>
-            </h2>
-            <!-- 4 Columns for larger tiles -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8">
-                {% for related in related_products %}
-                <a href="{{ url_for('product_detail', product_id=related.id) }}"
-                    class="group block bg-gray-50 rounded-xl p-3 hover:shadow-lg transition-all duration-300 border border-transparent hover:border-purple-100">
-                    <div class="relative aspect-square bg-gray-200 mb-3 overflow-hidden rounded-lg">
-                        <img src="{{ url_for('static', filename=related.image_url) }}" alt="{{ related.name }}"
-                            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
-                    </div>
-                    <div class="px-1">
-                        <h3
-                            class="text-xs font-bold text-gray-900 mb-1 group-hover:text-purple-700 truncate min-h-[1.25rem]">
-                            {{ related.name }}</h3>
-                        <p class="text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">₹{{
-                            related.price }}</p>
-                    </div>
-                </a>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Related Bundles -->
-        {% if related_bundles %}
-        <div class="mt-10 lg:mt-16 border-t border-gray-100 pt-10">
-            <h2
-                class="text-4xl lg:text-5xl font-serif text-center mb-16 tracking-tight text-gray-900 relative inline-block w-full">
-                <span class="relative z-10">Related Bundles</span>
-                <span class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-purple-100 -z-10"></span>
-            </h2>
-            <!-- 4 Columns for larger tiles -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8">
-                {% for related in related_bundles %}
-                <a href="{{ url_for('bundle_detail', bundle_id=related.id) }}"
-                    class="group block bg-gray-50 rounded-xl p-3 hover:shadow-lg transition-all duration-300 border border-transparent hover:border-purple-100 product-card">
-                    <div class="relative aspect-square bg-gray-200 mb-3 overflow-hidden rounded-lg">
-                        <img src="{{ url_for('static', filename=related.image_url) }}" alt="{{ related.name }}"
-                            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
-                        <div
-                            class="absolute top-2 right-2 bg-red-500 text-white text-[10px] px-2 py-1 rounded font-bold">
-                            Save {{ ((related.original_price - related.discounted_price)/related.original_price *
-                            100)|round|int }}%
-                        </div>
-                    </div>
-                    <div class="px-1">
-                        <h3
-                            class="text-xs font-bold text-gray-900 mb-1 group-hover:text-purple-700 truncate min-h-[1.25rem]">
-                            {{ related.name }}</h3>
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="text-sm font-medium text-amber-600 group-hover:text-amber-700 transition-colors">₹{{
-                                related.discounted_price }}</span>
-                            <span class="text-xs text-gray-400 line-through">₹{{ related.original_price }}</span>
-                        </div>
-                        {% if related.rating %}
-                        <div class="flex items-center gap-1 mt-1">
-                            <div class="text-yellow-400 text-[10px]">
-                                {% for i in range(5) %}
-                                {% if i < related.rating|int %} <i class="fas fa-star"></i>
-                                    {% else %}
-                                    <i class="far fa-star"></i>
-                                    {% endif %}
-                                    {% endfor %}
-                            </div>
-                            <span class="text-[10px] text-gray-500">({{ related.review_count or '24' }})</span>
-                        </div>
+                        {% endfor %}
                         {% endif %}
                     </div>
-                </a>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
 
-        <!-- Value Props -->
-        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-            <div
-                class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-6 text-center hover:shadow-md transition-all duration-300 hover:-translate-y-1 product-card">
-                <div class="text-4xl mb-4">📦</div>
-                <h3 class="font-bold text-gray-800 mb-2">Complete Package</h3>
-                <p class="text-sm text-gray-600">Everything included, ready to use</p>
-            </div>
-            <div
-                class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-6 text-center hover:shadow-md transition-all duration-300 hover:-translate-y-1 product-card">
-                <div class="text-4xl mb-4">🎯</div>
-                <h3 class="font-bold text-gray-800 mb-2">Expert Curated</h3>
-                <p class="text-sm text-gray-600">Selected by experienced pandits</p>
-            </div>
-            <div
-                class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6 text-center hover:shadow-md transition-all duration-300 hover:-translate-y-1 product-card">
-                <div class="text-4xl mb-4">💰</div>
-                <h3 class="font-bold text-gray-800 mb-2">Best Value</h3>
-                <p class="text-sm text-gray-600">Save more with bundle pricing</p>
-            </div>
-        </div>
-
-        <div class="h-24"></div>
-    </div>
-
-    <!-- Footer Section -->
-    <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white">
-        <div class="container mx-auto px-6 py-12">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <!-- Brand Info -->
-                <div class="space-y-4">
-                    <h3 class="text-2xl font-bold">PujaPath</h3>
-                    <p class="text-gray-400">Preserving Vedic traditions with modern convenience since 2025</p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
-                            </svg>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm3 8h-1.35c-.538 0-.65.221-.65.778v1.222h2l-.209 2h-1.791v7h-3v-7h-2v-2h2v-2.308c0-1.769.931-2.692 3.029-2.692h1.971v3z" />
-                            </svg>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                            </svg>
-                        </a>
+                    <div class="mt-6 pt-4 border-t border-amber-100 text-center">
+                        <p class="text-xs text-gray-600">
+                            Total Value:
+                            <span class="line-through text-gray-400">₹{% if bundle.total_individual_value %}{{
+                                bundle.total_individual_value }}{% else %}{{ bundle.original_price * 1.5 }}{% endif
+                                %}</span>
+                            <span class="font-bold text-green-600 ml-2">
+                                You Save: ₹{% if bundle.total_individual_value %}{{ bundle.total_individual_value -
+                                bundle.discounted_price }}{% else %}{{ (bundle.original_price * 1.5) -
+                                bundle.discounted_price }}{% endif %}
+                            </span>
+                        </p>
                     </div>
                 </div>
 
-                <!-- Services -->
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Services</h4>
-                    <ul class="space-y-2">
-                        <li><a href="#pandits" class="text-gray-400 hover:text-white transition-colors">Book
-                                Pandit</a></li>
-                        <li><a href="#essentials" class="text-gray-400 hover:text-white transition-colors">Puja
-                                Essentials</a></li>
-                        <li><a href="#bundles" class="text-gray-400 hover:text-white transition-colors">Ritual
-                                Bundles</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Custom
-                                Ceremonies</a></li>
-                    </ul>
+                <!-- Bundle Comparison Table -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-balance-scale text-purple-600"></i> Why Choose Bundle?
+                    </h3>
+                    <div class="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+                        <table class="w-full text-sm bundle-comparison">
+                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                <tr>
+                                    <th class="py-3 px-4 text-left font-bold text-gray-700">Features</th>
+                                    <th class="py-3 px-4 text-left font-bold text-amber-600">This Bundle</th>
+                                    <th class="py-3 px-4 text-left font-bold text-gray-400">Buying Separately</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr>
+                                    <td class="py-3 px-4 font-medium text-gray-700">Total Items</td>
+                                    <td class="py-3 px-4 font-bold text-green-600">
+                                        <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                                        {% if bundle.item_count %}{{ bundle.item_count }}{% else %}12{% endif %}
+                                        items included
+                                    </td>
+                                    <td class="py-3 px-4 text-gray-500">Purchase individually</td>
+                                </tr>
+                                <tr class="bg-gray-50/50">
+                                    <td class="py-3 px-4 font-medium text-gray-700">Price</td>
+                                    <td class="py-3 px-4 font-bold text-amber-600 text-lg">₹{{
+                                        bundle.discounted_price }}</td>
+                                    <td class="py-3 px-4 line-through text-gray-400">
+                                        ₹{% if bundle.total_individual_value %}{{ bundle.total_individual_value }}{%
+                                        else %}{{ bundle.original_price * 1.5 }}{% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-medium text-gray-700">Pandit Guidance</td>
+                                    <td class="py-3 px-4">
+                                        <i class="fas fa-check text-green-500 mr-1"></i>
+                                        <span class="font-medium">Included Free</span>
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <i class="fas fa-times text-red-500 mr-1"></i>
+                                        <span class="text-gray-500">Extra ₹500-1000</span>
+                                    </td>
+                                </tr>
+                                <tr class="bg-gray-50/50">
+                                    <td class="py-3 px-4 font-medium text-gray-700">Time Required</td>
+                                    <td class="py-3 px-4">
+                                        <i class="fas fa-check text-green-500 mr-1"></i>
+                                        <span class="font-medium">Ready in 2-3 days</span>
+                                    </td>
+                                    <td class="py-3 px-4 text-gray-500">7-10 days (shopping + assembly)</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-medium text-gray-700">Quality Assurance</td>
+                                    <td class="py-3 px-4">
+                                        <i class="fas fa-check text-green-500 mr-1"></i>
+                                        <span class="font-medium">Certified Premium</span>
+                                    </td>
+                                    <td class="py-3 px-4 text-gray-500">Varies by vendor</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <!-- Contact -->
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Contact Us</h4>
-                    <ul class="space-y-2">
-                        <li class="text-gray-400 flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            +91 9155095375
-                        </li>
-                        <li class="text-gray-400 flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            support@pujapath.com
-                        </li>
-                        <li class="text-gray-400 flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            New Delhi, India
-                        </li>
-                    </ul>
+                <!-- Special Instructions Option -->
+                <div
+                    class="mb-6 p-4 bg-gradient-to-br from-sage to-emerald-50 rounded-xl border border-emerald-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
+                                <i class="fas fa-edit text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-sm">Special Instructions</h4>
+                                <p class="text-xs text-gray-600">Add any special requirements or instructions</p>
+                            </div>
+                        </div>
+                        <label class="special-toggle">
+                            <input type="checkbox" id="special-instructions" onchange="toggleSpecialInstructions()">
+                            <span class="special-toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div id="special-instructions-input" class="hidden mt-3">
+                        <textarea id="special-instructions-text"
+                            placeholder="Add any special instructions or requirements for your ritual (max 200 characters)"
+                            class="w-full px-3 py-2 text-sm border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
+                            rows="3" maxlength="200"></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle text-emerald-500 mr-1"></i>
+                            Our pandits will review your instructions before the ritual
+                        </p>
+                    </div>
                 </div>
 
-                <!-- Company -->
-                <div>
-                    <h4 class="text-lg font-semibold mb-4">Company</h4>
-                    <ul class="space-y-2">
-                        <li><a href="/about" class="text-gray-400 hover:text-white transition-colors">About Us</a>
-                        </li>
-                        <li><a href="/contact" class="text-gray-400 hover:text-white transition-colors">Contact
-                                Us</a></li>
-                        <li><a href="/pandit-signup" class="text-gray-400 hover:text-white transition-colors">Become
-                                a Pandit</a></li>
-                        <li><a href="/careers" class="text-gray-400 hover:text-white transition-colors">Careers</a>
-                        </li>
-                    </ul>
+                <!-- Schedule Your Ritual -->
+                <div
+                    class="mb-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-calendar-alt text-amber-600"></i> Schedule Your Ritual
+                    </h3>
+                    <div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Date</label>
+                            <input type="date" id="ritual-date"
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent schedule-input">
+                        </div>
+                    </div>
+                    <div class="mt-4 text-xs text-gray-600 bg-white/50 p-2 rounded-lg">
+                        <i class="fas fa-info-circle mr-1 text-amber-500"></i> Our pandit will contact you within 24
+                        hours to confirm the schedule
+                    </div>
                 </div>
-            </div>
 
-            <div class="border-t border-gray-700 mt-12 pt-8 text-center">
-                <p class="text-gray-400">&copy; 2025 PujaPath. All rights reserved. | Preserving traditions,
-                    embracing technology.</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Mobile Fixed Bottom Bar -->
-    <div
-        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-3 lg:hidden z-50 flex items-center justify-between shadow-[0_-5px_15px_rgba(0,0,0,0.1)]">
-        <!-- Thumbnail & Info -->
-        <div class="flex items-center gap-3">
-            <img src="{{ url_for('static', filename=bundle.image_url) }}"
-                class="w-10 h-10 rounded-lg object-cover border border-gray-100 shadow-sm">
-            <div class="flex flex-col">
-                <span class="text-xs font-bold text-gray-900 line-clamp-1 max-w-[120px]">{{ bundle.name }}</span>
-                <div class="flex items-center gap-1">
-                    <span class="text-sm font-bold text-amber-600">₹{{ bundle.discounted_price }}</span>
-                    <span class="text-xs text-gray-400 line-through">₹{{ bundle.original_price }}</span>
-                </div>
-            </div>
-        </div>
-        <!-- Buttons -->
-        <div class="flex items-center gap-2">
-            <button onclick="addToCart()"
-                class="flex-1 py-3 px-2 rounded-lg text-[10px] sm:text-xs font-bold bg-gradient-to-r from-orange-500 to-red-600 text-white uppercase tracking-wide shadow-lg hover:shadow-xl transition-all whitespace-nowrap">
-                ADD TO CART
-            </button>
-            <button onclick="scheduleBundle()"
-                class="flex-1 py-3 px-2 rounded-lg text-[10px] sm:text-xs font-bold bg-gradient-to-r from-green-600 to-emerald-700 text-white uppercase tracking-wide shadow-lg hover:shadow-xl transition-all whitespace-nowrap">
-                Book Now
-            </button>
-        </div>
-    </div>
-
-    <!-- Live Chat Widget (Fixed) -->
-    <div id="live-chat-widget" class="fixed bottom-20 right-4 z-50 hidden">
-        <div class="bg-white rounded-xl shadow-2xl border border-purple-200 w-80 overflow-hidden">
-            <div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4">
-                <div class="flex items-center justify-between">
+                <!-- Quantity Selector (Fixed to 1) -->
+                <div
+                    class="mb-8 p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 inline-block">
+                    <label
+                        class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Quantity</label>
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                            <i class="fas fa-headset"></i>
+                        <div
+                            class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-900 border border-gray-100">
+                            <span class="text-lg font-bold font-serif">1</span>
+                        </div>
+                        <span class="text-sm font-medium text-gray-500 ml-2">Slot per booking</span>
+                        <input type="hidden" id="quantity" value="1">
+                    </div>
+                </div>
+
+                <!-- CTA Buttons (Desktop) -->
+                <div class="hidden lg:grid grid-cols-2 gap-4 mb-10">
+                    <button onclick="addBundleToCart()"
+                        class="bg-gradient-to-r from-orange-500 to-red-600 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                        <i class="fas fa-shopping-cart"></i>
+                        ADD TO CART
+                    </button>
+                    <button onclick="scheduleBundle()"
+                        class="bg-gradient-to-r from-green-600 to-emerald-700 text-white py-4 px-8 rounded-xl font-bold text-lg hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                        <i class="fas fa-calendar-check"></i>
+                        Book Now
+                    </button>
+                </div>
+
+                <!-- Customer Support Widget -->
+                <div
+                    class="mb-8 p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div
+                            class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-purple-600">
+                            <i class="fas fa-headset text-xl"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-sm">Live Chat</h4>
-                            <p class="text-xs opacity-90">Pandit is online</p>
+                            <h4 class="font-bold text-gray-900 text-sm">Need Help?</h4>
+                            <p class="text-xs text-gray-600">Our pandits are here to assist</p>
                         </div>
                     </div>
-                    <button onclick="closeChat()" class="text-white hover:text-gray-200">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <div class="space-y-2">
+                        <button onclick="openLiveChat()"
+                            class="w-full py-3 bg-white border border-purple-300 text-purple-700 text-sm font-bold rounded-lg hover:bg-purple-50 transition-colors live-chat-btn">
+                            <i class="fas fa-comment-dots mr-2"></i> Live Chat with Pandit
+                        </button>
+                        <button onclick="callPandit()"
+                            class="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md">
+                            <i class="fas fa-phone-alt mr-2"></i> Call Pandit (+91 9155095375)
+                        </button>
+                    </div>
                 </div>
-            </div>
-            <div class="p-4 h-64 overflow-y-auto bg-gray-50">
-                <div class="space-y-3">
-                    <div class="bg-purple-100 rounded-lg p-3 max-w-[80%]">
-                        <p class="text-sm text-gray-800">Namaste! I'm Pandit Sharma. How can I help you with {{
-                            bundle.name }}?</p>
+
+                <!-- Large Trust Badges -->
+                <div class="grid grid-cols-1 gap-4 mb-8">
+                    <div
+                        class="flex items-center gap-4 p-4 border border-blue-100 bg-blue-50/50 rounded-xl hover:shadow-sm transition-all">
+                        <div
+                            class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-blue-600">
+                            <i class="fas fa-user-tie text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-sm uppercase tracking-wide">Pandit Consultation
+                            </h4>
+                            <p class="text-xs text-gray-600">Includes guidance for proper ritual performance</p>
+                        </div>
+                    </div>
+                    <div
+                        class="flex items-center gap-4 p-4 border border-green-100 bg-green-50/50 rounded-xl hover:shadow-sm transition-all">
+                        <div
+                            class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-green-600">
+                            <i class="fas fa-box-open text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-sm uppercase tracking-wide">Everything Included
+                            </h4>
+                            <p class="text-xs text-gray-600">No need to buy anything separately</p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="p-4 border-t border-gray-200">
-                <div class="flex gap-2">
-                    <input type="text" placeholder="Type your message..."
-                        class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                    <button class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="mt-10 lg:mt-16 border-t border-gray-100 pt-10 mb-10">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl lg:text-4xl font-serif text-gray-900 mb-4">Frequently Asked Questions</h2>
+            <p class="text-gray-500">Get answers to common questions about our bundles</p>
+        </div>
+
+        <div class="space-y-3 max-w-3xl mx-auto">
+            <details class="faq-item group bg-gray-50 rounded-xl border border-gray-200 p-4">
+                <summary class="flex justify-between items-center cursor-pointer">
+                    <span class="font-bold text-gray-800">Can I customize this bundle?</span>
+                    <i
+                        class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform duration-300"></i>
+                </summary>
+                <p class="mt-3 text-gray-600 text-sm pl-4 border-l-2 border-amber-500">
+                    Yes! Contact our pandit team for customizations. We can add/remove items based on your specific
+                    ritual requirements. Additional charges may apply for premium items.
+                </p>
+            </details>
+
+            <details class="faq-item group bg-gray-50 rounded-xl border border-gray-200 p-4">
+                <summary class="flex justify-between items-center cursor-pointer">
+                    <span class="font-bold text-gray-800">What if I need the bundle urgently?</span>
+                    <i
+                        class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform duration-300"></i>
+                </summary>
+                <p class="mt-3 text-gray-600 text-sm pl-4 border-l-2 border-amber-500">
+                    We offer express delivery for urgent requirements. Select "Express Delivery" at checkout for
+                    delivery within 24 hours (additional charges apply).
+                </p>
+            </details>
+
+            <details class="faq-item group bg-gray-50 rounded-xl border border-gray-200 p-4">
+                <summary class="flex justify-between items-center cursor-pointer">
+                    <span class="font-bold text-gray-800">Is pandit service included in all bundles?</span>
+                    <i
+                        class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform duration-300"></i>
+                </summary>
+                <p class="mt-3 text-gray-600 text-sm pl-4 border-l-2 border-amber-500">
+                    Most of our premium bundles include basic pandit guidance. For full ritual performance by a
+                    pandit, please select the "With Pandit Service" option at checkout.
+                </p>
+            </details>
+
+            <details class="faq-item group bg-gray-50 rounded-xl border border-gray-200 p-4">
+                <summary class="flex justify-between items-center cursor-pointer">
+                    <span class="font-bold text-gray-800">What is your cancellation policy?</span>
+                    <i
+                        class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform duration-300"></i>
+                </summary>
+                <p class="mt-3 text-gray-600 text-sm pl-4 border-l-2 border-amber-500">
+                    You can cancel your order up to 24 hours before the scheduled date for a full refund.
+                    Cancellations within 24 hours may incur a 20% processing fee.
+                </p>
+            </details>
+        </div>
+
+        <div class="mt-10 text-center">
+            <button onclick="openAllFAQs()"
+                class="bg-white border-2 border-gray-900 text-gray-900 py-3 px-8 rounded-full font-bold hover:bg-gray-900 hover:text-white transition-all duration-300">
+                View All FAQs
+            </button>
+        </div>
+    </div>
+
+    <!-- Customer Reviews Section -->
+    <div class="mt-10 lg:mt-16 border-t border-gray-100 pt-10 mb-10">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl lg:text-4xl font-serif text-gray-900 mb-4">Customer Stories</h2>
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <div class="text-yellow-400 text-lg">
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                    <i class="fas fa-star"></i>
+                </div>
+                <span class="font-bold text-gray-900">4.9/5</span>
+            </div>
+            <p class="text-gray-500 text-sm">Based on 89+ Verified Reviews</p>
+        </div>
+
+        <!-- Masonry Grid Layout -->
+        <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+            <!-- Review Card 1 -->
+            <div
+                class="break-inside-avoid bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300">
+                <div class="flex items-center gap-1 text-yellow-400 text-xs mb-3">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas
+                        fa-star"></i><i class="fas fa-star"></i>
+                </div>
+                <h4 class="font-bold text-gray-900 mb-2">Complete Solution!</h4>
+                <p class="text-gray-600 text-sm leading-relaxed mb-4">"Everything was perfectly arranged. The bundle
+                    saved me hours of shopping and ensured I had all the right items for my housewarming ceremony."
+                </p>
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs">
+                        R</div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-900">Rahul K.</p>
+                        <p class="text-[10px] text-green-600 font-medium"><i
+                                class="fas fa-check-circle mr-1"></i>Verified
+                            Buyer</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Card 2 (With Image) -->
+            <div
+                class="break-inside-avoid bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300">
+                <div class="mb-4 overflow-hidden rounded-lg">
+                    <!-- Placeholder Image -->
+                    <div class="bg-gray-200 h-48 w-full flex items-center justify-center text-gray-400">
+                        <i class="fas fa-image text-3xl"></i>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 text-yellow-400 text-xs mb-3">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas
+                        fa-star"></i><i class="fas fa-star"></i>
+                </div>
+                <p class="text-gray-600 text-sm leading-relaxed mb-4">"The pandit consultation included was
+                    priceless. They guided us through the entire ritual. Highly recommended for first-timers!"</p>
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                        P</div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-900">Priya M.</p>
+                        <p class="text-[10px] text-green-600 font-medium"><i
+                                class="fas fa-check-circle mr-1"></i>Verified
+                            Buyer</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Card 3 -->
+            <div
+                class="break-inside-avoid bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300">
+                <div class="flex items-center gap-1 text-yellow-400 text-xs mb-3">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas
+                        fa-star"></i><i class="fas fa-star"></i>
+                </div>
+                <h4 class="font-bold text-gray-900 mb-2">Perfect for Weddings</h4>
+                <p class="text-gray-600 text-sm leading-relaxed mb-4">"We used this for our wedding rituals. The
+                    quality of items was exceptional and saved us so much time. Everything arrived perfectly
+                    packaged."</p>
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xs">
+                        S</div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-900">Sunita R.</p>
+                        <p class="text-[10px] text-green-600 font-medium"><i
+                                class="fas fa-check-circle mr-1"></i>Verified
+                            Buyer</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Image Zoom Modal -->
-    <div id="image-modal" class="fixed inset-0 bg-black/90 z-[100] hidden items-center justify-center">
-        <div class="relative max-w-4xl max-h-[90vh]">
-            <button onclick="closeZoom()" class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300 z-10">
-                <i class="fas fa-times"></i>
+        <div class="mt-10 text-center">
+            <button
+                class="bg-white border-2 border-gray-900 text-gray-900 py-3 px-8 rounded-full font-bold hover:bg-gray-900 hover:text-white transition-all duration-300">
+                Read All Reviews
             </button>
-            <img src="{{ url_for('static', filename=bundle.image_url) }}" alt="{{ bundle.name }}"
-                class="max-w-full max-h-[90vh] object-contain">
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script>
-        const bundleId = {{ bundle.id }};
-        const bundleName = '{{ bundle.name }}';
-        const bundlePrice = {{ bundle.discounted_price }};
-        const bundleOriginalPrice = {{ bundle.original_price }};
-        let selectedDate = '';
-        let selectedTime = '';
-        let specialInstructions = false;
-        let specialInstructionsText = '';
-
-        // Toggle Mobile Menu
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobile-menu');
-            menu.classList.toggle('hidden');
-        }
-
-        // Update Quantity
-        function updateQuantity(change) {
-            const input = document.getElementById('quantity');
-            let val = parseInt(input.value) || 1;
-            val += change;
-            if (val < 1) val = 1;
-            if (val > 10) val = 10;
-            input.value = val;
-            return val;
-        }
-
-        // Special Instructions Toggle
-        function toggleSpecialInstructions() {
-            specialInstructions = !specialInstructions;
-            const instructionsDiv = document.getElementById('special-instructions-input');
-            if (specialInstructions) {
-                instructionsDiv.classList.remove('hidden');
-            } else {
-                instructionsDiv.classList.add('hidden');
-                specialInstructionsText = '';
-            }
-        }
-
-        // Schedule Validation
-        function validateSchedule() {
-            selectedDate = document.getElementById('ritual-date').value;
-            // selectedTime is no longer required
-
-            if (!selectedDate) {
-                alert('Please select a preferred date for the ritual');
-                document.getElementById('ritual-date').focus();
-                return false;
-            }
-
-            // Check if date is in future
-            const selectedDateObj = new Date(selectedDate);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            if (selectedDateObj < today) {
-                alert('Please select a future date for the ritual');
-                return false;
-            }
-
-            return true;
-        }
-
-        // Cart Management
-        function getCart() {
-            return JSON.parse(localStorage.getItem('pujapath_cart')) || [];
-        }
-
-        function saveCart(cart) {
-            localStorage.setItem('pujapath_cart', JSON.stringify(cart));
-            updateCartBadge();
-        }
-
-        function updateCartBadge() {
-            const cart = getCart();
-            const badge = document.getElementById('cart-count');
-            const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-            if (count > 0) {
-                badge.textContent = count;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        }
-
-        // Add to Cart with Bundle Details
-        function addToCart() {
-            if (!validateSchedule()) {
-                return false;
-            }
-
-            const quantity = 1; // Force quantity to 1
-            const specialInstructionsCheckbox = document.getElementById('special-instructions');
-            const specialInstructionsInput = document.querySelector('#special-instructions-input textarea');
-
-            let cartItem = {
-                id: bundleId,
-                name: bundleName,
-                price: bundlePrice,
-                original_price: bundleOriginalPrice,
-                quantity: quantity,
-                type: 'bundle',
-                image_url: '{{ bundle.image_url }}',
-                schedule: {
-                    date: selectedDate,
-                    time: "Any" // Default to Any since we removed the selector
-                }
-            };
-
-            // Add special instructions if selected
-            if (specialInstructionsCheckbox && specialInstructionsCheckbox.checked && specialInstructionsInput) {
-                cartItem.special_instructions = specialInstructionsInput.value;
-                specialInstructionsText = specialInstructionsInput.value;
-            }
-
-            let cart = getCart();
-            const existingItemIndex = cart.findIndex(item =>
-                item.id === bundleId &&
-                item.type === 'bundle' &&
-                JSON.stringify(item.schedule) === JSON.stringify(cartItem.schedule)
-            );
-
-            if (existingItemIndex > -1) {
-                // Update existing item without increasing quantity
-                cart[existingItemIndex].quantity = 1; // Ensure 1
-
-                // Update special instructions if they exist
-                if (cartItem.special_instructions) {
-                    cart[existingItemIndex].special_instructions = cartItem.special_instructions;
-                }
-
-                showToast('Cart Updated', 'Booking details updated', 'success');
-            } else {
-                cart.push(cartItem);
-                // Show success notification
-                showToast('Bundle Added to Cart!', `Booking confirmed for ${selectedDate}`, 'success');
-            }
-
-            saveCart(cart);
-            return true;
-        }
-
-        // Schedule Bundle (Book Now)
-        function scheduleBundle() {
-            if (addToCart()) {
-                // Redirect to checkout
-                setTimeout(() => {
-                    const cart = getCart();
-                    const cartData = encodeURIComponent(JSON.stringify(cart));
-                    window.location.href = `/checkout?cart=${cartData}`;
-                }, 500);
-            }
-        }
-
-        function viewCart() {
-            const cart = getCart();
-            const cartData = encodeURIComponent(JSON.stringify(cart));
-            window.location.href = `/checkout?cart=${cartData}`;
-        }
-
-        // Live Chat Functions
-        function openLiveChat() {
-            document.getElementById('live-chat-widget').classList.remove('hidden');
-        }
-
-        function closeChat() {
-            document.getElementById('live-chat-widget').classList.add('hidden');
-        }
-
-        // Call Pandit Function
-        function callPandit() {
-            const phone = '9155095375';
-            const message = `Hi, I need guidance for "${bundleName}" bundle. Please call me back.`;
-            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-        }
-
-        // Image Zoom Functions
-        function zoomImage() {
-            document.getElementById('image-modal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeZoom() {
-            document.getElementById('image-modal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-
-        // FAQ Functions
-        function openAllFAQs() {
-            const allFAQs = document.querySelectorAll('.faq-item');
-            allFAQs.forEach(faq => faq.setAttribute('open', ''));
-        }
-
-        // Toast Notification
-        function showToast(title, message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = `fixed top-24 right-4 bg-white border-l-4 ${type === 'success' ? 'border-green-500' : 'border-amber-500'} text-gray-800 px-6 py-4 rounded-lg shadow-2xl z-[100] animate-fadeIn flex items-center gap-4 max-w-sm`;
-
-            const icon = type === 'success' ?
-                '<div class="text-green-500 text-xl"><i class="fas fa-check-circle"></i></div>' :
-                '<div class="text-amber-500 text-xl"><i class="fas fa-info-circle"></i></div>';
-
-            toast.innerHTML = `
-                ${icon}
-                <div>
-                    <h4 class="font-bold text-sm">${title}</h4>
-                    <p class="text-xs text-gray-500">${message}</p>
+    <!-- You May Also Like (Product Recommendations) -->
+    {% if related_products %}
+    <div class="mt-10 lg:mt-16 border-t border-gray-100 pt-10">
+        <h2
+            class="text-4xl lg:text-5xl font-serif text-center mb-16 tracking-tight text-gray-900 relative inline-block w-full">
+            <span class="relative z-10">You May Also Like</span>
+            <span class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-purple-100 -z-10"></span>
+        </h2>
+        <!-- 4 Columns for larger tiles -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8">
+            {% for related in related_products %}
+            <a href="{{ url_for('product_detail', product_id=related.id) }}"
+                class="group block bg-gray-50 rounded-xl p-3 hover:shadow-lg transition-all duration-300 border border-transparent hover:border-purple-100">
+                <div class="relative aspect-square bg-gray-200 mb-3 overflow-hidden rounded-lg">
+                    <img src="{{ url_for('static', filename=related.image_url) }}" alt="{{ related.name }}"
+                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                 </div>
-                <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600 ml-auto">
+                <div class="px-1">
+                    <h3
+                        class="text-xs font-bold text-gray-900 mb-1 group-hover:text-purple-700 truncate min-h-[1.25rem]">
+                        {{ related.name }}</h3>
+                    <p class="text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">₹{{
+                        related.price }}</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Related Bundles -->
+    {% if related_bundles %}
+    <div class="mt-10 lg:mt-16 border-t border-gray-100 pt-10">
+        <h2
+            class="text-4xl lg:text-5xl font-serif text-center mb-16 tracking-tight text-gray-900 relative inline-block w-full">
+            <span class="relative z-10">Related Bundles</span>
+            <span class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-3 bg-purple-100 -z-10"></span>
+        </h2>
+        <!-- 4 Columns for larger tiles -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-8">
+            {% for related in related_bundles %}
+            <a href="{{ url_for('bundle_detail', bundle_id=related.id) }}"
+                class="group block bg-gray-50 rounded-xl p-3 hover:shadow-lg transition-all duration-300 border border-transparent hover:border-purple-100 product-card">
+                <div class="relative aspect-square bg-gray-200 mb-3 overflow-hidden rounded-lg">
+                    <img src="{{ url_for('static', filename=related.image_url) }}" alt="{{ related.name }}"
+                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    <div
+                        class="absolute top-2 right-2 bg-red-500 text-white text-[10px] px-2 py-1 rounded font-bold">
+                        Save {{ ((related.original_price - related.discounted_price)/related.original_price *
+                        100)|round|int }}%
+                    </div>
+                </div>
+                <div class="px-1">
+                    <h3
+                        class="text-xs font-bold text-gray-900 mb-1 group-hover:text-purple-700 truncate min-h-[1.25rem]">
+                        {{ related.name }}</h3>
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="text-sm font-medium text-amber-600 group-hover:text-amber-700 transition-colors">₹{{
+                            related.discounted_price }}</span>
+                        <span class="text-xs text-gray-400 line-through">₹{{ related.original_price }}</span>
+                    </div>
+                    {% if related.rating %}
+                    <div class="flex items-center gap-1 mt-1">
+                        <div class="text-yellow-400 text-[10px]">
+                            {% for i in range(5) %}
+                            {% if i < related.rating|int %} <i class="fas fa-star"></i>
+                                {% else %}
+                                <i class="far fa-star"></i>
+                                {% endif %}
+                                {% endfor %}
+                        </div>
+                        <span class="text-[10px] text-gray-500">({{ related.review_count or '24' }})</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Value Props -->
+    <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+        <div
+            class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200 p-6 text-center hover:shadow-md transition-all duration-300 hover:-translate-y-1 product-card">
+            <div class="text-4xl mb-4">📦</div>
+            <h3 class="font-bold text-gray-800 mb-2">Complete Package</h3>
+            <p class="text-sm text-gray-600">Everything included, ready to use</p>
+        </div>
+        <div
+            class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-6 text-center hover:shadow-md transition-all duration-300 hover:-translate-y-1 product-card">
+            <div class="text-4xl mb-4">🎯</div>
+            <h3 class="font-bold text-gray-800 mb-2">Expert Curated</h3>
+            <p class="text-sm text-gray-600">Selected by experienced pandits</p>
+        </div>
+        <div
+            class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6 text-center hover:shadow-md transition-all duration-300 hover:-translate-y-1 product-card">
+            <div class="text-4xl mb-4">💰</div>
+            <h3 class="font-bold text-gray-800 mb-2">Best Value</h3>
+            <p class="text-sm text-gray-600">Save more with bundle pricing</p>
+        </div>
+    </div>
+
+    <div class="h-24"></div>
+</div>
+
+<!-- Mobile Fixed Bottom Bar -->
+<div
+    class="fixed bottom-[65px] left-0 right-0 bg-white border-t border-gray-100 p-3 lg:hidden z-40 flex items-center justify-between shadow-[0_-5px_15px_rgba(0,0,0,0.1)]">
+    <!-- Thumbnail & Info -->
+    <div class="flex items-center gap-3">
+        <img src="{{ url_for('static', filename=bundle.image_url) }}"
+            class="w-10 h-10 rounded-lg object-cover border border-gray-100 shadow-sm">
+        <div class="flex flex-col">
+            <span class="text-xs font-bold text-gray-900 line-clamp-1 max-w-[120px]">{{ bundle.name }}</span>
+            <div class="flex items-center gap-1">
+                <span class="text-sm font-bold text-amber-600">₹{{ bundle.discounted_price }}</span>
+                <span class="text-xs text-gray-400 line-through">₹{{ bundle.original_price }}</span>
+            </div>
+        </div>
+    </div>
+    <!-- Buttons -->
+    <div class="flex items-center gap-2">
+        <button onclick="addBundleToCart()"
+            class="flex-1 py-3 px-2 rounded-lg text-[10px] sm:text-xs font-bold bg-gradient-to-r from-orange-500 to-red-600 text-white uppercase tracking-wide shadow-lg hover:shadow-xl transition-all whitespace-nowrap">
+            ADD TO CART
+        </button>
+        <button onclick="scheduleBundle()"
+            class="flex-1 py-3 px-2 rounded-lg text-[10px] sm:text-xs font-bold bg-gradient-to-r from-green-600 to-emerald-700 text-white uppercase tracking-wide shadow-lg hover:shadow-xl transition-all whitespace-nowrap">
+            Book Now
+        </button>
+    </div>
+</div>
+
+<!-- Live Chat Widget (Fixed) -->
+<div id="live-chat-widget" class="fixed bottom-20 right-4 z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl border border-purple-200 w-80 overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm">Live Chat</h4>
+                        <p class="text-xs opacity-90">Pandit is online</p>
+                    </div>
+                </div>
+                <button onclick="closeChat()" class="text-white hover:text-gray-200">
                     <i class="fas fa-times"></i>
                 </button>
-            `;
+            </div>
+        </div>
+        <div class="p-4 h-64 overflow-y-auto bg-gray-50">
+            <div class="space-y-3">
+                <div class="bg-purple-100 rounded-lg p-3 max-w-[80%]">
+                    <p class="text-sm text-gray-800">Namaste! I'm Pandit Sharma. How can I help you with {{
+                        bundle.name }}?</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-200">
+            <div class="flex gap-2">
+                <input type="text" placeholder="Type your message..."
+                    class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <button class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
-            document.body.appendChild(toast);
-            setTimeout(() => { toast.remove(); }, 5000);
+<!-- Image Zoom Modal -->
+<div id="image-modal" class="fixed inset-0 bg-black/90 z-[100] hidden items-center justify-center">
+    <div class="relative max-w-4xl max-h-[90vh]">
+        <button onclick="closeZoom()" class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300 z-10">
+            <i class="fas fa-times"></i>
+        </button>
+        <img src="{{ url_for('static', filename=bundle.image_url) }}" alt="{{ bundle.name }}"
+            class="max-w-full max-h-[90vh] object-contain">
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const bundleId = {{ bundle.id }};
+    const bundleName = '{{ bundle.name }}';
+    const bundlePrice = {{ bundle.discounted_price }};
+    const bundleOriginalPrice = {{ bundle.original_price }};
+    let selectedDate = '';
+    let specialInstructionsText = '';
+
+    // Special Instructions Toggle
+    function toggleSpecialInstructions() {
+        const instructionsDiv = document.getElementById('special-instructions-input');
+        const checkbox = document.getElementById('special-instructions');
+        if (checkbox.checked) {
+            instructionsDiv.classList.remove('hidden');
+        } else {
+            instructionsDiv.classList.add('hidden');
+            specialInstructionsText = '';
+        }
+    }
+
+    // Schedule Validation
+    function validateSchedule() {
+        selectedDate = document.getElementById('ritual-date').value;
+
+        if (!selectedDate) {
+            alert('Please select a preferred date for the ritual');
+            document.getElementById('ritual-date').focus();
+            return false;
         }
 
-        // Initialize on load
-        document.addEventListener('DOMContentLoaded', () => {
-            updateCartBadge();
+        // Check if date is in future
+        const selectedDateObj = new Date(selectedDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-            // Set minimum date to today
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('ritual-date').min = today;
+        if (selectedDateObj < today) {
+            alert('Please select a future date for the ritual');
+            return false;
+        }
 
-            // Initialize progress bar animation
+        return true;
+    }
+
+    // Add to Cart with Bundle Details
+    function addBundleToCart() {
+        if (!validateSchedule()) {
+            return false;
+        }
+
+        const quantity = 1;
+        const specialInstructionsCheckbox = document.getElementById('special-instructions');
+        const specialInstructionsInput = document.getElementById('special-instructions-text');
+
+        let cartItem = {
+            id: bundleId,
+            name: bundleName,
+            price: bundlePrice,
+            original_price: bundleOriginalPrice,
+            quantity: quantity,
+            type: 'bundle',
+            image_url: '{{ bundle.image_url }}',
+            schedule: {
+                date: selectedDate,
+                time: "Any"
+            }
+        };
+
+        // Add special instructions if selected
+        if (specialInstructionsCheckbox && specialInstructionsCheckbox.checked && specialInstructionsInput) {
+            cartItem.special_instructions = specialInstructionsInput.value;
+            specialInstructionsText = specialInstructionsInput.value;
+        }
+
+        const existingItemIndex = cart.findIndex(item =>
+            item.id === bundleId &&
+            item.type === 'bundle' &&
+            JSON.stringify(item.schedule) === JSON.stringify(cartItem.schedule)
+        );
+
+        if (existingItemIndex > -1) {
+            cart[existingItemIndex].quantity = 1;
+            if (cartItem.special_instructions) {
+                cart[existingItemIndex].special_instructions = cartItem.special_instructions;
+            }
+            showToast('Cart Updated', 'Booking details updated', 'success');
+        } else {
+            cart.push(cartItem);
+            showToast('Bundle Added to Cart!', `Booking confirmed for ${selectedDate}`, 'success');
+        }
+
+        updateCartUI();
+
+        // Auto-open cart drawer
+        const drawer = document.getElementById('cart-drawer');
+        const overlay = document.getElementById('cart-overlay');
+        if (drawer && drawer.classList.contains('translate-x-full')) {
+            drawer.classList.remove('translate-x-full');
+            overlay.classList.remove('opacity-0', 'invisible');
+        }
+
+        return true;
+    }
+
+    // Schedule Bundle (Book Now)
+    function scheduleBundle() {
+        if (addBundleToCart()) {
             setTimeout(() => {
-                const progressBar = document.querySelector('.progress-bar');
-                if (progressBar) {
-                    progressBar.style.width = progressBar.style.width;
-                }
-            }, 100);
+                checkout();
+            }, 500);
+        }
+    }
 
-            // Close modals on escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    closeZoom();
-                    closeChat();
-                }
-            });
+    // Live Chat Functions
+    function openLiveChat() {
+        document.getElementById('live-chat-widget').classList.remove('hidden');
+    }
 
-            // Close modals on outside click
-            document.getElementById('image-modal')?.addEventListener('click', (e) => {
-                if (e.target === document.getElementById('image-modal')) {
-                    closeZoom();
-                }
-            });
+    function closeChat() {
+        document.getElementById('live-chat-widget').classList.add('hidden');
+    }
+
+    // Call Pandit Function
+    function callPandit() {
+        const phone = '9155095375';
+        const message = `Hi, I need guidance for "${bundleName}" bundle. Please call me back.`;
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    // Image Zoom Functions
+    function zoomImage() {
+        document.getElementById('image-modal').classList.remove('hidden');
+        document.getElementById('image-modal').classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeZoom() {
+        document.getElementById('image-modal').classList.add('hidden');
+        document.getElementById('image-modal').classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
+
+    // FAQ Functions
+    function openAllFAQs() {
+        const allFAQs = document.querySelectorAll('.faq-item');
+        allFAQs.forEach(faq => faq.setAttribute('open', ''));
+    }
+
+    // Toast Notification
+    function showToast(title, message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-24 right-4 bg-white border-l-4 ${type === 'success' ? 'border-green-500' : 'border-amber-500'} text-gray-800 px-6 py-4 rounded-lg shadow-2xl z-[100] animate-fadeInUp flex items-center gap-4 max-w-sm`;
+
+        const icon = type === 'success' ?
+            '<div class="text-green-500 text-xl"><i class="fas fa-check-circle"></i></div>' :
+            '<div class="text-amber-500 text-xl"><i class="fas fa-info-circle"></i></div>';
+
+        toast.innerHTML = `
+            ${icon}
+            <div>
+                <h4 class="font-bold text-sm">${title}</h4>
+                <p class="text-xs text-gray-500">${message}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600 ml-auto">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.remove(); }, 5000);
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('ritual-date');
+        if (dateInput) {
+            dateInput.min = today;
+        }
+
+        // Close modals on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeZoom();
+                closeChat();
+            }
         });
 
-        // Page transition effects
-        document.addEventListener('DOMContentLoaded', () => {
-            // Fade in content
-            document.body.style.opacity = '0';
-            setTimeout(() => {
-                document.body.style.transition = 'opacity 0.5s ease';
-                document.body.style.opacity = '1';
-            }, 100);
-        });
-    </script>
-</body>
-
-</html>
+        // Close modals on outside click
+        const imageModal = document.getElementById('image-modal');
+        if (imageModal) {
+            imageModal.addEventListener('click', (e) => {
+                if (e.target === imageModal) {
+                    closeZoom();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

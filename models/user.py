@@ -23,7 +23,10 @@ class User(db.Model):
     
     # User roles: 'customer', 'pandit', 'admin' - ESSENTIAL
     role = db.Column(db.String(20), default='customer')
-    
+
+    # Email verification
+    email_verified = db.Column(db.Boolean, default=False)
+
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -55,6 +58,7 @@ class User(db.Model):
             'state': self.state,
             'pincode': self.pincode,
             'role': self.role,  # Important for frontend permissions
+            'email_verified': self.email_verified,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
         }
     
@@ -67,3 +71,6 @@ class User(db.Model):
     
     def is_customer(self):
         return self.role == 'customer'
+
+    def is_verified(self):
+        return self.email_verified == True
