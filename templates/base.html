@@ -306,11 +306,12 @@
         // Handle Google OAuth callback
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
-        const username = urlParams.get('user');
+        const userStr = urlParams.get('user');
+        
         if (token) {
-            localStorage.setItem('access_token', token);
-            if (username) {
-                localStorage.setItem('username', username);
+            localStorage.setItem('token', token);
+            if (userStr) {
+                localStorage.setItem('user', userStr);
             }
             // Clean URL
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -520,6 +521,17 @@
             document.body.style.overflow = drawer && drawer.classList.contains('active') ? 'hidden' : '';
         }
 
+        // Position navbar below announcement bar
+        function updateNavPosition() {
+            const bar = document.getElementById('announcement-bar');
+            const nav = document.getElementById('main-nav');
+            if (bar && nav) {
+                nav.style.top = bar.offsetHeight + 'px';
+            }
+        }
+        updateNavPosition();
+        window.addEventListener('resize', updateNavPosition);
+
         // Sticky Header scroll effect
         window.addEventListener('scroll', () => {
             const nav = document.getElementById('main-nav');
@@ -531,6 +543,7 @@
                     nav.classList.remove('sticky-header-modern', 'shadow-md', 'py-2');
                     nav.classList.add('py-4');
                 }
+                updateNavPosition();
             }
         });
 

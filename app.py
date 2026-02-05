@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 import os
 import json
-from urllib.parse import unquote
+from urllib.parse import unquote, quote
 from dotenv import load_dotenv
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
@@ -21,7 +21,11 @@ from database import db
 from models import User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking, Order, OrderItem, OTP
 
 # Load environment variables
-load_dotenv()
+load_dotenv(override=True)
+
+# Allow OAuth over HTTP for local development
+if os.getenv("FLASK_DEBUG"):
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -55,6 +59,9 @@ app.config.update(
 )
 
 # Initialize OAuth AFTER app configuration
+if os.getenv("FLASK_DEBUG"):
+    app.config['SESSION_COOKIE_SECURE'] = False
+    app.config['REMEMBER_COOKIE_SECURE'] = False
 oauth = OAuth(app)
 
 # Configure Google OAuth
@@ -77,13 +84,16 @@ if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
 # Intialise Razorpay Client
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
-# Configure Flask-Mail
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+# Configure Flask-Mail (AWS SES SMTP)
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'email-smtp.ap-south-1.amazonaws.com')
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME', 'noreply@pujapath.com')
+app.config['MAIL_DEFAULT_SENDER'] = ('Pujaapaath', 'support@pujaapaath.com')
+
+print(f"DEBUG: Email Config - Server: {app.config.get('MAIL_SERVER')}")
+print(f"DEBUG: Email Config - Username: {app.config.get('MAIL_USERNAME')}")
 
 # Initialize extensions
 from flask_mail import Mail, Message
@@ -135,7 +145,9 @@ def send_booking_confirmation_email(booking, pandit):
         # 1. Create email object
         msg = Message(
             subject=f"Booking Confirmed: {booking.puja_type} with Pandit {pandit.name}",
-            recipients=[booking.email]
+            recipients=[booking.email],
+            sender=('Pujaapaath Bookings', 'bookings@pujaapaath.com'),
+            reply_to='help@pujaapaath.com'
         )
         
         # 2. Email Body (HTML + Plain Text Fallback)
@@ -295,7 +307,9 @@ def send_order_confirmation_email(order):
         # 1. Create email object
         msg = Message(
             subject=f"Order Confirmed: #{order.order_number}",
-            recipients=[recipient_email]
+            recipients=[recipient_email],
+            sender=('Pujaapaath Bookings', 'bookings@pujaapaath.com'),
+            reply_to='help@pujaapaath.com'
         )
         
         items_html = ""
@@ -463,7 +477,9 @@ def send_otp_email(email, otp_code):
 
         msg = Message(
             subject="Your PujaPath Verification Code",
-            recipients=[email]
+            recipients=[email],
+            sender=('Pujaapaath', 'support@pujaapaath.com'),
+            reply_to='help@pujaapaath.com'
         )
 
         # Plain text version
@@ -814,7 +830,8 @@ def google_callback():
         access_token = create_access_token(identity=str(user.id))
         
         # Redirect to home with token in URL (frontend will handle storing it)
-        return redirect(f"/?token={access_token}&user={user.username}")
+        user_json = json.dumps(user.to_dict())
+        return redirect(f"/?token={access_token}&user={quote(user_json)}")
         
     except Exception as e:
         app.logger.error(f"Google OAuth error: {str(e)}")
