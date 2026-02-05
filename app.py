@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request, url_for, session, redirect
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 from functools import wraps
 import os
@@ -29,6 +30,10 @@ if os.getenv("FLASK_DEBUG"):
 
 # Initialize Flask app
 app = Flask(__name__)
+
+# Fix for running behind a reverse proxy (Nginx, Railway, etc.)
+# This ensures url_for generates https:// URLs correctly
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Application configuration
 # Get database URL with fallback for SQLite (Windows compatibility)
@@ -834,7 +839,8 @@ def google_callback():
         return redirect(f"/?token={access_token}&user={quote(user_json)}")
         
     except Exception as e:
-        app.logger.error(f"Google OAuth error: {str(e)}")
+        import traceback
+        app.logger.error(f"Google OAuth error: {str(e)}\n{traceback.format_exc()}")
         return redirect('/?error=oauth_failed')
 
 @app.route('/api/upload', methods=['POST'])
