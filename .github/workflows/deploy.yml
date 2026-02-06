@@ -24,4 +24,6 @@ jobs:
             git fetch origin
             git reset --hard origin/main
             source venv/bin/activate
-            sudo systemctl restart pujapath 
+            pip install -r requirements.txt --quiet
+            python sync_db.py --apply
+            sudo systemctl restart pujapath
