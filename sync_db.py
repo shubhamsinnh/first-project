@@ -24,6 +24,8 @@ TYPE_MAP = {
     'Integer': 'INTEGER',
     'FLOAT': 'FLOAT',
     'Float': 'DOUBLE PRECISION',
+    'NUMERIC': 'NUMERIC',
+    'Numeric': 'NUMERIC',
     'BOOLEAN': 'BOOLEAN',
     'Boolean': 'BOOLEAN',
     'DATETIME': 'TIMESTAMP',
@@ -41,6 +43,10 @@ def get_pg_type(column):
         if length:
             return f'VARCHAR({length})'
         return 'VARCHAR(255)'
+    if col_type in ('Numeric', 'NUMERIC'):
+        precision = getattr(column.type, 'precision', 10)
+        scale = getattr(column.type, 'scale', 2)
+        return f'NUMERIC({precision},{scale})'
     return TYPE_MAP.get(col_type, 'TEXT')
 
 

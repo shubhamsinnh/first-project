@@ -10,6 +10,7 @@ class Order(db.Model):
     
     razorpay_order_id = db.Column(db.String(100), nullable=True)  # razorpay
     payment_date = db.Column(db.DateTime, nullable=True)  # razorpay
+    payment_reference = db.Column(db.String(100), nullable=True)  # razorpay payment ID
     id = db.Column(db.Integer, primary_key=True)
     order_number = db.Column(db.String(50), unique=True, nullable=False)
     customer_name = db.Column(db.String(150), nullable=False)
@@ -19,7 +20,7 @@ class Order(db.Model):
     city = db.Column(db.String(100), nullable=False)
     state = db.Column(db.String(100), nullable=False)
     pincode = db.Column(db.String(10), nullable=False)
-    total_amount = db.Column(db.Float, nullable=False)
+    total_amount = db.Column(db.Numeric(10, 2), nullable=False)
     status = db.Column(db.String(50), default='pending')  # pending, confirmed, shipped, delivered, cancelled
     payment_status = db.Column(db.String(50), default='pending')  # pending, paid, failed
     notes = db.Column(db.Text)
@@ -50,7 +51,7 @@ class Order(db.Model):
             try:
                 last_num = int(last_order.order_number.split('-')[-1])
                 new_num = str(last_num + 1).zfill(3)
-            except:
+            except (ValueError, IndexError):
                 new_num = '001'
         else:
             new_num = '001'
@@ -76,6 +77,7 @@ class Order(db.Model):
             "total_amount": self.total_amount,
             "status": self.status,
             "payment_status": self.payment_status,
+            "payment_reference": self.payment_reference,
             "notes": self.notes,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -94,9 +96,9 @@ class OrderItem(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('public.puja_materials.id'), nullable=True)
     bundle_id = db.Column(db.Integer, db.ForeignKey('public.bundles.id'), nullable=True)
     product_name = db.Column(db.String(200), nullable=False)
-    product_price = db.Column(db.Float, nullable=False)
+    product_price = db.Column(db.Numeric(10, 2), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
-    subtotal = db.Column(db.Float, nullable=False)
+    subtotal = db.Column(db.Numeric(10, 2), nullable=False)
     
     # Relationship
     product = db.relationship('PujaMaterial', backref='order_items')

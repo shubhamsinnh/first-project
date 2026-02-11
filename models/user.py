@@ -1,7 +1,9 @@
 # models/user.py - FINAL VERSION
 from database import db
+from flask import current_app
 from flask_bcrypt import generate_password_hash, check_password_hash
-from datetime import datetime
+from itsdangerous import URLSafeTimedSerializer as Serializer
+from datetime import datetime, timezone
 
 class User(db.Model):
     __tablename__ = "users"
@@ -27,9 +29,12 @@ class User(db.Model):
     # Email verification
     email_verified = db.Column(db.Boolean, default=False)
 
+    # Phone verification (for Firebase Phone Auth)
+    phone_verified = db.Column(db.Boolean, default=False)
+
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     bookings = db.relationship('Booking', backref='user', lazy=True)
@@ -43,6 +48,21 @@ class User(db.Model):
     def check_password(self, password):
         """Verify password against hash"""
         return check_password_hash(self.password_hash, password)
+
+    def get_reset_token(self, expires_sec=1800):
+        """Generate a password reset token"""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id}, salt='password-reset-salt')
+
+    @staticmethod
+    def verify_reset_token(token):
+        """Verify the password reset token"""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token, salt='password-reset-salt', max_age=1800)['user_id']
+        except:
+            return None
+        return User.query.get(user_id)
     
     def to_dict(self):
         """Return user data as dictionary for API responses"""
@@ -59,6 +79,7 @@ class User(db.Model):
             'pincode': self.pincode,
             'role': self.role,  # Important for frontend permissions
             'email_verified': self.email_verified,
+            'phone_verified': self.phone_verified,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
         }
     

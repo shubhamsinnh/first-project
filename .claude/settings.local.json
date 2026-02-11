@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python app.py:*)",
+      "Bash(timeout:*)",
+      "Bash(python:*)"
+    ]
+  }
+}

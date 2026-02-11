@@ -1,6 +1,7 @@
-from flask import Flask, render_template, jsonify, request, url_for, session, redirect
+from flask import Flask, render_template, jsonify, request, url_for, session, redirect, flash
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity, set_access_cookies, unset_jwt_cookies
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 from functools import wraps
@@ -11,10 +12,13 @@ from dotenv import load_dotenv
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from flask_migrate import Migrate
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import razorpay
 import threading
+import uuid
 from authlib.integrations.flask_client import OAuth
+import firebase_admin
+from firebase_admin import credentials, auth as firebase_auth
 
 
 # Local imports
@@ -60,7 +64,17 @@ app.config.update(
     SECRET_KEY=os.getenv("SECRET_KEY", "dev-secret-key-change-in-production"),
     UPLOAD_FOLDER=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/uploads'),
     ALLOWED_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif'},
-    MAX_CONTENT_LENGTH=16 * 1024 * 1024  # 16MB file size limit
+    MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB file size limit
+    # JWT Cookie Configuration (enables direct page navigation for protected routes)
+    JWT_TOKEN_LOCATION=['headers', 'cookies'],
+    JWT_COOKIE_SECURE=not os.getenv("FLASK_DEBUG"),  # HTTPS only in production
+    JWT_COOKIE_CSRF_PROTECT=True,
+    JWT_ACCESS_COOKIE_NAME='access_token_cookie',
+    JWT_COOKIE_SAMESITE='Lax',
+    # Firebase frontend config (for templates)
+    FIREBASE_API_KEY=os.getenv("FIREBASE_API_KEY", ""),
+    FIREBASE_AUTH_DOMAIN=os.getenv("FIREBASE_AUTH_DOMAIN", ""),
+    FIREBASE_PROJECT_ID=os.getenv("FIREBASE_PROJECT_ID", ""),
 )
 
 # Initialize OAuth AFTER app configuration
@@ -97,9 +111,6 @@ app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = ('Pujaapaath', 'support@pujaapaath.com')
 
-print(f"DEBUG: Email Config - Server: {app.config.get('MAIL_SERVER')}")
-print(f"DEBUG: Email Config - Username: {app.config.get('MAIL_USERNAME')}")
-
 # Initialize extensions
 from flask_mail import Mail, Message
 mail = Mail(app)
@@ -108,6 +119,48 @@ db.init_app(app) # Initialize database
 migrate = Migrate(app, db) # Initialize Flask-Migrate AFTER db
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
+csrf = CSRFProtect(app)
+
+# JWT error handlers - redirect to home for page routes, return JSON for API routes
+@jwt.unauthorized_loader
+def unauthorized_callback(callback):
+    """Handle missing JWT token"""
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Missing authorization token'}), 401
+    # Redirect to home page for HTML routes
+    return redirect('/?login=required')
+
+@jwt.invalid_token_loader
+def invalid_token_callback(callback):
+    """Handle invalid JWT token"""
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Invalid token'}), 401
+    return redirect('/?login=required')
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    """Handle expired JWT token"""
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Token has expired'}), 401
+    return redirect('/?login=expired')
+
+# Note: API routes are exempted from CSRF after all routes are defined (see bottom of file)
+
+# Initialize Firebase Admin SDK for Phone Auth
+firebase_config = {
+    "type": "service_account",
+    "project_id": os.getenv('FIREBASE_PROJECT_ID'),
+    "private_key": os.getenv('FIREBASE_PRIVATE_KEY', '').replace('\\n', '\n'),
+    "client_email": os.getenv('FIREBASE_CLIENT_EMAIL'),
+    "token_uri": "https://oauth2.googleapis.com/token",
+}
+
+if firebase_config['project_id'] and firebase_config['client_email']:
+    try:
+        cred = credentials.Certificate(firebase_config)
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        app.logger.warning(f"Firebase Admin SDK initialization failed: {e}")
 
 # Ensure upload directory exists
 with app.app_context():
@@ -128,7 +181,44 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Global error handler for API routes
+@app.errorhandler(Exception)
+def handle_api_error(error):
+    """Handle exceptions in API routes and return JSON instead of HTML"""
+    # Only handle API routes
+    if request.path.startswith('/api/'):
+        app.logger.error(f"API Error on {request.path}: {type(error).__name__} - {str(error)}")
+        import traceback
+        app.logger.error(traceback.format_exc())
+        
+        # Return JSON error response
+        return jsonify({
+            'error': str(error),
+            'type': type(error).__name__
+        }), 500
+    
+    # For non-API routes, let Flask handle it normally
+    raise error
+
 # ==================== HELPER FUNCTIONS ====================
+
+def send_email_async(message):
+    """Send email asynchronously in a background thread.
+
+    This is a shared helper to avoid duplicate async email code.
+    """
+    def _send(app_obj, msg):
+        with app_obj.app_context():
+            try:
+                mail.send(msg)
+                app_obj.logger.info(f"Email sent successfully to {msg.recipients}")
+            except Exception as e:
+                app_obj.logger.error(f"Error sending email async: {e}")
+
+    email_thread = threading.Thread(target=_send, args=(app, message))
+    email_thread.daemon = True
+    email_thread.start()
+
 
 def send_booking_confirmation_email(booking, pandit):
     """Send email with ICS calendar invite attached"""
@@ -272,17 +362,7 @@ def send_booking_confirmation_email(booking, pandit):
         )
         
         # 5. Send Asynchronously
-        def send_async(app_obj, message):
-            with app_obj.app_context():
-                try:
-                    mail.send(message)
-                    print(f"Email sent successfully to {message.recipients}")
-                except Exception as e:
-                    print(f"Error sending email async: {e}")
-
-        email_thread = threading.Thread(target=send_async, args=(app, msg))
-        email_thread.start()
-        print(f"Email sending initiated in background to {booking.email}")
+        send_email_async(msg)
         
     except Exception as e:
         print(f"Error preparing email: {str(e)}")
@@ -454,17 +534,7 @@ def send_order_confirmation_email(order):
             )
 
         # 2. Send Asynchronously
-        def send_async(app_obj, message):
-            with app_obj.app_context():
-                try:
-                    mail.send(message)
-                    print(f"Order confirmation email sent successfully to {message.recipients}")
-                except Exception as e:
-                    print(f"Error sending order email async: {e}")
-                    
-        email_thread = threading.Thread(target=send_async, args=(app, msg))
-        email_thread.start()
-        print(f"Order email sending initiated in background to {recipient_email}")
+        send_email_async(msg)
         
     except Exception as e:
         print(f"Error preparing order email: {str(e)}")
@@ -535,23 +605,91 @@ If you did not request this code, please ignore this email.
 """
 
         # Send email asynchronously for faster response
-        def send_async_email(flask_app, message):
-            with flask_app.app_context():
-                try:
-                    mail.send(message)
-                    print(f"OTP email sent successfully to {message.recipients}")
-                except Exception as e:
-                    print(f"Error sending OTP email: {e}")
-
-        thread = threading.Thread(target=send_async_email, args=(app._get_current_object(), msg))
-        thread.daemon = True
-        thread.start()
-        print(f"OTP email queued for {email}")
+        send_email_async(msg)
         return True
 
     except Exception as e:
         print(f"Error preparing OTP email: {str(e)}")
         return False
+
+def send_reset_email(user):
+    """Send password reset email"""
+    token = user.get_reset_token()
+    msg = Message('Password Reset Request',
+                  sender=('Pujaapaath Support', 'support@pujaapaath.com'),
+                  recipients=[user.email])
+    
+    reset_url = url_for('reset_token', token=token, _external=True)
+    
+    msg.body = f'''To reset your password, visit the following link:
+{reset_url}
+
+If you did not make this request then simply ignore this email and no changes will be made.
+'''
+    msg.html = f"""
+    <html>
+        <body>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #6b46c1;">Password Reset Request</h2>
+                <p>To reset your password, please click the button below:</p>
+                <a href="{reset_url}" style="background-color: #6b46c1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">Reset Password</a>
+                <p>If you did not make this request then simply ignore this email and no changes will be made.</p>
+                <p style="color: #888; font-size: 12px; margin-top: 30px;">PujaPath Support Team</p>
+            </div>
+        </body>
+    </html>
+    """
+    send_email_async(msg)
+
+@app.route("/forgot-password", methods=['GET', 'POST'])
+def forgot_password():
+    if current_user_is_authenticated(): # Helper needed or check session
+        return redirect(url_for('home'))
+        
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        if user:
+            send_reset_email(user)
+            flash('An email has been sent with instructions to reset your password.', 'success')
+        else:
+            # Don't reveal if email exists or not for security, but for UX maybe say sent if format is correct
+            flash('An email has been sent with instructions to reset your password.', 'success')
+        return redirect(url_for('forgot_password'))
+    return render_template('forgot_password.html')
+
+@app.route("/reset-password/<token>", methods=['GET', 'POST'])
+def reset_token(token):
+    if current_user_is_authenticated():
+        return redirect(url_for('home'))
+        
+    user = User.verify_reset_token(token)
+    if user is None:
+        flash('That is an invalid or expired token', 'danger')
+        return redirect(url_for('forgot_password'))
+        
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if password != confirm_password:
+            flash('Passwords do not match!', 'danger')
+            return redirect(url_for('reset_token', token=token))
+            
+        user.set_password(password)
+        db.session.commit()
+        flash('Your password has been updated! You are now able to log in', 'success')
+        return redirect(url_for('home')) # Or open login modal
+        
+    return render_template('reset_token.html')
+
+def current_user_is_authenticated():
+    # Helper checking session or JWT in cookies if applicable
+    # Since this app uses JWT for API but session/templates for some views, 
+    # we might need to check 'token' in localStorage (client side) or session.
+    # For now, simplistic check or skip. The templates handle auth state via JS mostly.
+    return False # 'user_id' in session
+
 
 @app.route("/")
 def home():
@@ -571,26 +709,121 @@ def home():
             "details": str(e)
         }), 500
 
-@app.route('/api/register', methods=['POST'])
+        return jsonify({
+            "error": "Database connection error. Please check your database connection.",
+            "details": str(e)
+        }), 500
+
+@app.route('/api/verify-reset-phone', methods=['POST'])
+def verify_reset_phone():
+    """Verify Firebase phone token for password reset"""
+    try:
+        data = request.json
+        app.logger.info(f"Reset phone verification request received. Data keys: {list(data.keys()) if data else 'None'}")
+        
+        if not data:
+            app.logger.error("No JSON data received in request")
+            return jsonify({'error': 'No data provided'}), 400
+            
+        id_token = data.get('idToken')
+        
+        if not id_token:
+            app.logger.error(f"ID token missing. Received data: {data}")
+            return jsonify({'error': 'ID token is required'}), 400
+            
+        # Verify Firebase ID token
+        try:
+            app.logger.info(f"Attempting to verify Firebase token (length: {len(id_token)})")
+            decoded_token = firebase_auth.verify_id_token(id_token)
+            phone = decoded_token.get('phone_number')
+            app.logger.info(f"Token verified successfully. Phone: {phone}")
+        except firebase_auth.InvalidIdTokenError as e:
+            app.logger.error(f"Invalid Firebase token: {str(e)}")
+            return jsonify({'error': 'Invalid authentication token. Please try again.'}), 400
+        except firebase_auth.ExpiredIdTokenError as e:
+            app.logger.error(f"Expired Firebase token: {str(e)}")
+            return jsonify({'error': 'Authentication token expired. Please request a new OTP.'}), 400
+        except ValueError as e:
+            app.logger.error(f"Firebase not initialized or value error: {str(e)}")
+            return jsonify({'error': 'Authentication service not available. Please contact support.'}), 500
+        except Exception as e:
+            app.logger.error(f"Unexpected Firebase verification error: {type(e).__name__} - {str(e)}")
+            return jsonify({'error': f'Authentication failed: {str(e)}'}), 400
+            
+        if not phone:
+            app.logger.error("Phone number not found in decoded token")
+            return jsonify({'error': 'Phone number not found in token'}), 400
+            
+        # Normalize phone (remove +91 or +)
+        phone_clean = phone.replace('+91', '') if phone.startswith('+91') else phone
+        phone_clean = phone_clean.lstrip('+') 
+        app.logger.info(f"Looking for user with phone: {phone_clean}")
+        
+        # Find user
+        user = User.query.filter_by(phone=phone_clean).first()
+        if not user:
+            app.logger.warning(f"No user found with phone: {phone_clean}")
+            return jsonify({'error': 'No account found with this phone number.'}), 404
+            
+        # Generate reset token (same as email flow)
+        token = user.get_reset_token()
+        app.logger.info(f"Reset token generated for user {user.id}")
+        
+        return jsonify({
+            'message': 'Verified',
+            'redirect_url': url_for('reset_token', token=token)
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Phone reset error: {type(e).__name__} - {str(e)}")
+        import traceback
+        app.logger.error(traceback.format_exc())
+        return jsonify({'error': 'An internal error occurred'}), 500
+
+@app.route("/test-email")
+def test_email():
+    email = request.args.get('email')
+    if not email:
+        return "Please provide email parameter: /test-email?email=your@email.com"
+    
+    try:
+        msg = Message("Test Email from PujaPath",
+                      recipients=[email])
+        msg.body = "This is a test email to verify Amazon SES configuration."
+        mail.send(msg)
+        return f"Email sent to {email}"
+    except Exception as e:
+        return f"Error sending email: {str(e)}"
 def register():
     try:
         data = request.json
         email = data.get('email')
+        phone = data.get('phone', '').replace('+91', '').strip()
 
-        # Check if user exists
+        # Check if email already exists
         if User.query.filter_by(email=email).first():
             return jsonify({'error': 'Email already registered'}), 400
 
-        if User.query.filter_by(username=data.get('username')).first():
-            return jsonify({'error': 'Username already taken'}), 400
+        # Check if phone already exists (if provided)
+        if phone and User.query.filter_by(phone=phone).first():
+            return jsonify({'error': 'Phone number already registered'}), 400
+
+        # Generate unique username if not provided or already taken
+        base_username = data.get('username') or email.split('@')[0]
+        username = base_username
+        counter = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
 
         # Create new user with profile data (email_verified defaults to False)
         user = User(
-            username=data.get('username'),
+            username=username,
             email=email,
             full_name=data.get('full_name', ''),
-            phone=data.get('phone', ''),
-            email_verified=False
+            phone=phone,
+            email_verified=False,
+            phone_verified=False
         )
         user.set_password(data.get('password'))
 
@@ -601,54 +834,201 @@ def register():
         new_otp = OTP(email=email)
         db.session.add(new_otp)
         db.session.commit()
-        print(f"DEBUG: About to send OTP {new_otp.otp_code} to {email}")
-        email_sent = send_otp_email(email, new_otp.otp_code)
-        print(f"DEBUG: OTP email initiated: {email_sent}")
+        send_otp_email(email, new_otp.otp_code)
 
         # Generate JWT token
         access_token = create_access_token(identity=str(user.id))
 
-        return jsonify({
+        response = jsonify({
             'message': 'Registration successful. Please verify your email.',
             'user': user.to_dict(),
             'access_token': access_token,
             'requires_verification': True,
             'verification_url': f'/verify-email?email={email}'
-        }), 201
+        })
+        set_access_cookies(response, access_token)
+        return response, 201
 
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
 
-# Update your `/api/login` endpoint
+# Login with email/phone and password
 @app.route('/api/login', methods=['POST'])
 def login():
     try:
         data = request.json
-        identifier = data.get('email') or data.get('username')
-        
-        if not identifier:
-            return jsonify({'error': 'Email or username is required'}), 400
-            
-        # Try to find user by email OR username
-        user = User.query.filter(
-            (User.email == identifier) | (User.username == identifier)
-        ).first()
-        
-        if user and user.check_password(data.get('password')):
+        email = data.get('email')
+        phone = data.get('phone', '').replace('+91', '').strip() if data.get('phone') else None
+        password = data.get('password')
+
+        if not password:
+            return jsonify({'error': 'Password is required'}), 400
+
+        if not email and not phone:
+            return jsonify({'error': 'Email or phone is required'}), 400
+
+        # Find user by email or phone
+        user = None
+        if email:
+            user = User.query.filter(
+                (User.email == email) | (User.username == email)
+            ).first()
+        elif phone:
+            user = User.query.filter_by(phone=phone).first()
+
+        if user and user.check_password(password):
             access_token = create_access_token(identity=str(user.id))
-            
-            return jsonify({
+
+            response = jsonify({
                 'message': 'Login successful',
                 'user': user.to_dict(),
                 'access_token': access_token
-            }), 200
-        
-        return jsonify({'error': 'Invalid email/username or password'}), 401
-        
+            })
+            set_access_cookies(response, access_token)
+            return response, 200
+
+        return jsonify({'error': 'Invalid credentials'}), 401
+
     except Exception as e:
-        # Log the error for debugging: app.logger.error(f"Login error: {e}")
+        app.logger.error(f"Login error: {str(e)}")
         return jsonify({'error': 'An internal error occurred. Please try again.'}), 500
+
+# Firebase Phone Auth Login
+@app.route('/api/firebase/login', methods=['POST'])
+def firebase_login():
+    """Authenticate user via Firebase Phone Auth"""
+    try:
+        data = request.json
+        id_token = data.get('idToken')
+
+        if not id_token:
+            return jsonify({'error': 'ID token is required'}), 400
+
+        # Verify Firebase ID token
+        decoded_token = firebase_auth.verify_id_token(id_token)
+        phone = decoded_token.get('phone_number')
+
+        if not phone:
+            return jsonify({'error': 'Phone number not found in token'}), 400
+
+        # Remove country code prefix for storage (keep just 10 digits)
+        phone_clean = phone.replace('+91', '') if phone.startswith('+91') else phone
+        phone_clean = phone_clean.lstrip('+')  # Remove any remaining + prefix
+
+        # Find existing user by phone
+        user = User.query.filter_by(phone=phone_clean).first()
+
+        if not user:
+            # Create new user with phone
+            user = User(
+                username=f"user_{phone_clean[-4:]}_{int(datetime.now(timezone.utc).timestamp())}",
+                email=f"{phone_clean}@phone.pujapath.local",
+                phone=phone_clean,
+                full_name='',
+                email_verified=False,
+                phone_verified=True
+            )
+            user.set_password(os.urandom(16).hex())  # Random password
+            db.session.add(user)
+            db.session.commit()
+        else:
+            # Mark phone as verified for existing user
+            if not user.phone_verified:
+                user.phone_verified = True
+                db.session.commit()
+
+        # Generate JWT
+        access_token = create_access_token(identity=str(user.id))
+
+        response = jsonify({
+            'message': 'Login successful',
+            'user': user.to_dict(),
+            'access_token': access_token
+        })
+        set_access_cookies(response, access_token)
+        return response, 200
+
+    except firebase_auth.InvalidIdTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except firebase_auth.ExpiredIdTokenError:
+        return jsonify({'error': 'Token expired'}), 401
+    except Exception as e:
+        app.logger.error(f"Firebase login error: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Authentication failed'}), 401
+
+# Register new user with phone verification via Firebase
+@app.route('/api/register-with-phone', methods=['POST'])
+def register_with_phone():
+    """Register new user with phone verification via Firebase"""
+    try:
+        data = request.json
+        firebase_token = data.get('firebase_token')
+
+        if not firebase_token:
+            return jsonify({'error': 'Firebase token is required'}), 400
+
+        # Verify Firebase ID token
+        decoded_token = firebase_auth.verify_id_token(firebase_token)
+        phone_from_token = decoded_token.get('phone_number', '').replace('+91', '')
+
+        email = data.get('email')
+        phone = data.get('phone', '').replace('+91', '').strip()
+
+        # Verify phone matches token
+        if phone != phone_from_token:
+            return jsonify({'error': 'Phone verification mismatch'}), 400
+
+        # Check if email already exists
+        if User.query.filter_by(email=email).first():
+            return jsonify({'error': 'Email already registered'}), 400
+
+        # Check if phone already exists
+        if User.query.filter_by(phone=phone).first():
+            return jsonify({'error': 'Phone number already registered'}), 400
+
+        # Generate unique username
+        base_username = email.split('@')[0]
+        username = base_username
+        counter = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        # Create new user with phone verified
+        user = User(
+            username=username,
+            email=email,
+            phone=phone,
+            full_name=data.get('full_name', ''),
+            email_verified=False,
+            phone_verified=True  # Verified via Firebase
+        )
+        user.set_password(data.get('password'))
+
+        db.session.add(user)
+        db.session.commit()
+
+        # Generate JWT token
+        access_token = create_access_token(identity=str(user.id))
+
+        response = jsonify({
+            'message': 'Registration successful!',
+            'user': user.to_dict(),
+            'access_token': access_token
+        })
+        set_access_cookies(response, access_token)
+        return response, 201
+
+    except firebase_auth.InvalidIdTokenError:
+        return jsonify({'error': 'Invalid Firebase token'}), 401
+    except firebase_auth.ExpiredIdTokenError:
+        return jsonify({'error': 'Firebase token expired'}), 401
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Phone registration error: {str(e)}")
+        return jsonify({'error': str(e)}), 400
 
 # OTP Verification Routes
 @app.route('/api/send-otp', methods=['POST'])
@@ -742,7 +1122,7 @@ def resend_otp():
         # Check rate limiting (optional: prevent spam)
         recent_otp = OTP.query.filter_by(email=email).order_by(OTP.created_at.desc()).first()
         if recent_otp:
-            time_diff = datetime.utcnow() - recent_otp.created_at
+            time_diff = datetime.now(timezone.utc) - recent_otp.created_at
             if time_diff.total_seconds() < 60:  # 1 minute cooldown
                 return jsonify({
                     'error': 'Please wait before requesting another OTP',
@@ -771,6 +1151,108 @@ def resend_otp():
         db.session.rollback()
         app.logger.error(f"Resend OTP error: {str(e)}")
         return jsonify({'error': 'Failed to resend OTP'}), 500
+
+# Passwordless Login OTP Routes
+@app.route('/api/send-login-otp', methods=['POST'])
+def send_login_otp():
+    """Send OTP for passwordless email login"""
+    try:
+        data = request.json
+        email = data.get('email')
+
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+
+        # Check if user exists
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'error': 'No account found with this email'}), 404
+
+        # Check rate limiting
+        recent_otp = OTP.query.filter_by(email=email).order_by(OTP.created_at.desc()).first()
+        if recent_otp:
+            time_diff = datetime.now(timezone.utc) - recent_otp.created_at
+            if time_diff.total_seconds() < 60:
+                return jsonify({
+                    'error': 'Please wait before requesting another OTP',
+                    'wait_seconds': int(60 - time_diff.total_seconds())
+                }), 429
+
+        # Invalidate existing OTPs
+        existing_otps = OTP.query.filter_by(email=email, is_used=False).all()
+        for otp in existing_otps:
+            otp.is_used = True
+
+        # Create and send new OTP
+        new_otp = OTP(email=email)
+        db.session.add(new_otp)
+        db.session.commit()
+
+        if send_otp_email(email, new_otp.otp_code):
+            return jsonify({
+                'message': 'OTP sent successfully',
+                'email': email
+            }), 200
+        else:
+            return jsonify({'error': 'Failed to send OTP email'}), 500
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Send login OTP error: {str(e)}")
+        return jsonify({'error': 'Failed to send OTP'}), 500
+
+@app.route('/api/verify-login-otp', methods=['POST'])
+def verify_login_otp():
+    """Verify OTP and login user (passwordless)"""
+    try:
+        data = request.json
+        email = data.get('email')
+        otp_code = data.get('otp_code')
+
+        if not email or not otp_code:
+            return jsonify({'error': 'Email and OTP code are required'}), 400
+
+        # Find valid OTP
+        otp_record = OTP.query.filter_by(
+            email=email,
+            otp_code=otp_code,
+            is_used=False
+        ).order_by(OTP.created_at.desc()).first()
+
+        if not otp_record:
+            return jsonify({'error': 'Invalid OTP code'}), 400
+
+        if not otp_record.is_valid():
+            return jsonify({'error': 'OTP has expired. Please request a new one.'}), 400
+
+        # Mark OTP as used
+        otp_record.mark_as_used()
+
+        # Get user and mark email as verified
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        if not user.email_verified:
+            user.email_verified = True
+
+        db.session.commit()
+
+        # Generate JWT
+        access_token = create_access_token(identity=str(user.id))
+
+        response = jsonify({
+            'message': 'Login successful',
+            'user': user.to_dict(),
+            'access_token': access_token
+        })
+        set_access_cookies(response, access_token)
+        return response, 200
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Verify login OTP error: {str(e)}")
+        return jsonify({'error': 'Failed to verify OTP'}), 500
 
 @app.route('/verify-email')
 def verify_email_page():
@@ -833,15 +1315,57 @@ def google_callback():
         
         # Generate JWT token
         access_token = create_access_token(identity=str(user.id))
-        
-        # Redirect to home with token in URL (frontend will handle storing it)
-        user_json = json.dumps(user.to_dict())
-        return redirect(f"/?token={access_token}&user={quote(user_json)}")
+
+        # Store token in session (secure) instead of URL (insecure)
+        session['oauth_token'] = access_token
+        session['oauth_user'] = user.to_dict()
+        return redirect(url_for('oauth_complete'))
         
     except Exception as e:
         import traceback
         app.logger.error(f"Google OAuth error: {str(e)}\n{traceback.format_exc()}")
         return redirect('/?error=oauth_failed')
+
+
+@app.route('/oauth/complete')
+def oauth_complete():
+    """Securely transfer OAuth token from session to localStorage and set cookies"""
+    token = session.pop('oauth_token', None)
+    user = session.pop('oauth_user', None)
+
+    if not token or not user:
+        return redirect('/?error=oauth_failed')
+
+    # Render a page that stores token in localStorage then redirects
+    response = app.response_class(
+        response=f'''
+        <!DOCTYPE html>
+        <html>
+        <head><title>Completing login...</title></head>
+        <body>
+            <p>Completing login, please wait...</p>
+            <script>
+                localStorage.setItem('token', '{token}');
+                localStorage.setItem('user', JSON.stringify({json.dumps(user)}));
+                window.location.href = '/';
+            </script>
+        </body>
+        </html>
+        ''',
+        status=200,
+        mimetype='text/html'
+    )
+    set_access_cookies(response, token)
+    return response
+
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    """Clear JWT cookies on logout"""
+    response = jsonify({'message': 'Logged out successfully'})
+    unset_jwt_cookies(response)
+    return response, 200
+
 
 @app.route('/api/upload', methods=['POST'])
 @jwt_required()
@@ -921,15 +1445,43 @@ def contact():
             phone = request.form.get('phone')
             subject = request.form.get('subject')
             message = request.form.get('message')
-            
-            # Here you would typically save to database or send email
-            app.logger.info(f"Contact form submission from {name} ({email}): {subject}")
-            
+
+            # Validate required fields
+            if not all([name, email, subject, message]):
+                return render_template('contact.html', error="Please fill in all required fields")
+
+            # Send email to support team
+            if app.config.get('MAIL_USERNAME'):
+                try:
+                    msg = Message(
+                        subject=f"[Contact Form] {subject}",
+                        recipients=['support@pujaapaath.com'],
+                        reply_to=email,
+                        body=f"""
+New contact form submission:
+
+Name: {name}
+Email: {email}
+Phone: {phone or 'Not provided'}
+Subject: {subject}
+
+Message:
+{message}
+"""
+                    )
+                    mail.send(msg)
+                    app.logger.info(f"Contact form email sent from {name} ({email})")
+                except Exception as e:
+                    app.logger.error(f"Failed to send contact form email: {str(e)}")
+                    # Still show success to user - we logged it
+            else:
+                app.logger.info(f"Contact form submission from {name} ({email}): {subject}")
+
             return render_template('contact.html', success=True)
         except Exception as e:
             app.logger.error(f"Error in contact form: {str(e)}")
-            return render_template('contact.html', error=str(e))
-    
+            return render_template('contact.html', error="An error occurred. Please try again.")
+
     return render_template('contact.html')
 
 
@@ -981,7 +1533,11 @@ def pandit_signup():
 
 @app.route('/api/seed-data', methods=['GET'])
 def seed_data():
-    """Seed the database with sample data"""
+    """Seed the database with sample data (development only)"""
+    # SECURITY: Only allow in debug mode
+    if not os.getenv("FLASK_DEBUG"):
+        return jsonify({"error": "This endpoint is disabled in production"}), 404
+
     try:
         # Check if data already exists
         if Pandit.query.first() or PujaMaterial.query.first() or Testimonial.query.first() or Bundle.query.first():
@@ -1112,7 +1668,7 @@ def seed_data():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/book-pandit', methods=['POST'])
-@jwt_required(optional=True)
+@jwt_required()
 def book_pandit():
     """API endpoint for booking a pandit"""
     try:
@@ -1124,8 +1680,8 @@ def book_pandit():
             if field not in data:
                 return jsonify({"error": f"Missing required field: {field}"}), 400
         
-        # Generate booking number
-        booking_number = f"BOOK{datetime.now().strftime('%Y%m%d%H%M%S')}{Booking.query.count() + 1}"
+        # Generate booking number (UUID suffix prevents race condition)
+        booking_number = f"BOOK{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:8].upper()}"
         
         # Parse the date string
         from datetime import datetime as dt
@@ -1134,6 +1690,10 @@ def book_pandit():
         except ValueError:
             return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
         
+        # Get booking amount (from request, env, or default)
+        default_fee = int(os.getenv('DEFAULT_BOOKING_FEE', 999))
+        booking_amount = data.get('amount', default_fee)
+
         # Create booking
         booking = Booking(
             pandit_id=data['pandit_id'],
@@ -1145,7 +1705,7 @@ def book_pandit():
             address=data['address'],
             notes=data.get('notes', ''),
             booking_number=booking_number,
-            amount=999,  # Fixed price for now
+            amount=booking_amount,
             payment_status='pending',
             status='pending'
         )
@@ -1212,7 +1772,7 @@ def checkout_page():
         if cart_data:
             try:
                 cart = json.loads(unquote(cart_data))
-            except:
+            except (json.JSONDecodeError, ValueError):
                 cart = []
         else:
             cart = []
@@ -1252,8 +1812,8 @@ def checkout_page():
         
         try:
             cart = json.loads(cart_data)
-        except:
-            return render_template('checkout.html', 
+        except (json.JSONDecodeError, ValueError):
+            return render_template('checkout.html',
                                  error="Invalid cart data",
                                  cart=[],
                                  total=0)
@@ -1292,8 +1852,8 @@ def checkout_page():
                                  cart=cart,
                                  total=0)
         
-        # Generate order number
-        order_number = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{Order.query.count() + 1}"
+        # Generate order number (UUID suffix prevents race condition)
+        order_number = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:8].upper()}"
         
         # Create order
         order = Order(
@@ -1344,12 +1904,12 @@ def checkout_page():
 def order_confirmation(order_number):
     """Order confirmation page"""
     order = Order.query.filter_by(order_number=order_number).first_or_404()
-    return render_template('order_confirmation.html', order=order)
-    # ✅ NEW: Check if payment was made
+
+    # Check if payment was made
     if order.payment_status != 'paid':
         # Redirect to payment page if not paid
         return redirect(url_for('payment_page', order_number=order_number))
-    
+
     return render_template('order_confirmation.html', order=order)
 
 
@@ -1421,8 +1981,8 @@ def create_order():
         if not order_items_data:
             return jsonify({"error": "No valid items in cart"}), 400
         
-        # Generate order number
-        order_number = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{Order.query.count() + 1}"
+        # Generate order number (UUID suffix prevents race condition)
+        order_number = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:8].upper()}"
         
         # Create order
         order = Order(
@@ -1564,7 +2124,7 @@ def verify_razorpay_payment():
             order.payment_status = 'paid'
             order.status = 'confirmed'
             order.payment_reference = razorpay_payment_id
-            order.payment_date = datetime.utcnow()
+            order.payment_date = datetime.now(timezone.utc)
             db.session.commit()
             
             print(f"Payment verified for Order {order_number}. Sending email...")
@@ -1702,7 +2262,7 @@ def verify_pandit_razorpay_payment():
             booking.payment_status = 'paid'
             booking.status = 'confirmed'
             booking.payment_reference = razorpay_payment_id
-            booking.payment_date = datetime.utcnow()
+            booking.payment_date = datetime.now(timezone.utc)
             db.session.commit()
 
             # Send Confirmation Email with Calendar Invite
@@ -2113,7 +2673,11 @@ def update_order_status(order_id):
 
 @app.route('/api/clear-data', methods=['GET'])
 def clear_data():
-    """Clear all seed data (use with caution!)"""
+    """Clear all seed data (development only)"""
+    # SECURITY: Only allow in debug mode
+    if not os.getenv("FLASK_DEBUG"):
+        return jsonify({"error": "This endpoint is disabled in production"}), 404
+
     try:
         PujaMaterial.query.delete()
         Testimonial.query.delete()
@@ -2128,7 +2692,11 @@ def clear_data():
 
 @app.route('/admin/init', methods=['GET'])
 def init_admin():
-    """Initialize admin user (run once)"""
+    """Initialize admin user (development only)"""
+    # SECURITY: Only allow in debug mode
+    if not os.getenv("FLASK_DEBUG"):
+        return jsonify({"error": "This endpoint is disabled in production"}), 404
+
     try:
         # Check if admin already exists
         if Admin.query.first():
@@ -2170,7 +2738,7 @@ def init_admin():
 def get_user_dashboard():
     """Get user dashboard summary"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         user = User.query.get(user_id)
         
         if not user:
@@ -2214,7 +2782,7 @@ def get_user_dashboard():
 def get_user_orders():
     """Get all orders for the logged-in user"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         orders = Order.query.filter_by(user_id=user_id)\
             .order_by(Order.created_at.desc())\
             .all()
@@ -2231,7 +2799,7 @@ def get_user_orders():
 def get_user_bookings():
     """Get all bookings for the logged-in user"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         bookings = Booking.query.filter_by(user_id=user_id)\
             .order_by(Booking.created_at.desc())\
             .all()
@@ -2248,7 +2816,7 @@ def get_user_bookings():
 def cancel_user_booking(booking_id):
     """Cancel a booking"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         booking = Booking.query.get(booking_id)
         
         if not booking:
@@ -2274,7 +2842,7 @@ def cancel_user_booking(booking_id):
 def get_user_profile():
     """Get user profile"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         user = User.query.get(user_id)
         
         if not user:
@@ -2290,7 +2858,7 @@ def get_user_profile():
 def update_user_profile():
     """Update user profile"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         user = User.query.get(user_id)
         
         if not user:
@@ -2325,7 +2893,7 @@ def update_user_profile():
 def change_password():
     """Change user password"""
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         user = User.query.get(user_id)
         
         if not user:
@@ -2350,31 +2918,43 @@ def change_password():
 
 
 @app.route('/user/dashboard')
+@jwt_required()
 def user_dashboard_page():
     """Render user dashboard HTML page"""
     return render_template('user/dashboard.html')
 
 @app.route('/user/orders')
+@jwt_required()
 def user_orders_page():
     """Render user orders HTML page"""
     return render_template('user/orders.html')
 
 @app.route('/user/profile')
+@jwt_required()
 def user_profile_page():
     """Render user profile HTML page"""
     return render_template('user/profile.html')
 
 @app.route('/user/bookings')
+@jwt_required()
 def user_bookings_page():
     """Render user bookings HTML page"""
-    return render_template('user/bookings.html')    
+    return render_template('user/bookings.html')
 
 @app.route('/user/settings')
+@jwt_required()
 def user_settings_page():
     """Render user settings HTML page"""
     return render_template('user/settings.html')    
 
 
+
+# Exempt all API routes from CSRF (they use JWT or Firebase authentication)
+for rule in app.url_map.iter_rules():
+    if rule.rule.startswith('/api/'):
+        view_func = app.view_functions.get(rule.endpoint)
+        if view_func:
+            csrf.exempt(view_func)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=os.getenv("FLASK_DEBUG", False))

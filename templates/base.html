@@ -199,40 +199,6 @@
             transform: translateY(0);
         }
 
-        /* Side Drawer & Overlay */
-        .drawer-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease-in-out;
-        }
-
-        .drawer-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .side-drawer {
-            position: fixed;
-            top: 0;
-            left: -300px;
-            width: 300px;
-            height: 100%;
-            background: white;
-            z-index: 1001;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
-            overflow-y: auto;
-        }
-
-        .side-drawer.active {
-            left: 0;
-        }
-
         /* Bottom Navigation Bar */
         .bottom-nav {
             position: fixed;
@@ -285,7 +251,6 @@
 
     {% include 'partials/announcement_bar.html' %}
     {% include 'partials/navbar.html' %}
-    {% include 'partials/mobile_drawer.html' %}
     {% include 'partials/bottom_nav.html' %}
 
     <!-- Main Content -->
@@ -299,9 +264,33 @@
 
     <!-- Scripts -->
     <script src="https://unpkg.com/swiper@8/swiper-bundle.min.js"></script>
+
+    <!-- Firebase SDK for Phone Auth -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "{{ config.get('FIREBASE_API_KEY', '') }}",
+            authDomain: "{{ config.get('FIREBASE_AUTH_DOMAIN', '') }}",
+            projectId: "{{ config.get('FIREBASE_PROJECT_ID', '') }}"
+        };
+        if (firebaseConfig.apiKey) {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase SDK initialized");
+        }
+    </script>
+
     <script>
         // Shopping Cart Functionality
         let cart = JSON.parse(localStorage.getItem('pujapath_cart')) || [];
+
+        // XSS protection: escape HTML entities
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         // Handle Google OAuth callback
         const urlParams = new URLSearchParams(window.location.search);
@@ -358,7 +347,7 @@
                     return `
                     <div class="cart-item flex items-center gap-4 bg-gray-50 p-4 rounded-xl hover:bg-gray-100 transition-colors">
                         <div class="flex-1">
-                            <h4 class="font-bold text-gray-800">${item.name}</h4>
+                            <h4 class="font-bold text-gray-800">${escapeHtml(item.name)}</h4>
                             <p class="text-orange-600 font-semibold text-sm">₹${item.price} × ${item.quantity}</p>
                         </div>
                         <div class="flex items-center gap-2">
@@ -404,7 +393,7 @@
             // Show success notification
             const notification = document.createElement('div');
             notification.className = 'fixed top-24 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-fadeInUp';
-            notification.innerHTML = `<div class="flex items-center gap-3"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><div><strong>Added to cart!</strong><br><span class="text-sm">${name}</span></div></div>`;
+            notification.innerHTML = `<div class="flex items-center gap-3"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><div><strong>Added to cart!</strong><br><span class="text-sm">${escapeHtml(name)}</span></div></div>`;
             document.body.appendChild(notification);
             setTimeout(() => notification.remove(), 3000);
         }
@@ -513,14 +502,6 @@
             }
         }
 
-        function toggleSideDrawer() {
-            const drawer = document.getElementById('side-drawer');
-            const overlay = document.getElementById('drawer-overlay');
-            if (drawer) drawer.classList.toggle('active');
-            if (overlay) overlay.classList.toggle('active');
-            document.body.style.overflow = drawer && drawer.classList.contains('active') ? 'hidden' : '';
-        }
-
         // Position navbar below announcement bar
         function updateNavPosition() {
             const bar = document.getElementById('announcement-bar');
@@ -581,6 +562,790 @@
                 const modal = document.getElementById('login-modal');
                 if (modal) modal.classList.add('active');
             }, 300);
+        }
+
+        // Login Required Modal Functions (for protected actions)
+        function openLoginRequiredModal() {
+            const modal = document.getElementById('login-required-modal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeLoginRequiredModal() {
+            const modal = document.getElementById('login-required-modal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        // ============================================
+        // FIREBASE PHONE AUTH FUNCTIONS
+        // ============================================
+        let confirmationResult = null;
+
+        // Initialize reCAPTCHA (invisible)
+        function initRecaptcha() {
+            if (typeof firebase !== 'undefined' && firebase.auth && !window.recaptchaVerifier) {
+                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                    'size': 'invisible',
+                    'callback': (response) => {
+                        console.log('reCAPTCHA solved');
+                    }
+                });
+            }
+        }
+
+        // Switch between Email and Phone login tabs
+        function switchLoginTab(tab) {
+            const emailTab = document.getElementById('email-tab');
+            const phoneTab = document.getElementById('phone-tab');
+            const emailForm = document.getElementById('login-form');
+            const phoneForm = document.getElementById('phone-login-form');
+
+            if (!emailTab || !phoneTab) return;
+
+            if (tab === 'phone') {
+                emailTab.classList.remove('border-purple-600', 'text-purple-600');
+                emailTab.classList.add('border-transparent', 'text-gray-500');
+                phoneTab.classList.add('border-purple-600', 'text-purple-600');
+                phoneTab.classList.remove('border-transparent', 'text-gray-500');
+                if (emailForm) emailForm.classList.add('hidden');
+                if (phoneForm) phoneForm.classList.remove('hidden');
+                initRecaptcha();
+            } else {
+                phoneTab.classList.remove('border-purple-600', 'text-purple-600');
+                phoneTab.classList.add('border-transparent', 'text-gray-500');
+                emailTab.classList.add('border-purple-600', 'text-purple-600');
+                emailTab.classList.remove('border-transparent', 'text-gray-500');
+                if (phoneForm) phoneForm.classList.add('hidden');
+                if (emailForm) emailForm.classList.remove('hidden');
+            }
+        }
+
+        // Send OTP via Firebase
+        async function sendPhoneOTP() {
+            const phoneNumber = document.getElementById('phone-number').value;
+            const errorDiv = document.getElementById('phone-error');
+            const sendBtn = document.getElementById('send-otp-btn');
+
+            if (phoneNumber.length !== 10 || !/^\d+$/.test(phoneNumber)) {
+                errorDiv.textContent = 'Please enter a valid 10-digit phone number';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'Sending...';
+                errorDiv.classList.add('hidden');
+
+                const fullNumber = '+91' + phoneNumber;
+                confirmationResult = await firebase.auth().signInWithPhoneNumber(fullNumber, window.recaptchaVerifier);
+
+                document.getElementById('otp-section').classList.remove('hidden');
+                document.getElementById('phone-input-section').classList.add('hidden');
+                sendBtn.textContent = 'OTP Sent!';
+
+            } catch (error) {
+                console.error('Send OTP error:', error);
+                errorDiv.textContent = error.message || 'Failed to send OTP. Please try again.';
+                errorDiv.classList.remove('hidden');
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send OTP';
+
+                // Reset reCAPTCHA on error
+                if (window.recaptchaVerifier) {
+                    window.recaptchaVerifier.render().then(widgetId => {
+                        grecaptcha.reset(widgetId);
+                    }).catch(e => console.error('reCAPTCHA reset error:', e));
+                }
+            }
+        }
+
+        // Verify OTP and login
+        async function verifyPhoneOTP() {
+            const otpCode = document.getElementById('otp-code').value;
+            const errorDiv = document.getElementById('phone-error');
+            const verifyBtn = document.querySelector('#otp-section button');
+
+            if (otpCode.length !== 6 || !/^\d+$/.test(otpCode)) {
+                errorDiv.textContent = 'Please enter the 6-digit OTP';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                errorDiv.classList.add('hidden');
+                if (verifyBtn) {
+                    verifyBtn.disabled = true;
+                    verifyBtn.textContent = 'Verifying...';
+                }
+
+                // Verify with Firebase
+                const result = await confirmationResult.confirm(otpCode);
+                const idToken = await result.user.getIdToken();
+
+                // Send to backend for user creation/login
+                const response = await fetch('/api/firebase/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    checkAuthStatus();
+                    closeLoginModal();
+
+                    // Show success message
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed top-24 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-fadeInUp';
+                    notification.innerHTML = '<div class="flex items-center gap-3"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Login successful!</span></div>';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 3000);
+
+                    // Reload to update UI
+                    window.location.reload();
+                } else {
+                    errorDiv.textContent = data.error || 'Login failed';
+                    errorDiv.classList.remove('hidden');
+                    if (verifyBtn) {
+                        verifyBtn.disabled = false;
+                        verifyBtn.textContent = 'Verify & Login';
+                    }
+                }
+
+            } catch (error) {
+                console.error('Verify OTP error:', error);
+                errorDiv.textContent = error.message || 'Invalid OTP. Please try again.';
+                errorDiv.classList.remove('hidden');
+                if (verifyBtn) {
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'Verify & Login';
+                }
+            }
+        }
+
+        // Reset phone login form (legacy - kept for compatibility)
+        function resetPhoneLoginForm() {
+            const phoneInput = document.getElementById('phone-number');
+            const otpInput = document.getElementById('otp-code');
+            const otpSection = document.getElementById('otp-section');
+            const phoneInputSection = document.getElementById('phone-input-section');
+            const sendBtn = document.getElementById('send-otp-btn');
+            const errorDiv = document.getElementById('phone-error');
+
+            if (phoneInput) phoneInput.value = '';
+            if (otpInput) otpInput.value = '';
+            if (otpSection) otpSection.classList.add('hidden');
+            if (phoneInputSection) phoneInputSection.classList.remove('hidden');
+            if (sendBtn) {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send OTP';
+            }
+            if (errorDiv) errorDiv.classList.add('hidden');
+            confirmationResult = null;
+        }
+
+        // ============================================
+        // UNIFIED AUTH FLOW - NEW FUNCTIONS
+        // ============================================
+
+        // Registration state
+        let registrationData = {};
+        let registrationConfirmationResult = null;
+
+        // Login state
+        let loginIdentifierType = null; // 'email' or 'phone'
+        let loginConfirmationResult = null;
+
+        // Helper functions
+        function showError(element, message) {
+            element.className = 'bg-red-100 text-red-600 p-3 rounded-xl text-sm text-center font-medium';
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        function showSuccess(element, message) {
+            element.className = 'bg-green-100 text-green-700 p-3 rounded-xl text-sm text-center font-medium';
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+
+        // ============================================
+        // REGISTRATION FLOW
+        // ============================================
+
+        function proceedToVerification() {
+            const name = document.getElementById('register-name').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const phone = document.getElementById('register-phone').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm').value;
+            const termsAccepted = document.getElementById('register-terms').checked;
+            const verifyMethod = document.querySelector('input[name="verify-method"]:checked').value;
+            const errorDiv = document.getElementById('register-error');
+            const continueBtn = document.getElementById('register-continue-btn');
+
+            // Validation
+            if (!name || !email || !phone || !password || !confirmPassword) {
+                showError(errorDiv, 'All fields are required');
+                return;
+            }
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showError(errorDiv, 'Please enter a valid email address');
+                return;
+            }
+
+            if (phone.length !== 10 || !/^\d+$/.test(phone)) {
+                showError(errorDiv, 'Please enter a valid 10-digit phone number');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError(errorDiv, 'Password must be at least 6 characters');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showError(errorDiv, 'Passwords do not match');
+                return;
+            }
+
+            if (!termsAccepted) {
+                showError(errorDiv, 'Please accept the Terms & Conditions');
+                return;
+            }
+
+            // Store registration data
+            registrationData = { name, email, phone, password, verifyMethod };
+
+            // Hide error and disable button
+            errorDiv.classList.add('hidden');
+            continueBtn.disabled = true;
+            continueBtn.textContent = 'Processing...';
+
+            // Update Step 2 UI based on verification method
+            const verificationIcon = document.getElementById('verification-icon');
+            const verificationMessage = document.getElementById('verification-message');
+
+            if (verifyMethod === 'phone') {
+                verificationIcon.className = 'fas fa-mobile-alt text-2xl text-blue-600';
+                verificationMessage.textContent = `Enter the 6-digit code sent to +91 ${phone}`;
+                // Initialize Firebase reCAPTCHA and send OTP
+                initRegisterRecaptcha();
+                sendRegistrationPhoneOTP();
+            } else {
+                verificationIcon.className = 'fas fa-envelope text-2xl text-blue-600';
+                verificationMessage.textContent = `Enter the 6-digit code sent to ${email}`;
+                // Send email OTP via backend
+                sendRegistrationEmailOTP();
+            }
+        }
+
+        function initRegisterRecaptcha() {
+            if (typeof firebase !== 'undefined' && firebase.auth && !window.registerRecaptchaVerifier) {
+                window.registerRecaptchaVerifier = new firebase.auth.RecaptchaVerifier('register-recaptcha-container', {
+                    'size': 'invisible',
+                    'callback': (response) => {
+                        console.log('Register reCAPTCHA solved');
+                    }
+                });
+            }
+        }
+
+        async function sendRegistrationPhoneOTP() {
+            const errorDiv = document.getElementById('register-error');
+            const continueBtn = document.getElementById('register-continue-btn');
+            try {
+                const fullNumber = '+91' + registrationData.phone;
+                registrationConfirmationResult = await firebase.auth().signInWithPhoneNumber(
+                    fullNumber,
+                    window.registerRecaptchaVerifier
+                );
+                console.log('Registration phone OTP sent');
+
+                // Show Step 2
+                document.getElementById('register-step-1').classList.add('hidden');
+                document.getElementById('register-step-2').classList.remove('hidden');
+            } catch (error) {
+                console.error('Send registration OTP error:', error);
+                showError(errorDiv, error.message || 'Failed to send OTP. Please try again.');
+            } finally {
+                continueBtn.disabled = false;
+                continueBtn.textContent = 'Continue to Verification';
+            }
+        }
+
+        async function sendRegistrationEmailOTP() {
+            const errorDiv = document.getElementById('register-error');
+            const continueBtn = document.getElementById('register-continue-btn');
+            try {
+                // Create the user account (email verification will happen after)
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        full_name: registrationData.name,
+                        email: registrationData.email,
+                        phone: registrationData.phone,
+                        username: registrationData.email.split('@')[0] + '_' + Date.now(),
+                        password: registrationData.password
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Registration failed');
+                }
+
+                // Store token temporarily (user not verified yet)
+                registrationData.tempToken = data.access_token;
+                registrationData.tempUser = data.user;
+
+                console.log('Email OTP sent during registration');
+
+                // Show Step 2
+                document.getElementById('register-step-1').classList.add('hidden');
+                document.getElementById('register-step-2').classList.remove('hidden');
+            } catch (error) {
+                console.error('Registration email OTP error:', error);
+                showError(errorDiv, error.message);
+            } finally {
+                continueBtn.disabled = false;
+                continueBtn.textContent = 'Continue to Verification';
+            }
+        }
+
+        async function verifyRegistrationOTP() {
+            const otpCode = document.getElementById('register-otp').value;
+            const errorDiv = document.getElementById('register-error');
+            const verifyBtn = document.getElementById('verify-register-otp-btn');
+
+            if (otpCode.length !== 6 || !/^\d+$/.test(otpCode)) {
+                showError(errorDiv, 'Please enter the 6-digit OTP');
+                return;
+            }
+
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verifying...';
+
+            if (registrationData.verifyMethod === 'phone') {
+                await verifyRegistrationPhoneOTP(otpCode);
+            } else {
+                await verifyRegistrationEmailOTP(otpCode);
+            }
+
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Verify & Create Account';
+        }
+
+        async function verifyRegistrationPhoneOTP(otpCode) {
+            const errorDiv = document.getElementById('register-error');
+            try {
+                // Verify with Firebase
+                const result = await registrationConfirmationResult.confirm(otpCode);
+                const idToken = await result.user.getIdToken();
+
+                // Create user account with phone verification
+                const response = await fetch('/api/register-with-phone', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        full_name: registrationData.name,
+                        email: registrationData.email,
+                        phone: registrationData.phone,
+                        password: registrationData.password,
+                        firebase_token: idToken
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    completeRegistration(data);
+                } else {
+                    throw new Error(data.error || 'Registration failed');
+                }
+            } catch (error) {
+                console.error('Phone OTP verification error:', error);
+                showError(errorDiv, error.message || 'Invalid OTP. Please try again.');
+            }
+        }
+
+        async function verifyRegistrationEmailOTP(otpCode) {
+            const errorDiv = document.getElementById('register-error');
+            try {
+                const response = await fetch('/api/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: registrationData.email,
+                        otp_code: otpCode
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    // Use the stored token and user from registration
+                    completeRegistration({
+                        access_token: registrationData.tempToken,
+                        user: { ...registrationData.tempUser, email_verified: true }
+                    });
+                } else {
+                    throw new Error(data.error || 'Invalid OTP');
+                }
+            } catch (error) {
+                console.error('Email OTP verification error:', error);
+                showError(errorDiv, error.message);
+            }
+        }
+
+        function completeRegistration(data) {
+            localStorage.setItem('token', data.access_token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            checkAuthStatus();
+
+            // Show success notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-24 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50';
+            notification.innerHTML = '<div class="flex items-center gap-3"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Account created successfully!</span></div>';
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+                closeRegisterModal();
+                resetRegisterForm();
+                window.location.reload();
+            }, 1500);
+        }
+
+        function goBackToStep1() {
+            document.getElementById('register-step-1').classList.remove('hidden');
+            document.getElementById('register-step-2').classList.add('hidden');
+            document.getElementById('register-otp').value = '';
+            document.getElementById('register-error').classList.add('hidden');
+        }
+
+        function resetRegisterForm() {
+            document.getElementById('register-name').value = '';
+            document.getElementById('register-email').value = '';
+            document.getElementById('register-phone').value = '';
+            document.getElementById('register-password').value = '';
+            document.getElementById('register-confirm').value = '';
+            document.getElementById('register-terms').checked = false;
+            document.getElementById('register-otp').value = '';
+            document.getElementById('register-step-1').classList.remove('hidden');
+            document.getElementById('register-step-2').classList.add('hidden');
+            document.getElementById('register-error').classList.add('hidden');
+            document.querySelector('input[name="verify-method"][value="email"]').checked = true;
+            registrationData = {};
+            registrationConfirmationResult = null;
+        }
+
+        async function resendRegistrationOTP() {
+            const resendBtn = document.getElementById('resend-otp-btn');
+            resendBtn.disabled = true;
+            resendBtn.textContent = 'Sending...';
+
+            if (registrationData.verifyMethod === 'phone') {
+                await sendRegistrationPhoneOTP();
+            } else {
+                // Resend email OTP
+                await fetch('/api/resend-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: registrationData.email })
+                });
+            }
+
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Resend OTP';
+        }
+
+        // ============================================
+        // LOGIN FLOW
+        // ============================================
+
+        function detectInputType(value) {
+            const hint = document.getElementById('input-type-hint');
+            const methodSelector = document.getElementById('login-method-selector');
+            const passwordSection = document.getElementById('password-input-section');
+            const otpSection = document.getElementById('otp-request-section');
+
+            value = value.trim();
+
+            if (!value) {
+                hint.classList.add('hidden');
+                methodSelector.classList.add('hidden');
+                passwordSection.classList.add('hidden');
+                otpSection.classList.add('hidden');
+                loginIdentifierType = null;
+                return;
+            }
+
+            // Detect if email (contains @) or phone (10 digits)
+            if (value.includes('@')) {
+                loginIdentifierType = 'email';
+                hint.textContent = 'Detected: Email address';
+                hint.classList.remove('hidden');
+                methodSelector.classList.remove('hidden');
+                switchLoginMethod('password');
+            } else if (/^\d{10}$/.test(value)) {
+                loginIdentifierType = 'phone';
+                hint.textContent = 'Detected: Phone number (+91)';
+                hint.classList.remove('hidden');
+                methodSelector.classList.remove('hidden');
+                switchLoginMethod('password');
+            } else if (/^\d+$/.test(value) && value.length < 10) {
+                loginIdentifierType = null;
+                hint.textContent = `Enter ${10 - value.length} more digits for phone`;
+                hint.classList.remove('hidden');
+                methodSelector.classList.add('hidden');
+                passwordSection.classList.add('hidden');
+                otpSection.classList.add('hidden');
+            } else {
+                loginIdentifierType = null;
+                hint.classList.add('hidden');
+                methodSelector.classList.add('hidden');
+                passwordSection.classList.add('hidden');
+                otpSection.classList.add('hidden');
+            }
+        }
+
+        function switchLoginMethod(method) {
+            const identifier = document.getElementById('login-identifier').value.trim();
+            const passwordSection = document.getElementById('password-input-section');
+            const otpSection = document.getElementById('otp-request-section');
+            const otpDestination = document.getElementById('otp-destination');
+
+            // Update radio button state
+            document.querySelector(`input[name="login-method"][value="${method}"]`).checked = true;
+
+            if (method === 'password') {
+                passwordSection.classList.remove('hidden');
+                otpSection.classList.add('hidden');
+            } else {
+                passwordSection.classList.add('hidden');
+                otpSection.classList.remove('hidden');
+
+                // Update destination display
+                if (loginIdentifierType === 'phone') {
+                    otpDestination.textContent = '+91 ' + identifier;
+                } else {
+                    otpDestination.textContent = identifier;
+                }
+            }
+        }
+
+        async function loginWithPassword() {
+            const identifier = document.getElementById('login-identifier').value.trim();
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            const loginBtn = document.getElementById('login-password-btn');
+
+            if (!identifier || !password) {
+                showError(errorDiv, 'Please enter both identifier and password');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing in...';
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: loginIdentifierType === 'email' ? identifier : null,
+                        phone: loginIdentifierType === 'phone' ? identifier : null,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    checkAuthStatus();
+
+                    showSuccess(errorDiv, 'Login successful! Redirecting...');
+                    setTimeout(() => {
+                        closeLoginModal();
+                        resetLoginForm();
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showError(errorDiv, data.error || 'Invalid credentials');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError(errorDiv, 'Network error. Please try again.');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+            }
+        }
+
+        function initLoginRecaptcha() {
+            if (typeof firebase !== 'undefined' && firebase.auth && !window.loginRecaptchaVerifier) {
+                window.loginRecaptchaVerifier = new firebase.auth.RecaptchaVerifier('login-recaptcha-container', {
+                    'size': 'invisible',
+                    'callback': (response) => {
+                        console.log('Login reCAPTCHA solved');
+                    }
+                });
+            }
+        }
+
+        async function requestLoginOTP() {
+            const identifier = document.getElementById('login-identifier').value.trim();
+            const errorDiv = document.getElementById('login-error');
+            const requestBtn = document.getElementById('request-otp-btn');
+
+            requestBtn.disabled = true;
+            requestBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+
+            try {
+                if (loginIdentifierType === 'phone') {
+                    // Firebase phone OTP
+                    initLoginRecaptcha();
+                    const fullNumber = '+91' + identifier;
+                    loginConfirmationResult = await firebase.auth().signInWithPhoneNumber(
+                        fullNumber,
+                        window.loginRecaptchaVerifier
+                    );
+
+                    document.getElementById('login-otp-message').textContent =
+                        `Enter the 6-digit code sent to +91 ${identifier}`;
+                } else {
+                    // Email OTP via backend
+                    const response = await fetch('/api/send-login-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: identifier })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to send OTP');
+                    }
+
+                    document.getElementById('login-otp-message').textContent =
+                        `Enter the 6-digit code sent to ${identifier}`;
+                }
+
+                // Show OTP input
+                document.getElementById('login-step-1').classList.add('hidden');
+                document.getElementById('login-step-2').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Request OTP error:', error);
+                showError(errorDiv, error.message || 'Failed to send OTP');
+            } finally {
+                requestBtn.disabled = false;
+                requestBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Send OTP';
+            }
+        }
+
+        async function verifyLoginOTP() {
+            const otpCode = document.getElementById('login-otp-code').value;
+            const identifier = document.getElementById('login-identifier').value.trim();
+            const errorDiv = document.getElementById('login-error');
+            const verifyBtn = document.getElementById('verify-login-otp-btn');
+
+            if (otpCode.length !== 6 || !/^\d+$/.test(otpCode)) {
+                showError(errorDiv, 'Please enter the 6-digit OTP');
+                return;
+            }
+
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verifying...';
+
+            try {
+                let response, data;
+
+                if (loginIdentifierType === 'phone') {
+                    // Verify Firebase OTP
+                    const result = await loginConfirmationResult.confirm(otpCode);
+                    const idToken = await result.user.getIdToken();
+
+                    // Send to backend
+                    response = await fetch('/api/firebase/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ idToken })
+                    });
+                    data = await response.json();
+                } else {
+                    // Verify email OTP
+                    response = await fetch('/api/verify-login-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: identifier,
+                            otp_code: otpCode
+                        })
+                    });
+                    data = await response.json();
+                }
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    checkAuthStatus();
+
+                    showSuccess(errorDiv, 'Login successful!');
+                    setTimeout(() => {
+                        closeLoginModal();
+                        resetLoginForm();
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showError(errorDiv, data.error || 'Invalid OTP');
+                }
+            } catch (error) {
+                console.error('Verify OTP error:', error);
+                showError(errorDiv, error.message || 'Invalid OTP. Please try again.');
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Verify & Login';
+            }
+        }
+
+        function resetLoginForm() {
+            const identifierInput = document.getElementById('login-identifier');
+            const passwordInput = document.getElementById('login-password');
+            const otpInput = document.getElementById('login-otp-code');
+            const step1 = document.getElementById('login-step-1');
+            const step2 = document.getElementById('login-step-2');
+            const methodSelector = document.getElementById('login-method-selector');
+            const passwordSection = document.getElementById('password-input-section');
+            const otpSection = document.getElementById('otp-request-section');
+            const errorDiv = document.getElementById('login-error');
+            const hint = document.getElementById('input-type-hint');
+
+            if (identifierInput) identifierInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+            if (otpInput) otpInput.value = '';
+            if (step1) step1.classList.remove('hidden');
+            if (step2) step2.classList.add('hidden');
+            if (methodSelector) methodSelector.classList.add('hidden');
+            if (passwordSection) passwordSection.classList.add('hidden');
+            if (otpSection) otpSection.classList.add('hidden');
+            if (errorDiv) errorDiv.classList.add('hidden');
+            if (hint) hint.classList.add('hidden');
+
+            loginIdentifierType = null;
+            loginConfirmationResult = null;
+        }
+
+        // Check if user is logged in
+        function isUserLoggedIn() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            return !!(token && user);
         }
 
         function toggleUserMenu() {
@@ -668,9 +1433,17 @@
                             errorDiv.textContent = 'Login successful! Redirecting...';
                             errorDiv.classList.remove('hidden');
 
+                            // Check if there's a pending booking
+                            const pendingBooking = localStorage.getItem('pendingBooking');
+
                             setTimeout(() => {
                                 closeLoginModal();
-                                window.location.href = '/';
+                                if (pendingBooking) {
+                                    // Redirect to home page to continue booking
+                                    window.location.href = '/#pandits';
+                                } else {
+                                    window.location.href = '/';
+                                }
                             }, 1000);
                         } else {
                             const errorDiv = document.getElementById('login-error');
@@ -736,10 +1509,18 @@
                             errorDiv.textContent = 'Registration successful! Redirecting...';
                             errorDiv.classList.remove('hidden');
 
+                            // Check if there's a pending booking
+                            const pendingBooking = localStorage.getItem('pendingBooking');
+
                             setTimeout(() => {
                                 closeRegisterModal();
                                 registerForm.reset();
-                                window.location.href = '/user/dashboard';
+                                if (pendingBooking) {
+                                    // Redirect to home page to continue booking
+                                    window.location.href = '/#pandits';
+                                } else {
+                                    window.location.href = '/user/dashboard';
+                                }
                             }, 1500);
                         } else {
                             const errorDiv = document.getElementById('register-error');
@@ -766,6 +1547,13 @@
             if (registerModal) {
                 registerModal.addEventListener('click', function (e) {
                     if (e.target === this) closeRegisterModal();
+                });
+            }
+
+            const loginRequiredModal = document.getElementById('login-required-modal');
+            if (loginRequiredModal) {
+                loginRequiredModal.addEventListener('click', function (e) {
+                    if (e.target === this) closeLoginRequiredModal();
                 });
             }
         });

@@ -5,20 +5,22 @@
 {% block extra_styles %}
 /* Logo Slider Styles */
 .logo-slider .swiper-pagination {
-    display: none;
+display: none;
 }
 
 .logo-slider .swiper-slide {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+display: flex;
+align-items: center;
+justify-content: center;
 }
 {% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
-<section id="home"
-    class="relative bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-16 overflow-hidden">
+<section id="home" class="relative bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-16 overflow-hidden">
+    <!-- Background Image (optional - add your image path) -->
+    <!-- <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20" style="background-image: url('{{ url_for('static', filename='images/hero-bg.jpg') }}');"></div> -->
+
     <!-- Decorative Elements -->
     <div
         class="absolute top-0 left-0 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float">
@@ -28,10 +30,6 @@
 
     <div class="container mx-auto px-6 text-center relative z-10">
         <div class="max-w-4xl mx-auto animate-fadeInUp">
-            <div class="inline-block mb-3 px-5 py-2 bg-white rounded-full shadow-md">
-                <span class="text-orange-600 font-semibold text-sm">India's Most Trusted Spiritual
-                    Platform</span>
-            </div>
             <h1 class="text-5xl md:text-6xl font-extrabold mb-5 leading-tight">
                 Experience <span class="gradient-text">Sacred Traditions</span><br>
                 with Modern Convenience
@@ -68,16 +66,49 @@
     </div>
 </section>
 
+<!-- Stats Section with Animation -->
+<section class="py-8 md:py-10 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
+    <!-- Decorative background elements -->
+    <div class="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+    <div class="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2"></div>
+
+    <div class="container mx-auto px-6 relative z-10">
+        <div class="grid grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto">
+            <div class="text-center text-white transform hover:scale-105 transition-transform duration-300">
+                <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 md:mb-3 drop-shadow-lg">
+                    <span class="counter" data-target="500">0</span>+
+                </div>
+                <div class="text-sm sm:text-base md:text-xl font-semibold opacity-95">Verified Pandits</div>
+                <p class="text-xs md:text-sm mt-1 md:mt-2 opacity-75 hidden sm:block">Across major cities</p>
+            </div>
+            <div class="text-center text-white transform hover:scale-105 transition-transform duration-300">
+                <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 md:mb-3 drop-shadow-lg">
+                    <span class="counter" data-target="10000">0</span>+
+                </div>
+                <div class="text-sm sm:text-base md:text-xl font-semibold opacity-95">Happy Customers</div>
+                <p class="text-xs md:text-sm mt-1 md:mt-2 opacity-75 hidden sm:block">Trusted by thousands</p>
+            </div>
+            <div class="text-center text-white transform hover:scale-105 transition-transform duration-300">
+                <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 md:mb-3 drop-shadow-lg">
+                    <span class="counter" data-target="13">0</span>+
+                </div>
+                <div class="text-sm sm:text-base md:text-xl font-semibold opacity-95">Cities Served</div>
+                <p class="text-xs md:text-sm mt-1 md:mt-2 opacity-75 hidden sm:block">Pan-India presence</p>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Pandit Ji Section -->
 <section id="pandits" class="py-16 bg-white scroll-reveal">
     <div class="container mx-auto px-6">
-        <div class="text-center mb-12">
+        <div class="text-center mb-8">
             <span
-                class="inline-block px-4 py-2 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold mb-4">Verified
+                class="inline-block px-4 py-2 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold mb-3">Verified
                 Experts</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-4">Meet Our <span class="gradient-text">Verified
+            <h2 class="text-3xl md:text-5xl font-extrabold mb-3">Meet Our <span class="gradient-text">Verified
                     Pandits</span></h2>
-            <p class="text-xl text-gray-600">Experienced and certified pandits for all your spiritual needs</p>
+            <p class="text-lg text-gray-600">Experienced and certified pandits for all your spiritual needs</p>
         </div>
         {% if pandits %}
         <div class="swiper pandits-slider relative">
@@ -94,8 +125,7 @@
                                 class="absolute top-3 right-3 {% if pandit.availability %}bg-green-500{% else %}bg-red-500{% endif %} text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg">
                                 {% if pandit.availability %}Available{% else %}Busy{% endif %}
                             </div>
-                            <div
-                                class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
+                            <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
                                 <span class="text-orange-600 font-bold">₹999/session</span>
                             </div>
                         </div>
@@ -140,155 +170,16 @@
     </div>
 </section>
 
-<!-- Puja Essentials Section -->
-<section id="essentials" class="py-16 bg-gradient-to-b from-gray-50 to-white scroll-reveal">
-    <div class="container mx-auto px-6">
-        <div class="text-center mb-12">
-            <span
-                class="inline-block px-4 py-2 bg-green-100 text-green-600 rounded-full text-sm font-semibold mb-4">Premium
-                Quality</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-4">Shop <span class="gradient-text">Puja
-                    Essentials</span></h2>
-            <p class="text-xl text-gray-600">Authentic and pure materials for your sacred rituals</p>
-        </div>
-        {% if materials %}
-        <div class="swiper essentials-slider relative">
-            <div class="swiper-wrapper">
-                {% for material in materials %}
-                <div class="swiper-slide">
-                    <div class="bg-white p-6 rounded-2xl shadow-lg card-hover h-full flex flex-col">
-                        <a href="{{ url_for('product_detail', product_id=material.id) }}"
-                            class="flex-1 flex flex-col cursor-pointer mb-3">
-                            <div class="relative mb-4 overflow-hidden rounded-xl group">
-                                <img src="{{ url_for('static', filename=material.image_url) }}"
-                                    alt="{{ material.name }}"
-                                    class="w-full h-52 object-cover transform group-hover:scale-110 transition-transform duration-500">
-                                <div
-                                    class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                                    20% OFF
-                                </div>
-                            </div>
-                            <h3
-                                class="text-xl font-bold mb-2 text-gray-800 hover:text-purple-600 transition-colors">
-                                {{ material.name }}</h3>
-                            <p class="text-gray-600 text-sm mb-4 line-clamp-2 flex-1">{{
-                                material.description|truncate(100, True, '...') }}</p>
-                            <div class="flex items-center mb-2">
-                                <div class="flex text-yellow-400 text-sm">★★★★★</div>
-                                <span class="text-gray-500 text-xs ml-2">(4.8/5)</span>
-                            </div>
-                            <div>
-                                <span class="text-2xl font-bold text-green-600">₹{{ material.price }}</span>
-                                <span class="text-gray-400 text-sm line-through ml-2">₹{{ (material.price *
-                                    1.25)|round|int }}</span>
-                            </div>
-                        </a>
-                        <button
-                            onclick="event.preventDefault(); event.stopPropagation(); addToCart({{ material.id }}, '{{ material.name }}', {{ material.price }})"
-                            class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2.5 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105">
-                            Add to Cart
-                        </button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="swiper-button-next essentials-next"></div>
-            <div class="swiper-button-prev essentials-prev"></div>
-            <div class="swiper-pagination essentials-pagination"></div>
-        </div>
-        {% else %}
-        <div class="text-center py-12">
-            <p class="text-gray-600">New stock arriving soon!</p>
-        </div>
-        {% endif %}
-    </div>
-</section>
-
-<!-- Ritual Bundles Section -->
-<section id="bundles" class="py-16 bg-white scroll-reveal">
-    <div class="container mx-auto px-6">
-        <div class="text-center mb-12">
-            <span
-                class="inline-block px-4 py-2 bg-amber-100 text-amber-600 rounded-full text-sm font-semibold mb-4">Best
-                Value Packages</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-4">Complete <span class="gradient-text">Ritual
-                    Bundles</span>
-            </h2>
-            <p class="text-xl text-gray-600">Everything you need for your ceremony in one package</p>
-        </div>
-        {% if bundles %}
-        <div class="swiper bundles-slider relative">
-            <div class="swiper-wrapper">
-                {% for bundle in bundles %}
-                <div class="swiper-slide">
-                    <div
-                        class="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-6 rounded-2xl shadow-xl card-hover h-full border-2 border-amber-200 flex flex-col">
-                        <a href="{{ url_for('bundle_detail', bundle_id=bundle.id) }}"
-                            class="flex-1 flex flex-col cursor-pointer">
-                            <div class="relative overflow-hidden rounded-xl group mb-4">
-                                <img src="{{ url_for('static', filename=bundle.image_url) }}"
-                                    alt="{{ bundle.name }}"
-                                    class="w-full h-48 object-cover transform group-hover:scale-110 transition-transform duration-500">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
-                                </div>
-                                <div
-                                    class="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
-                                    Save {{ ((bundle.original_price -
-                                    bundle.discounted_price)/bundle.original_price * 100)|round|int }}%
-                                </div>
-                                <div
-                                    class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                                    <span class="text-xs text-gray-600 font-semibold">Popular Choice</span>
-                                </div>
-                            </div>
-                            <h3
-                                class="text-xl font-bold text-gray-800 mb-2 hover:text-amber-700 transition-colors">
-                                {{ bundle.name }}</h3>
-                            <p class="text-gray-600 text-sm mb-3 line-clamp-2 flex-1">{{
-                                bundle.description|truncate(90, True, '...') }}</p>
-                            <div class="bg-white rounded-lg p-3 mb-4">
-                                <p class="text-xs text-gray-500 font-semibold mb-1">Includes:</p>
-                                <p class="text-xs text-gray-600">{{ bundle.includes|truncate(60, True, '...') }}
-                                </p>
-                            </div>
-                            <div class="mb-3">
-                                <div class="text-3xl font-bold text-amber-600">₹{{ bundle.discounted_price }}
-                                </div>
-                                <div class="text-sm text-gray-400 line-through">₹{{ bundle.original_price }}
-                                </div>
-                            </div>
-                        </a>
-                        <button
-                            onclick="event.preventDefault(); event.stopPropagation(); addToCart({{ bundle.id }}, '{{ bundle.name }}', {{ bundle.discounted_price }}, 'bundle')"
-                            class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105">
-                            Add to Cart
-                        </button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="swiper-button-next bundles-next"></div>
-            <div class="swiper-button-prev bundles-prev"></div>
-            <div class="swiper-pagination bundles-pagination"></div>
-        </div>
-        {% else %}
-        <div class="text-center py-12">
-            <p class="text-gray-600">New ritual bundles coming soon!</p>
-        </div>
-        {% endif %}
-    </div>
-</section>
-
 <!-- Testimonials Section -->
 <section id="testimonials" class="py-16 bg-gradient-to-b from-white to-gray-50 scroll-reveal">
     <div class="container mx-auto px-6">
-        <div class="text-center mb-12">
+        <div class="text-center mb-8">
             <span
-                class="inline-block px-4 py-2 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold mb-4">Customer
+                class="inline-block px-4 py-2 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold mb-3">Customer
                 Reviews</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-4"><span class="gradient-text">Delighted</span>
+            <h2 class="text-3xl md:text-5xl font-extrabold mb-3"><span class="gradient-text">Delighted</span>
                 Customers</h2>
-            <p class="text-xl text-gray-600">See what our satisfied customers have to say</p>
+            <p class="text-lg text-gray-600">See what our satisfied customers have to say</p>
         </div>
         {% if testimonials %}
         <div class="swiper testimonials-slider relative">
@@ -326,17 +217,151 @@
     </div>
 </section>
 
-<!-- Media Coverage Section -->
-<section class="py-12 bg-white scroll-reveal">
+<!-- Puja Essentials Section -->
+<section id="essentials" class="py-16 bg-gradient-to-b from-gray-50 to-white scroll-reveal">
     <div class="container mx-auto px-6">
-        <div class="text-center mb-12">
+        <div class="text-center mb-8">
             <span
-                class="inline-block px-4 py-2 bg-amber-100 text-amber-600 rounded-full text-sm font-semibold mb-4">As
+                class="inline-block px-4 py-2 bg-green-100 text-green-600 rounded-full text-sm font-semibold mb-3">Premium
+                Quality</span>
+            <h2 class="text-3xl md:text-5xl font-extrabold mb-3">Shop <span class="gradient-text">Puja
+                    Essentials</span></h2>
+            <p class="text-lg text-gray-600">Authentic and pure materials for your sacred rituals</p>
+        </div>
+        {% if materials %}
+        <div class="swiper essentials-slider relative">
+            <div class="swiper-wrapper">
+                {% for material in materials %}
+                <div class="swiper-slide">
+                    <div class="bg-white p-6 rounded-2xl shadow-lg card-hover h-full flex flex-col">
+                        <a href="{{ url_for('product_detail', product_id=material.id) }}"
+                            class="flex-1 flex flex-col cursor-pointer mb-3">
+                            <div class="relative mb-4 overflow-hidden rounded-xl group">
+                                <img src="{{ url_for('static', filename=material.image_url) }}"
+                                    alt="{{ material.name }}"
+                                    class="w-full h-52 object-cover transform group-hover:scale-110 transition-transform duration-500">
+                                <div
+                                    class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                                    20% OFF
+                                </div>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 text-gray-800 hover:text-purple-600 transition-colors">
+                                {{ material.name }}</h3>
+                            <p class="text-gray-600 text-sm mb-4 line-clamp-2 flex-1">{{
+                                material.description|truncate(100, True, '...') }}</p>
+                            <div class="flex items-center mb-2">
+                                <div class="flex text-yellow-400 text-sm">★★★★★</div>
+                                <span class="text-gray-500 text-xs ml-2">(4.8/5)</span>
+                            </div>
+                            <div>
+                                <span class="text-2xl font-bold text-green-600">₹{{ material.price }}</span>
+                                <span class="text-gray-400 text-sm line-through ml-2">₹{{ (material.price|float *
+                                    1.25)|round|int }}</span>
+                            </div>
+                        </a>
+                        <button
+                            onclick="event.preventDefault(); event.stopPropagation(); addToCart({{ material.id }}, '{{ material.name }}', {{ material.price }})"
+                            class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2.5 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105">
+                            Add to Cart
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="swiper-button-next essentials-next"></div>
+            <div class="swiper-button-prev essentials-prev"></div>
+            <div class="swiper-pagination essentials-pagination"></div>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <p class="text-gray-600">New stock arriving soon!</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Ritual Bundles Section -->
+<section id="bundles" class="py-16 bg-white scroll-reveal">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-8">
+            <span
+                class="inline-block px-4 py-2 bg-amber-100 text-amber-600 rounded-full text-sm font-semibold mb-3">Best
+                Value Packages</span>
+            <h2 class="text-3xl md:text-5xl font-extrabold mb-3">Complete <span class="gradient-text">Ritual
+                    Bundles</span>
+            </h2>
+            <p class="text-lg text-gray-600">Everything you need for your ceremony in one package</p>
+        </div>
+        {% if bundles %}
+        <div class="swiper bundles-slider relative">
+            <div class="swiper-wrapper">
+                {% for bundle in bundles %}
+                <div class="swiper-slide">
+                    <div
+                        class="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-6 rounded-2xl shadow-xl card-hover h-full border-2 border-amber-200 flex flex-col">
+                        <a href="{{ url_for('bundle_detail', bundle_id=bundle.id) }}"
+                            class="flex-1 flex flex-col cursor-pointer">
+                            <div class="relative overflow-hidden rounded-xl group mb-4">
+                                <img src="{{ url_for('static', filename=bundle.image_url) }}" alt="{{ bundle.name }}"
+                                    class="w-full h-48 object-cover transform group-hover:scale-110 transition-transform duration-500">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
+                                </div>
+                                <div
+                                    class="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
+                                    Save {{ ((bundle.original_price -
+                                    bundle.discounted_price)/bundle.original_price * 100)|round|int }}%
+                                </div>
+                                <div
+                                    class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
+                                    <span class="text-xs text-gray-600 font-semibold">Popular Choice</span>
+                                </div>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2 hover:text-amber-700 transition-colors">
+                                {{ bundle.name }}</h3>
+                            <p class="text-gray-600 text-sm mb-3 line-clamp-2 flex-1">{{
+                                bundle.description|truncate(90, True, '...') }}</p>
+                            <div class="bg-white rounded-lg p-3 mb-4">
+                                <p class="text-xs text-gray-500 font-semibold mb-1">Includes:</p>
+                                <p class="text-xs text-gray-600">{{ bundle.includes|truncate(60, True, '...') }}
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-3xl font-bold text-amber-600">₹{{ bundle.discounted_price }}
+                                </div>
+                                <div class="text-sm text-gray-400 line-through">₹{{ bundle.original_price }}
+                                </div>
+                            </div>
+                        </a>
+                        <button
+                            onclick="event.preventDefault(); event.stopPropagation(); addToCart({{ bundle.id }}, '{{ bundle.name }}', {{ bundle.discounted_price }}, 'bundle')"
+                            class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105">
+                            Add to Cart
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="swiper-button-next bundles-next"></div>
+            <div class="swiper-button-prev bundles-prev"></div>
+            <div class="swiper-pagination bundles-pagination"></div>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <p class="text-gray-600">New ritual bundles coming soon!</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Media Coverage Section -->
+<section class="py-8 md:py-10 bg-white scroll-reveal">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-6">
+            <span class="inline-block px-4 py-2 bg-amber-100 text-amber-600 rounded-full text-sm font-semibold mb-3">As
                 Featured In</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-4">Not Recognized by <span
-                    class="gradient-text">Leading
+            <h2 class="text-3xl md:text-5xl font-extrabold mb-3">Not Recognized by <span class="gradient-text">Leading
                     Media</span></h2>
-            <p class="text-xl text-gray-600">India's most respected publications</p>
+            <p class="text-lg text-gray-600">India's most respected publications</p>
         </div>
 
         <div class="logo-slider swiper">
@@ -376,8 +401,7 @@
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
             <div class="flex justify-between items-center">
                 <h2 class="text-2xl font-bold">Book Pandit Ji</h2>
-                <button onclick="closeBookingModal()"
-                    class="text-white hover:text-gray-200 text-3xl">&times;</button>
+                <button onclick="closeBookingModal()" class="text-white hover:text-gray-200 text-3xl">&times;</button>
             </div>
             <p id="modal-pandit-info" class="text-blue-100 mt-2"></p>
         </div>
@@ -421,7 +445,7 @@
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Preferred Date *</label>
-                <input type="date" required
+                <input type="date" id="booking-date" required
                     class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
 
@@ -560,27 +584,148 @@
     });
 
     // Booking Modal Functionality
+    function isUserLoggedIn() {
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+        return !!(token && user);
+    }
+
+    function openLoginRequiredModal() {
+        const modal = document.getElementById('login-required-modal');
+        if (modal) modal.classList.add('active');
+    }
+
+    function closeLoginRequiredModal() {
+        const modal = document.getElementById('login-required-modal');
+        if (modal) modal.classList.remove('active');
+    }
+
     function openBookingModal(panditId, panditName, location) {
+        // Check if user is logged in before opening booking modal
+        if (!isUserLoggedIn()) {
+            // Store booking intent for after login
+            const bookingIntent = {
+                panditId: panditId,
+                panditName: panditName,
+                location: location,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('pendingBooking', JSON.stringify(bookingIntent));
+
+            // Show login required modal
+            openLoginRequiredModal();
+            return;
+        }
+
+        // User is logged in, proceed with booking
         document.getElementById('pandit-id').value = panditId;
         document.getElementById('modal-pandit-info').textContent = `Booking ${panditName} from ${location}`;
         document.getElementById('booking-modal').classList.add('active');
+
+        // Pre-fill user details if available
+        prefillUserDetails();
+    }
+
+    function prefillUserDetails() {
+        try {
+            const userData = localStorage.getItem('user');
+            if (userData) {
+                const user = JSON.parse(userData);
+                const nameInput = document.querySelector('#booking-form input[type="text"]');
+                const emailInput = document.querySelector('#booking-form input[type="email"]');
+
+                if (nameInput && user.full_name) nameInput.value = user.full_name;
+                if (emailInput && user.email) emailInput.value = user.email;
+            }
+        } catch (e) {
+            console.error('Error prefilling user details:', e);
+        }
     }
 
     function closeBookingModal() {
         document.getElementById('booking-modal').classList.remove('active');
     }
 
+    // Check for pending booking after login
+    function checkPendingBooking() {
+        if (!isUserLoggedIn()) return;
+
+        const pendingBooking = localStorage.getItem('pendingBooking');
+        if (pendingBooking) {
+            try {
+                const booking = JSON.parse(pendingBooking);
+                // Only restore if booking intent is less than 30 minutes old
+                const thirtyMinutes = 30 * 60 * 1000;
+                if (Date.now() - booking.timestamp < thirtyMinutes) {
+                    // Clear the pending booking
+                    localStorage.removeItem('pendingBooking');
+
+                    // Open booking modal with stored details
+                    setTimeout(() => {
+                        document.getElementById('pandit-id').value = booking.panditId;
+                        document.getElementById('modal-pandit-info').textContent = `Booking ${booking.panditName} from ${booking.location}`;
+                        document.getElementById('booking-modal').classList.add('active');
+                        prefillUserDetails();
+
+                        // Show welcome back message
+                        showNotification('Welcome back! Continue with your booking.', 'success');
+                    }, 500);
+                } else {
+                    localStorage.removeItem('pendingBooking');
+                }
+            } catch (e) {
+                localStorage.removeItem('pendingBooking');
+            }
+        }
+    }
+
+    function showNotification(message, type = 'info') {
+        const bgColor = type === 'success' ? 'from-green-500 to-emerald-600' :
+            type === 'error' ? 'from-red-500 to-red-600' :
+                'from-blue-500 to-blue-600';
+
+        const notification = document.createElement('div');
+        notification.className = `fixed top-24 right-6 bg-gradient-to-r ${bgColor} text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-fadeInUp`;
+        notification.innerHTML = `<div class="flex items-center gap-3"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>${message}</span></div>`;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 4000);
+    }
+
     // Close modal when clicking outside
     window.onclick = function (event) {
         const bookingModal = document.getElementById('booking-modal');
+        const loginRequiredModal = document.getElementById('login-required-modal');
+
         if (event.target === bookingModal) {
             closeBookingModal();
         }
+        if (event.target === loginRequiredModal) {
+            closeLoginRequiredModal();
+        }
     }
+
+    // Check for pending booking on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        checkPendingBooking();
+
+        // Set minimum date for booking to today
+        const dateInput = document.getElementById('booking-date');
+        if (dateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.setAttribute('min', today);
+        }
+    });
 
     // Booking Form Submission
     document.getElementById('booking-form').addEventListener('submit', async function (e) {
         e.preventDefault();
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+
+        // Show loading state
+        submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+        submitBtn.disabled = true;
 
         const formData = {
             pandit_id: document.getElementById('pandit-id').value,
@@ -595,51 +740,100 @@
 
         try {
             const token = localStorage.getItem('token');
-            const headers = { 'Content-Type': 'application/json' };
 
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
+            // Check token before making request
+            if (!token) {
+                closeBookingModal();
+                openLoginRequiredModal();
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                return;
             }
 
             const response = await fetch('/api/book-pandit', {
                 method: 'POST',
-                headers: headers,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(formData)
             });
 
             const result = await response.json();
 
             if (response.ok && result.success) {
+                // Clear any pending booking
+                localStorage.removeItem('pendingBooking');
                 window.location.href = result.redirect_url;
+            } else if (response.status === 401) {
+                // Token expired or invalid - show login modal
+                closeBookingModal();
+
+                // Store booking intent
+                const bookingIntent = {
+                    panditId: formData.pandit_id,
+                    panditName: document.getElementById('modal-pandit-info').textContent.replace('Booking ', '').split(' from ')[0],
+                    location: document.getElementById('modal-pandit-info').textContent.split(' from ')[1],
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('pendingBooking', JSON.stringify(bookingIntent));
+
+                // Clear invalid token
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                checkAuthStatus();
+
+                showNotification('Your session has expired. Please sign in again.', 'error');
+                setTimeout(() => openLoginRequiredModal(), 500);
             } else {
-                alert('Booking failed: ' + (result.error || 'Unknown error'));
+                showNotification('Booking failed: ' + (result.error || result.msg || 'Unknown error'), 'error');
             }
         } catch (error) {
             console.error('Booking error:', error);
-            alert('Booking failed. Please try again.');
+            showNotification('Network error. Please check your connection and try again.', 'error');
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         }
     });
 
-    // Counter Animation for Stats
+    // Smooth Counter Animation
     function animateCounter(element) {
         const target = parseInt(element.getAttribute('data-target'));
         const duration = 2000;
-        const increment = target / (duration / 16);
-        let current = 0;
+        let startTime = null;
+        let lastValue = -1;
 
-        const timer = setInterval(() => {
-            current += increment;
-            if (current >= target) {
-                element.textContent = target >= 1000 ? (target / 1000).toFixed(0) + 'K' : target;
-                clearInterval(timer);
-            } else {
-                if (target >= 1000) {
-                    element.textContent = (current / 1000).toFixed(1) + 'K';
-                } else {
-                    element.textContent = Math.floor(current);
-                }
+        // Smooth easing - easeOutQuart
+        function easeOutQuart(t) {
+            return 1 - Math.pow(1 - t, 4);
+        }
+
+        function formatNumber(num) {
+            return Math.round(num).toLocaleString('en-IN');
+        }
+
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            const elapsed = timestamp - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedProgress = easeOutQuart(progress);
+            const currentValue = Math.round(easedProgress * target);
+
+            // Only update DOM if value changed (reduces jitter)
+            if (currentValue !== lastValue) {
+                element.textContent = formatNumber(currentValue);
+                lastValue = currentValue;
             }
-        }, 16);
+
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                element.textContent = formatNumber(target);
+            }
+        }
+
+        requestAnimationFrame(step);
     }
 
     const counterObserver = new IntersectionObserver((entries) => {
@@ -649,7 +843,7 @@
                 animateCounter(entry.target);
             }
         });
-    }, { threshold: 0.5 });
+    }, { threshold: 0.3 });
 
     document.querySelectorAll('.counter').forEach(counter => counterObserver.observe(counter));
 </script>

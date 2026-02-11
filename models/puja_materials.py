@@ -9,4 +9,4 @@ class PujaMaterial(db.Model):
     name = db.Column(db.String(100), nullable=False)
     image_url = db.Column(db.String(200))
     description = db.Column(db.Text)
-    price = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Numeric(10, 2), nullable=False)

@@ -14,3 +14,5 @@ Flask-Mail==0.9.1
 icalendar==5.0.11
 Authlib>=1.2.0
 requests>=2.31.0
+firebase-admin>=6.0.0
+Flask-WTF>=1.2.0

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Reset Password - PujaPath{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl">
+        <div class="text-center">
+            <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-lock text-2xl text-green-600"></i>
+            </div>
+            <h2 class="mt-2 text-3xl font-extrabold text-gray-900">Reset Password</h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Please enter your new password below.
+            </p>
+        </div>
+
+        <form class="mt-8 space-y-6" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="rounded-md shadow-sm space-y-4">
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <input id="password" name="password" type="password" required
+                        class="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                        placeholder="Enter new password">
+                </div>
+                <div>
+                    <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">Confirm
+                        Password</label>
+                    <input id="confirm_password" name="confirm_password" type="password" required
+                        class="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                        placeholder="Confirm new password">
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="rounded-md bg-{{ 'green' if category == 'success' else 'red' }}-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        {% if category == 'success' %}
+                        <i class="fas fa-check-circle text-green-400"></i>
+                        {% else %}
+                        <i class="fas fa-exclamation-circle text-red-400"></i>
+                        {% endif %}
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-{{ 'green' if category == 'success' else 'red' }}-800">
+                            {{ message }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <div>
+                <button type="submit"
+                    class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg transform transition hover:-translate-y-0.5">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <i class="fas fa-check text-green-200 group-hover:text-green-100"></i>
+                    </span>
+                    Update Password
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

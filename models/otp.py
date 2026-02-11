@@ -1,6 +1,6 @@
 # models/otp.py
 from database import db
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 import string
 
@@ -11,7 +11,7 @@ class OTP(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), nullable=False, index=True)
     otp_code = db.Column(db.String(6), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
 
@@ -19,7 +19,7 @@ class OTP(db.Model):
         super(OTP, self).__init__(**kwargs)
         self.email = email
         self.otp_code = self.generate_otp()
-        self.expires_at = datetime.utcnow() + timedelta(minutes=5)
+        self.expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
 
     @staticmethod
     def generate_otp():
@@ -28,7 +28,7 @@ class OTP(db.Model):
 
     def is_valid(self):
         """Check if OTP is still valid (not expired and not used)"""
-        return not self.is_used and datetime.utcnow() < self.expires_at
+        return not self.is_used and datetime.now(timezone.utc) < self.expires_at
 
     def mark_as_used(self):
         """Mark the OTP as used"""

@@ -1,6 +1,6 @@
 # models/booking.py - Keep ONLY this one
 from database import db
-from datetime import datetime
+from datetime import datetime, timezone
 
 class Booking(db.Model):
     __tablename__ = 'bookings'
@@ -25,14 +25,14 @@ class Booking(db.Model):
     
     # Payment fields
     booking_number = db.Column(db.String(50), unique=True, nullable=True)
-    amount = db.Column(db.Float, default=999)  # Default booking fee
+    amount = db.Column(db.Numeric(10, 2), default=999)  # Default booking fee
     payment_status = db.Column(db.String(50), default='pending')  # pending, paid, refunded
     razorpay_order_id = db.Column(db.String(100), nullable=True)
     payment_reference = db.Column(db.String(100), nullable=True)
     payment_date = db.Column(db.DateTime, nullable=True)
     
     status = db.Column(db.String(50), default='pending')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
     pandit = db.relationship('Pandit', backref='bookings')

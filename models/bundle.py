@@ -9,6 +9,6 @@ class Bundle(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     image_url = db.Column(db.String(200))
-    original_price = db.Column(db.Float, nullable=False)
-    discounted_price = db.Column(db.Float, nullable=False)
+    original_price = db.Column(db.Numeric(10, 2), nullable=False)
+    discounted_price = db.Column(db.Numeric(10, 2), nullable=False)
     includes = db.Column(db.Text)
