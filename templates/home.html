@@ -3,6 +3,13 @@
 {% block title %}PujaPath - Your Spiritual Journey Partner{% endblock %}
 
 {% block extra_styles %}
+/* Counter Styles - Prevent layout shift */
+.counter {
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+    min-width: 2ch;
+}
+
 /* Logo Slider Styles */
 .logo-slider .swiper-pagination {
 display: none;
@@ -31,7 +38,7 @@ justify-content: center;
     <div class="container mx-auto px-6 text-center relative z-10">
         <div class="max-w-4xl mx-auto animate-fadeInUp">
             <h1 class="text-5xl md:text-6xl font-extrabold mb-5 leading-tight">
-                Experience <span class="gradient-text">Sacred Traditions</span><br>
+                Experience <span class="text-gray-800">Sacred Traditions</span><br>
                 with Modern Convenience
             </h1>
             <p class="text-xl text-gray-700 mb-8 leading-relaxed">
@@ -40,7 +47,7 @@ justify-content: center;
             </p>
             <div class="flex flex-col sm:flex-row justify-center gap-5">
                 <a href="#pandits"
-                    class="group bg-gradient-to-r from-blue-600 to-blue-700 text-white px-10 py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-2xl hover:shadow-3xl transform hover:scale-105">
+                    class="group bg-gradient-to-r from-orange-500 to-orange-600 text-white px-10 py-4 rounded-xl font-bold text-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-2xl hover:shadow-3xl transform hover:scale-105">
                     <span class="flex items-center justify-center">
                         Book Pandit Ji
                         <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none"
@@ -67,92 +74,188 @@ justify-content: center;
 </section>
 
 <!-- Stats Section with Animation -->
-<section class="py-8 md:py-10 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
+<section class="py-8 md:py-10 bg-gray-900 relative overflow-hidden">
     <!-- Decorative background elements -->
     <div class="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
     <div class="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2"></div>
 
     <div class="container mx-auto px-6 relative z-10">
-        <div class="grid grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 max-w-5xl mx-auto">
             <div class="text-center text-white transform hover:scale-105 transition-transform duration-300">
-                <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 md:mb-3 drop-shadow-lg">
-                    <span class="counter" data-target="500">0</span>+
+                <div class="mb-2 md:mb-3">
+                    <i class="fas fa-gopuram text-2xl sm:text-3xl md:text-4xl text-white"></i>
                 </div>
-                <div class="text-sm sm:text-base md:text-xl font-semibold opacity-95">Verified Pandits</div>
-                <p class="text-xs md:text-sm mt-1 md:mt-2 opacity-75 hidden sm:block">Across major cities</p>
+                <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 md:mb-3 whitespace-nowrap">
+                    <span class="counter" data-target="11">11</span>+
+                </div>
+                <div class="text-sm sm:text-base md:text-xl font-semibold opacity-95">Sacred Temples</div>
             </div>
             <div class="text-center text-white transform hover:scale-105 transition-transform duration-300">
-                <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 md:mb-3 drop-shadow-lg">
-                    <span class="counter" data-target="10000">0</span>+
+                <div class="mb-2 md:mb-3">
+                    <i class="fas fa-city text-2xl sm:text-3xl md:text-4xl text-white"></i>
                 </div>
-                <div class="text-sm sm:text-base md:text-xl font-semibold opacity-95">Happy Customers</div>
-                <p class="text-xs md:text-sm mt-1 md:mt-2 opacity-75 hidden sm:block">Trusted by thousands</p>
-            </div>
-            <div class="text-center text-white transform hover:scale-105 transition-transform duration-300">
-                <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 md:mb-3 drop-shadow-lg">
-                    <span class="counter" data-target="13">0</span>+
+                <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 md:mb-3 whitespace-nowrap">
+                    <span class="counter" data-target="13">13</span>+
                 </div>
                 <div class="text-sm sm:text-base md:text-xl font-semibold opacity-95">Cities Served</div>
-                <p class="text-xs md:text-sm mt-1 md:mt-2 opacity-75 hidden sm:block">Pan-India presence</p>
+            </div>
+            <div class="text-center text-white transform hover:scale-105 transition-transform duration-300">
+                <div class="mb-2 md:mb-3">
+                    <i class="fas fa-om text-2xl sm:text-3xl md:text-4xl text-white"></i>
+                </div>
+                <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 md:mb-3 whitespace-nowrap">
+                    <span class="counter" data-target="500">500</span>+
+                </div>
+                <div class="text-sm sm:text-base md:text-xl font-semibold opacity-95">Verified Pandits</div>
+            </div>
+            <div class="text-center text-white transform hover:scale-105 transition-transform duration-300">
+                <div class="mb-2 md:mb-3">
+                    <i class="fas fa-users text-2xl sm:text-3xl md:text-4xl text-white"></i>
+                </div>
+                <div class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-2 md:mb-3 whitespace-nowrap">
+                    <span class="counter" data-target="10000">10,000</span>+
+                </div>
+                <div class="text-sm sm:text-base md:text-xl font-semibold opacity-95">Happy Customers</div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Pandit Ji Section -->
-<section id="pandits" class="py-16 bg-white scroll-reveal">
+<!-- Puja For You Section -->
+<section id="puja-for-you" class="py-10 bg-gradient-to-b from-amber-50 via-orange-50 to-white scroll-reveal">
     <div class="container mx-auto px-6">
         <div class="text-center mb-8">
-            <span
-                class="inline-block px-4 py-2 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold mb-3">Verified
-                Experts</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-3">Meet Our <span class="gradient-text">Verified
-                    Pandits</span></h2>
+            <span class="inline-block px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold mb-3">
+                Temple Rituals, From Your Home
+            </span>
+            <h2 class="text-2xl md:text-4xl font-extrabold">
+                <span class="text-gray-800">Puja For You</span> at India's Holiest Temples
+            </h2>
+        </div>
+
+        <!-- Trust Badges -->
+        <div class="flex flex-wrap justify-center gap-4 md:gap-8 mb-8">
+            <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                <i class="fas fa-video text-orange-600"></i>
+                <span class="text-sm font-medium text-gray-700">Video Proof</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                <i class="fas fa-gift text-orange-600"></i>
+                <span class="text-sm font-medium text-gray-700">Aashirwad Box</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                <i class="fas fa-om text-orange-600"></i>
+                <span class="text-sm font-medium text-gray-700">Vedic Rituals</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                <i class="fas fa-map-marker-alt text-orange-600"></i>
+                <span class="text-sm font-medium text-gray-700">11+ Sacred Temples</span>
+            </div>
+        </div>
+
+        <!-- Temple Cards Slider -->
+        <div class="swiper temples-slider relative">
+            <div class="swiper-wrapper">
+{% for temple in temples %}
+                <div class="swiper-slide">
+                    <a href="{{ url_for('temple_detail', temple_id=temple.id) }}"
+                        class="bg-white rounded-2xl shadow-lg overflow-hidden card-hover border border-orange-100 h-full block">
+                        <div class="relative">
+                            <img src="{{ url_for('static', filename=temple.image_url) if temple.image_url else 'https://images.unsplash.com/photo-1627894006066-b45f13d12f6e?w=400&h=300&fit=crop' }}"
+                                onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1627894006066-b45f13d12f6e?w=400&h=300&fit=crop'"
+                                alt="{{ temple.name }}" class="w-full h-48 object-cover" loading="lazy" decoding="async">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <div class="absolute bottom-3 left-3 text-white">
+                                <h3 class="text-lg font-bold">{{ temple.name }}</h3>
+                                <p class="text-sm opacity-90">{{ temple.location }}, {{ temple.state }}</p>
+                            </div>
+                            {% if temple.is_featured %}
+                            <div class="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                                Featured
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="p-5">
+                            {% if temple.pujas %}
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                {% for puja in temple.pujas[:2] %}
+                                <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">{{ puja.name }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-sm text-gray-500">Starting from</span>
+                                <span class="text-xl font-bold text-orange-600">₹{{ temple.starting_price|int }}</span>
+                            </div>
+                            <span class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-xl font-bold uppercase tracking-wide hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 block text-center">
+                                VIEW PUJAS
+                            </span>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="swiper-button-next temples-next"></div>
+            <div class="swiper-button-prev temples-prev"></div>
+            <div class="swiper-pagination temples-pagination"></div>
+        </div>
+
+        <!-- View All CTA -->
+        <div class="text-center mt-8">
+            <a href="{{ url_for('temples') }}"
+                class="inline-flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700 transition-colors">
+                View All Temples & Pujas
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Pandit Ji Section -->
+<section id="pandits" class="py-6 bg-white scroll-reveal">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-6">
+            <span class="inline-block px-4 py-2 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold mb-3">
+                Verified Experts
+            </span>
+            <h2 class="text-2xl md:text-4xl font-extrabold mb-3">Our <span class="text-gray-800">Verified Pandits</span></h2>
             <p class="text-lg text-gray-600">Experienced and certified pandits for all your spiritual needs</p>
         </div>
+
         {% if pandits %}
         <div class="swiper pandits-slider relative">
             <div class="swiper-wrapper">
                 {% for pandit in pandits %}
                 <div class="swiper-slide">
-                    <div
-                        class="bg-white rounded-2xl shadow-lg overflow-hidden card-hover border border-gray-100 h-full">
+                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden card-hover border border-gray-100 h-full cursor-pointer"
+                        onclick="openBookingModal('{{ pandit.id }}', '{{ pandit.name }}', '{{ pandit.location }}')">
                         <div class="relative">
                             <img src="{{ url_for('static', filename='pandit/' + (pandit.image_url or 'govind-jha.webp')) }}"
-                                alt="{{ pandit.name }}" class="w-full h-64 object-cover">
+                                alt="{{ pandit.name }}" class="w-full h-48 object-cover" loading="lazy" decoding="async">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                            <div
-                                class="absolute top-3 right-3 {% if pandit.availability %}bg-green-500{% else %}bg-red-500{% endif %} text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                            <div class="absolute bottom-3 left-3 text-white">
+                                <h3 class="text-lg font-bold">{{ pandit.name }}</h3>
+                                <p class="text-sm opacity-90">{{ pandit.location }}</p>
+                            </div>
+                            <div class="absolute top-3 right-3 {% if pandit.availability %}bg-green-500{% else %}bg-red-500{% endif %} text-white px-2 py-1 rounded-full text-xs font-bold">
                                 {% if pandit.availability %}Available{% else %}Busy{% endif %}
                             </div>
-                            <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                                <span class="text-orange-600 font-bold">₹999/session</span>
-                            </div>
                         </div>
-                        <div class="p-6">
-                            <h3 class="text-xl font-bold mb-2 text-gray-800">{{ pandit.name }}</h3>
-                            <div class="flex text-yellow-400 text-sm mb-3">
-                                ★★★★★ <span class="text-gray-500 ml-2">(4.9)</span>
+                        <div class="p-5">
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">{{ pandit.experience }} yrs exp</span>
+                                <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">★ 4.9</span>
                             </div>
-                            <div class="space-y-2 text-gray-600 text-sm mb-4">
-                                <div class="flex items-center">
-                                    <i class="fas fa-graduation-cap w-5 text-blue-600"></i>
-                                    <span class="ml-2">{{ pandit.experience }} years experience</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-map-marker-alt w-5 text-blue-600"></i>
-                                    <span class="ml-2">{{ pandit.location }}</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-language w-5 text-blue-600"></i>
-                                    <span class="ml-2">{{ pandit.languages }}</span>
-                                </div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-sm text-gray-500">Starting from</span>
+                                <span class="text-xl font-bold text-orange-600">₹999</span>
                             </div>
-                            <button
-                                onclick="openBookingModal('{{ pandit.id }}', '{{ pandit.name }}', '{{ pandit.location }}')"
-                                class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-xl font-bold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl transform hover:scale-105">
-                                Book Now
-                            </button>
+                            <span class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-xl font-bold uppercase tracking-wide hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 block text-center">
+                                BOOK NOW
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -167,17 +270,15 @@ justify-content: center;
             <p class="text-gray-600">No pandits available at the moment. Please check back later.</p>
         </div>
         {% endif %}
+
     </div>
 </section>
 
 <!-- Testimonials Section -->
-<section id="testimonials" class="py-16 bg-gradient-to-b from-white to-gray-50 scroll-reveal">
+<section id="testimonials" class="py-6 bg-gradient-to-b from-white to-gray-50 scroll-reveal">
     <div class="container mx-auto px-6">
-        <div class="text-center mb-8">
-            <span
-                class="inline-block px-4 py-2 bg-purple-100 text-purple-600 rounded-full text-sm font-semibold mb-3">Customer
-                Reviews</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-3"><span class="gradient-text">Delighted</span>
+        <div class="text-center mb-6">
+            <h2 class="text-2xl md:text-4xl font-extrabold mb-3"><span class="text-gray-800">Happy</span>
                 Customers</h2>
             <p class="text-lg text-gray-600">See what our satisfied customers have to say</p>
         </div>
@@ -187,11 +288,12 @@ justify-content: center;
                 {% for testimonial in testimonials %}
                 <div class="swiper-slide">
                     <div
-                        class="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-2xl shadow-lg border-l-4 border-blue-600 h-full">
+                        class="bg-gradient-to-br from-orange-50 to-amber-50 p-8 rounded-2xl shadow-lg border-l-4 border-orange-500 h-full">
                         <div class="flex items-center mb-4">
-                            <img src="{{ url_for('static', filename=testimonial.author_image) }}"
+                            <img src="{{ url_for('static', filename=testimonial.author_image) if testimonial.author_image else 'https://ui-avatars.com/api/?name=' + testimonial.author|urlencode + '&background=f97316&color=fff' }}"
+                                onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ testimonial.author|urlencode }}&background=f97316&color=fff'"
                                 alt="{{ testimonial.author }}"
-                                class="w-14 h-14 rounded-full object-cover border-2 border-blue-600">
+                                class="w-14 h-14 rounded-full object-cover border-2 border-orange-500" loading="lazy" decoding="async">
                             <div class="ml-4">
                                 <p class="font-bold text-lg">{{ testimonial.author }}</p>
                                 <p class="text-sm text-gray-600">{{ testimonial.location }}</p>
@@ -218,53 +320,41 @@ justify-content: center;
 </section>
 
 <!-- Puja Essentials Section -->
-<section id="essentials" class="py-16 bg-gradient-to-b from-gray-50 to-white scroll-reveal">
+<section id="essentials" class="py-6 bg-gradient-to-b from-gray-50 to-white scroll-reveal">
     <div class="container mx-auto px-6">
-        <div class="text-center mb-8">
-            <span
-                class="inline-block px-4 py-2 bg-green-100 text-green-600 rounded-full text-sm font-semibold mb-3">Premium
-                Quality</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-3">Shop <span class="gradient-text">Puja
-                    Essentials</span></h2>
+        <div class="text-center mb-6">
+            <h2 class="text-2xl md:text-4xl font-extrabold mb-3"><span class="text-gray-800">Puja Essentials</span></h2>
             <p class="text-lg text-gray-600">Authentic and pure materials for your sacred rituals</p>
         </div>
+
         {% if materials %}
         <div class="swiper essentials-slider relative">
             <div class="swiper-wrapper">
                 {% for material in materials %}
                 <div class="swiper-slide">
-                    <div class="bg-white p-6 rounded-2xl shadow-lg card-hover h-full flex flex-col">
-                        <a href="{{ url_for('product_detail', product_id=material.id) }}"
-                            class="flex-1 flex flex-col cursor-pointer mb-3">
-                            <div class="relative mb-4 overflow-hidden rounded-xl group">
-                                <img src="{{ url_for('static', filename=material.image_url) }}"
-                                    alt="{{ material.name }}"
-                                    class="w-full h-52 object-cover transform group-hover:scale-110 transition-transform duration-500">
-                                <div
-                                    class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                                    20% OFF
-                                </div>
+                    <a href="{{ url_for('product_detail', product_id=material.id) }}"
+                        class="bg-white rounded-2xl shadow-lg overflow-hidden card-hover border border-gray-100 h-full block">
+                        <div class="relative">
+                            <img src="{{ url_for('static', filename=material.image_url) }}"
+                                alt="{{ material.name }}" class="w-full h-48 object-cover" loading="lazy" decoding="async">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <div class="absolute bottom-3 left-3 text-white">
+                                <h3 class="text-lg font-bold">{{ material.name }}</h3>
                             </div>
-                            <h3 class="text-xl font-bold mb-2 text-gray-800 hover:text-purple-600 transition-colors">
-                                {{ material.name }}</h3>
-                            <p class="text-gray-600 text-sm mb-4 line-clamp-2 flex-1">{{
-                                material.description|truncate(100, True, '...') }}</p>
-                            <div class="flex items-center mb-2">
-                                <div class="flex text-yellow-400 text-sm">★★★★★</div>
-                                <span class="text-gray-500 text-xs ml-2">(4.8/5)</span>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">★ 4.8</span>
                             </div>
-                            <div>
-                                <span class="text-2xl font-bold text-green-600">₹{{ material.price }}</span>
-                                <span class="text-gray-400 text-sm line-through ml-2">₹{{ (material.price|float *
-                                    1.25)|round|int }}</span>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-sm text-gray-500">Price</span>
+                                <span class="text-xl font-bold text-orange-600">₹{{ material.price }}</span>
                             </div>
-                        </a>
-                        <button
-                            onclick="event.preventDefault(); event.stopPropagation(); addToCart({{ material.id }}, '{{ material.name }}', {{ material.price }})"
-                            class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2.5 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105">
-                            Add to Cart
-                        </button>
-                    </div>
+                            <span class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-xl font-bold uppercase tracking-wide hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 block text-center">
+                                VIEW DETAILS
+                            </span>
+                        </div>
+                    </a>
                 </div>
                 {% endfor %}
             </div>
@@ -277,67 +367,49 @@ justify-content: center;
             <p class="text-gray-600">New stock arriving soon!</p>
         </div>
         {% endif %}
+
     </div>
 </section>
 
 <!-- Ritual Bundles Section -->
-<section id="bundles" class="py-16 bg-white scroll-reveal">
+<section id="bundles" class="py-6 bg-white scroll-reveal">
     <div class="container mx-auto px-6">
-        <div class="text-center mb-8">
-            <span
-                class="inline-block px-4 py-2 bg-amber-100 text-amber-600 rounded-full text-sm font-semibold mb-3">Best
-                Value Packages</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-3">Complete <span class="gradient-text">Ritual
-                    Bundles</span>
-            </h2>
+        <div class="text-center mb-6">
+            <h2 class="text-2xl md:text-4xl font-extrabold mb-3"><span class="text-gray-800">Ritual Bundles</span></h2>
             <p class="text-lg text-gray-600">Everything you need for your ceremony in one package</p>
         </div>
+
         {% if bundles %}
         <div class="swiper bundles-slider relative">
             <div class="swiper-wrapper">
                 {% for bundle in bundles %}
                 <div class="swiper-slide">
-                    <div
-                        class="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-6 rounded-2xl shadow-xl card-hover h-full border-2 border-amber-200 flex flex-col">
-                        <a href="{{ url_for('bundle_detail', bundle_id=bundle.id) }}"
-                            class="flex-1 flex flex-col cursor-pointer">
-                            <div class="relative overflow-hidden rounded-xl group mb-4">
-                                <img src="{{ url_for('static', filename=bundle.image_url) }}" alt="{{ bundle.name }}"
-                                    class="w-full h-48 object-cover transform group-hover:scale-110 transition-transform duration-500">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
-                                </div>
-                                <div
-                                    class="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
-                                    Save {{ ((bundle.original_price -
-                                    bundle.discounted_price)/bundle.original_price * 100)|round|int }}%
-                                </div>
-                                <div
-                                    class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                                    <span class="text-xs text-gray-600 font-semibold">Popular Choice</span>
-                                </div>
+                    <a href="{{ url_for('bundle_detail', bundle_id=bundle.id) }}"
+                        class="bg-white rounded-2xl shadow-lg overflow-hidden card-hover border border-amber-200 h-full block">
+                        <div class="relative">
+                            <img src="{{ url_for('static', filename=bundle.image_url) }}" alt="{{ bundle.name }}"
+                                class="w-full h-48 object-cover" loading="lazy" decoding="async">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <div class="absolute bottom-3 left-3 text-white">
+                                <h3 class="text-lg font-bold">{{ bundle.name }}</h3>
                             </div>
-                            <h3 class="text-xl font-bold text-gray-800 mb-2 hover:text-amber-700 transition-colors">
-                                {{ bundle.name }}</h3>
-                            <p class="text-gray-600 text-sm mb-3 line-clamp-2 flex-1">{{
-                                bundle.description|truncate(90, True, '...') }}</p>
-                            <div class="bg-white rounded-lg p-3 mb-4">
-                                <p class="text-xs text-gray-500 font-semibold mb-1">Includes:</p>
-                                <p class="text-xs text-gray-600">{{ bundle.includes|truncate(60, True, '...') }}
-                                </p>
+                            <div class="absolute top-3 right-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                                Save {{ ((bundle.original_price - bundle.discounted_price)/bundle.original_price * 100)|round|int }}%
                             </div>
-                            <div class="mb-3">
-                                <div class="text-3xl font-bold text-amber-600">₹{{ bundle.discounted_price }}
-                                </div>
-                                <div class="text-sm text-gray-400 line-through">₹{{ bundle.original_price }}
-                                </div>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">★ 4.9</span>
                             </div>
-                        </a>
-                        <button
-                            onclick="event.preventDefault(); event.stopPropagation(); addToCart({{ bundle.id }}, '{{ bundle.name }}', {{ bundle.discounted_price }}, 'bundle')"
-                            class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all font-bold shadow-lg hover:shadow-xl transform hover:scale-105">
-                            Add to Cart
-                        </button>
-                    </div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-sm text-gray-500 line-through">₹{{ bundle.original_price }}</span>
+                                <span class="text-xl font-bold text-amber-600">₹{{ bundle.discounted_price }}</span>
+                            </div>
+                            <span class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-xl font-bold uppercase tracking-wide hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 block text-center">
+                                VIEW BUNDLE
+                            </span>
+                        </div>
+                    </a>
                 </div>
                 {% endfor %}
             </div>
@@ -350,17 +422,16 @@ justify-content: center;
             <p class="text-gray-600">New ritual bundles coming soon!</p>
         </div>
         {% endif %}
+
     </div>
 </section>
 
 <!-- Media Coverage Section -->
-<section class="py-8 md:py-10 bg-white scroll-reveal">
+<section class="py-6 bg-white scroll-reveal">
     <div class="container mx-auto px-6">
-        <div class="text-center mb-6">
-            <span class="inline-block px-4 py-2 bg-amber-100 text-amber-600 rounded-full text-sm font-semibold mb-3">As
-                Featured In</span>
-            <h2 class="text-3xl md:text-5xl font-extrabold mb-3">Not Recognized by <span class="gradient-text">Leading
-                    Media</span></h2>
+        <div class="text-center mb-4">
+            <h2 class="text-2xl md:text-4xl font-extrabold mb-3">As <span class="text-gray-800">Featured
+                    In</span></h2>
             <p class="text-lg text-gray-600">India's most respected publications</p>
         </div>
 
@@ -368,26 +439,26 @@ justify-content: center;
             <div class="swiper-wrapper">
                 <div class="swiper-slide">
                     <div class="flex items-center justify-center h-32 px-8">
-                        <img src="{{ url_for('static', filename='hindu.png') }}" alt="The Hindu"
-                            class="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300">
+                        <img src="{{ url_for('static', filename='your_story.png') }}" alt="YourStory"
+                            class="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300" loading="lazy" decoding="async">
                     </div>
                 </div>
                 <div class="swiper-slide">
                     <div class="flex items-center justify-center h-32 px-8">
-                        <img src="{{ url_for('static', filename='ndtv.1.png') }}" alt="NDTV"
-                            class="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300">
+                        <img src="{{ url_for('static', filename='inc42.webp') }}" alt="Inc42"
+                            class="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300" loading="lazy" decoding="async">
                     </div>
                 </div>
                 <div class="swiper-slide">
                     <div class="flex items-center justify-center h-32 px-8">
-                        <img src="{{ url_for('static', filename='forbes.1.png') }}" alt="Forbes"
-                            class="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300">
+                        <img src="{{ url_for('static', filename='mint.png') }}" alt="Mint"
+                            class="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300" loading="lazy" decoding="async">
                     </div>
                 </div>
                 <div class="swiper-slide">
                     <div class="flex items-center justify-center h-32 px-8">
-                        <img src="{{ url_for('static', filename='et.1.png') }}" alt="Economic Times"
-                            class="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300">
+                        <img src="{{ url_for('static', filename='Frobes_png.webp') }}" alt="Forbes"
+                            class="max-h-16 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300" loading="lazy" decoding="async">
                     </div>
                 </div>
             </div>
@@ -398,12 +469,12 @@ justify-content: center;
 <!-- Booking Modal -->
 <div id="booking-modal" class="modal">
     <div class="modal-content">
-        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+        <div class="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 rounded-t-2xl">
             <div class="flex justify-between items-center">
                 <h2 class="text-2xl font-bold">Book Pandit Ji</h2>
                 <button onclick="closeBookingModal()" class="text-white hover:text-gray-200 text-3xl">&times;</button>
             </div>
-            <p id="modal-pandit-info" class="text-blue-100 mt-2"></p>
+            <p id="modal-pandit-info" class="text-orange-100 mt-2"></p>
         </div>
         <form id="booking-form" class="p-8 space-y-6">
             <input type="hidden" id="pandit-id" name="pandit-id">
@@ -411,28 +482,28 @@ justify-content: center;
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Your Name *</label>
                 <input type="text" required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="Enter your full name">
             </div>
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Phone Number *</label>
                 <input type="tel" required pattern="[0-9]{10}"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="10-digit mobile number">
             </div>
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Email</label>
                 <input type="email"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="your.email@example.com">
             </div>
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Puja Type *</label>
                 <select required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                     <option value="">Select Puja Type</option>
                     <option>Griha Pravesh</option>
                     <option>Satyanarayan Katha</option>
@@ -446,34 +517,34 @@ justify-content: center;
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Preferred Date *</label>
                 <input type="date" id="booking-date" required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent">
             </div>
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Address *</label>
                 <textarea required rows="3"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="Full address for the puja"></textarea>
             </div>
 
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Additional Notes</label>
                 <textarea rows="2"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="Any specific requirements..."></textarea>
             </div>
 
-            <div class="bg-blue-50 p-4 rounded-xl">
+            <div class="bg-orange-50 p-4 rounded-xl">
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-gray-700 font-semibold">Booking Fee:</span>
-                    <span class="text-2xl font-bold text-blue-600">₹999</span>
+                    <span class="text-2xl font-bold text-orange-600">₹999</span>
                 </div>
                 <p class="text-xs text-gray-600">*Final amount may vary based on puja requirements</p>
             </div>
 
             <button type="submit"
-                class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl">
-                Confirm Booking
+                class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-xl font-bold text-lg uppercase tracking-wide hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl">
+                CONFIRM BOOKING
             </button>
         </form>
     </div>
@@ -482,9 +553,37 @@ justify-content: center;
 
 {% block extra_scripts %}
 <script>
+    // Helper: Check if slider has enough slides for loop mode
+    function canLoop(selector, minSlides) {
+        const container = document.querySelector(selector);
+        if (!container) return false;
+        return container.querySelectorAll('.swiper-slide').length >= minSlides;
+    }
+
+    // Initialize Temples Slider (Puja For You)
+    const templesSlider = new Swiper('.temples-slider', {
+        loop: canLoop('.temples-slider', 4),
+        speed: 600,
+        spaceBetween: 30,
+        slidesPerView: 4,
+        breakpoints: {
+            320: { slidesPerView: 1, spaceBetween: 20 },
+            640: { slidesPerView: 2, spaceBetween: 25 },
+            1024: { slidesPerView: 4, spaceBetween: 30 },
+        },
+        navigation: {
+            nextEl: '.temples-next',
+            prevEl: '.temples-prev',
+        },
+        pagination: {
+            el: '.temples-pagination',
+            clickable: true,
+        },
+    });
+
     // Initialize Pandits Slider
     const panditsSlider = new Swiper('.pandits-slider', {
-        loop: true,
+        loop: canLoop('.pandits-slider', 4),
         speed: 600,
         spaceBetween: 30,
         slidesPerView: 4,
@@ -505,7 +604,7 @@ justify-content: center;
 
     // Initialize Puja Essentials Slider
     const essentialsSlider = new Swiper('.essentials-slider', {
-        loop: true,
+        loop: canLoop('.essentials-slider', 4),
         speed: 600,
         spaceBetween: 30,
         slidesPerView: 4,
@@ -526,7 +625,7 @@ justify-content: center;
 
     // Initialize Bundles Slider
     const bundlesSlider = new Swiper('.bundles-slider', {
-        loop: true,
+        loop: canLoop('.bundles-slider', 4),
         speed: 600,
         spaceBetween: 30,
         slidesPerView: 4,
@@ -547,7 +646,7 @@ justify-content: center;
 
     // Initialize Testimonials Slider
     const testimonialsSlider = new Swiper('.testimonials-slider', {
-        loop: true,
+        loop: canLoop('.testimonials-slider', 3),
         speed: 600,
         spaceBetween: 30,
         slidesPerView: 3,
@@ -803,6 +902,9 @@ justify-content: center;
         const duration = 2000;
         let startTime = null;
         let lastValue = -1;
+
+        // Reset to 0 before animating
+        element.textContent = '0';
 
         // Smooth easing - easeOutQuart
         function easeOutQuart(t) {

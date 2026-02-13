@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+
+{% block title %}{{ temple.name }} - Book Puja | PujaPath{% endblock %}
+
+{% block meta_description %}Book authentic pujas at {{ temple.name }}, {{ temple.location }}. Video proof, blessed prasad delivered. Starting from {{ temple.starting_price|int }}.{% endblock %}
+
+{% block extra_styles %}
+.puja-card {
+    transition: all 0.3s ease;
+}
+
+.puja-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+}
+
+.puja-card.selected {
+    border-color: #f97316;
+    background: linear-gradient(135deg, #fff7ed, #fffbeb);
+}
+
+.sticky-summary {
+    position: sticky;
+    top: 6rem;
+}
+
+body {
+    padding-bottom: 80px;
+}
+
+@media (min-width: 1024px) {
+    body {
+        padding-bottom: 0;
+    }
+}
+
+details>summary {
+    list-style: none;
+}
+
+details>summary::-webkit-details-marker {
+    display: none;
+}
+
+details[open] summary~* {
+    animation: fadeInDetails 0.3s ease-in-out;
+}
+
+@keyframes fadeInDetails {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+{% endblock %}
+
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<div class="container mx-auto px-4 py-4 pt-6">
+    <nav class="text-xs text-gray-500 uppercase tracking-wider font-medium flex items-center">
+        <a href="{{ url_for('home') }}" class="hover:text-orange-600 transition-colors">Home</a>
+        <i class="fas fa-chevron-right text-[10px] mx-2 text-gray-300"></i>
+        <a href="{{ url_for('temples') }}" class="hover:text-orange-600 transition-colors">Temples</a>
+        <i class="fas fa-chevron-right text-[10px] mx-2 text-gray-300"></i>
+        <span class="text-gray-900 font-semibold">{{ temple.name }}</span>
+    </nav>
+</div>
+
+<!-- Main Content -->
+<div class="container mx-auto px-4 lg:px-8 max-w-7xl mt-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-16">
+
+        <!-- Image Section -->
+        <div class="space-y-4">
+            <div class="bg-gray-50 aspect-[4/3] rounded-2xl overflow-hidden relative group shadow-lg border border-orange-100">
+                <img src="{{ url_for('static', filename=temple.image_url) if temple.image_url else 'https://images.unsplash.com/photo-1627894006066-b45f13d12f6e?w=800&h=600&fit=crop' }}"
+                    onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1627894006066-b45f13d12f6e?w=800&h=600&fit=crop'"
+                    alt="{{ temple.name }}"
+                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+
+                {% if temple.is_featured %}
+                <div class="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">
+                    <i class="fas fa-star mr-1"></i>Featured Temple
+                </div>
+                {% endif %}
+
+                <div class="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center text-white">
+                            <i class="fas fa-om text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">Main Deity</p>
+                            <p class="font-bold text-gray-800">{{ temple.deity or 'Various Deities' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trust Features -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">Video Proof</p>
+                            <p class="text-xs text-gray-600">Live or recorded</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-amber-600 shadow-sm">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">Aashirwad Box</p>
+                            <p class="text-xs text-gray-600">Prasad delivered</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Section -->
+        <div class="relative">
+            <div class="sticky-summary">
+                <!-- Header -->
+                <div class="mb-6">
+                    <div class="flex items-center gap-2 text-orange-600 text-sm font-semibold mb-2">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>{{ temple.location }}, {{ temple.state }}</span>
+                    </div>
+                    <h1 class="text-4xl lg:text-5xl font-serif font-bold text-gray-900 mb-4 leading-tight">
+                        {{ temple.name }}
+                    </h1>
+
+                    {% if temple.description %}
+                    <p class="text-gray-600 leading-relaxed text-lg">
+                        {{ temple.description }}
+                    </p>
+                    {% endif %}
+                </div>
+
+                <!-- Significance -->
+                {% if temple.significance %}
+                <div class="mb-8 p-5 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200">
+                    <h3 class="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                        <i class="fas fa-scroll text-orange-500"></i>
+                        Religious Significance
+                    </h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">{{ temple.significance }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Available Pujas Section -->
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <i class="fas fa-om text-orange-500"></i>
+                        Available Pujas
+                    </h2>
+
+                    {% if pujas %}
+                    <div class="space-y-4" id="pujas-list">
+                        {% for puja in pujas %}
+                        <div class="puja-card bg-white rounded-xl border-2 border-gray-100 p-5 cursor-pointer hover:border-orange-300"
+                            onclick="selectPuja({{ puja.id }}, '{{ puja.name }}', {{ puja.price }})">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <h3 class="text-lg font-bold text-gray-800">{{ puja.name }}</h3>
+                                        {% if puja.is_popular %}
+                                        <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">Popular</span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if puja.description %}
+                                    <p class="text-gray-600 text-sm mb-3">{{ puja.description }}</p>
+                                    {% endif %}
+
+                                    <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500">
+                                        {% if puja.duration %}
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-clock text-orange-400"></i>
+                                            {{ puja.duration }}
+                                        </span>
+                                        {% endif %}
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-video text-green-500"></i>
+                                            Video Proof
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-gift text-amber-500"></i>
+                                            Prasad Included
+                                        </span>
+                                    </div>
+
+                                    {% if puja.benefits %}
+                                    <div class="mt-3 text-xs text-gray-500">
+                                        <span class="font-semibold text-gray-700">Benefits:</span> {{ puja.benefits|truncate(100) }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="text-right ml-4">
+                                    <p class="text-2xl font-bold text-orange-600">{{ puja.price|int }}</p>
+                                    <p class="text-xs text-gray-500">per puja</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                                <div class="flex items-center gap-2 text-sm text-gray-600">
+                                    <i class="fas fa-check-circle text-green-500"></i>
+                                    <span>Performed by verified pandit</span>
+                                </div>
+                                <button onclick="event.stopPropagation(); bookPuja({{ puja.id }}, '{{ puja.name }}', {{ puja.price }})"
+                                    class="px-6 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg font-bold text-sm hover:from-orange-600 hover:to-amber-600 transition-all shadow-md hover:shadow-lg">
+                                    Book Now
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-12 bg-gray-50 rounded-xl">
+                        <i class="fas fa-om text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-600 mb-4">Pujas for this temple will be available soon.</p>
+                        <a href="https://wa.me/919155095375?text=Hi, I want to book a puja at {{ temple.name }}. Please let me know the available options." target="_blank"
+                            class="inline-flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700">
+                            <i class="fab fa-whatsapp text-xl"></i>
+                            Contact for Custom Booking
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- FAQ Section -->
+                <div class="space-y-3 mb-8">
+                    <h3 class="font-bold text-gray-800 text-lg mb-4">Frequently Asked Questions</h3>
+
+                    <details class="group bg-gray-50 rounded-xl border border-gray-200 p-4">
+                        <summary class="flex justify-between items-center cursor-pointer font-semibold text-gray-800">
+                            How will I receive the video proof?
+                            <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="mt-3 text-gray-600 text-sm">You will receive the video via WhatsApp and email within 24-48 hours after the puja is completed.</p>
+                    </details>
+
+                    <details class="group bg-gray-50 rounded-xl border border-gray-200 p-4">
+                        <summary class="flex justify-between items-center cursor-pointer font-semibold text-gray-800">
+                            When will I receive the Aashirwad Box?
+                            <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="mt-3 text-gray-600 text-sm">The Aashirwad Box containing blessed prasad and sacred items will be delivered within 5-7 working days.</p>
+                    </details>
+
+                    <details class="group bg-gray-50 rounded-xl border border-gray-200 p-4">
+                        <summary class="flex justify-between items-center cursor-pointer font-semibold text-gray-800">
+                            Can I choose a specific date for the puja?
+                            <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="mt-3 text-gray-600 text-sm">Yes! After booking, you can select your preferred date. Our team will confirm based on temple availability and auspicious timings.</p>
+                    </details>
+                </div>
+
+                <!-- Contact Support -->
+                <div class="p-5 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center text-purple-600 shadow-md">
+                            <i class="fas fa-headset text-2xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-800">Need Help?</h4>
+                            <p class="text-sm text-gray-600">Our pandits can guide you to the right puja</p>
+                        </div>
+                        <a href="https://wa.me/919155095375?text=Hi, I need help choosing a puja at {{ temple.name }}" target="_blank"
+                            class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold text-sm hover:from-purple-700 hover:to-pink-700 transition-all">
+                            <i class="fab fa-whatsapp mr-1"></i>Chat
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- More Temples Section -->
+    {% if other_temples %}
+    <div class="mt-16 border-t border-gray-100 pt-12">
+        <h2 class="text-3xl font-serif font-bold text-center mb-10">
+            Explore More <span class="gradient-text">Sacred Temples</span>
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for other in other_temples %}
+            <a href="{{ url_for('temple_detail', temple_id=other.id) }}"
+                class="bg-white rounded-2xl shadow-lg overflow-hidden border border-orange-100 hover:shadow-xl transition-all hover:-translate-y-1">
+                <div class="relative">
+                    <img src="{{ url_for('static', filename=other.image_url) if other.image_url else 'https://images.unsplash.com/photo-1627894006066-b45f13d12f6e?w=400&h=300&fit=crop' }}"
+                        onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1627894006066-b45f13d12f6e?w=400&h=300&fit=crop'"
+                        alt="{{ other.name }}" class="w-full h-40 object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div class="absolute bottom-3 left-3 text-white">
+                        <h3 class="font-bold">{{ other.name }}</h3>
+                        <p class="text-xs opacity-90">{{ other.location }}</p>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-500">Starting from</span>
+                        <span class="font-bold text-orange-600">{{ other.starting_price|int }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-10">
+            <a href="{{ url_for('temples') }}"
+                class="inline-flex items-center gap-2 px-8 py-3 border-2 border-orange-500 text-orange-600 rounded-xl font-bold hover:bg-orange-500 hover:text-white transition-all">
+                View All Temples
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="h-24"></div>
+</div>
+
+<!-- Mobile Fixed Bottom Bar -->
+<div class="fixed bottom-[65px] left-0 right-0 bg-white border-t border-gray-100 p-3 lg:hidden z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.1)]">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <img src="{{ url_for('static', filename=temple.image_url) if temple.image_url else 'https://images.unsplash.com/photo-1627894006066-b45f13d12f6e?w=100&h=100&fit=crop' }}"
+                class="w-10 h-10 rounded-lg object-cover border border-gray-100">
+            <div>
+                <p class="text-xs font-bold text-gray-900 line-clamp-1">{{ temple.name }}</p>
+                <p class="text-sm font-bold text-orange-600">From {{ temple.starting_price|int }}</p>
+            </div>
+        </div>
+        <a href="#pujas-list"
+            class="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold text-sm shadow-lg">
+            View Pujas
+        </a>
+    </div>
+</div>
+
+<!-- Booking Modal -->
+<div id="puja-booking-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div class="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-6 rounded-t-2xl">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold">Book Puja</h2>
+                <button onclick="closeBookingModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+            </div>
+            <p id="modal-puja-info" class="text-orange-100 mt-1 text-sm"></p>
+        </div>
+
+        <form id="puja-booking-form" class="p-6 space-y-5">
+            <input type="hidden" id="selected-puja-id" name="puja_id">
+            <input type="hidden" id="selected-puja-name" name="puja_name">
+            <input type="hidden" id="selected-puja-price" name="puja_price">
+            <input type="hidden" name="temple_id" value="{{ temple.id }}">
+            <input type="hidden" name="temple_name" value="{{ temple.name }}">
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2 text-sm">Your Name *</label>
+                <input type="text" name="name" required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Enter your full name">
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2 text-sm">Phone Number *</label>
+                <input type="tel" name="phone" required pattern="[0-9]{10}"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="10-digit mobile number">
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2 text-sm">Email</label>
+                <input type="email" name="email"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="your.email@example.com">
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2 text-sm">Preferred Date *</label>
+                <input type="date" name="date" id="puja-date" required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2 text-sm">Gotra (Optional)</label>
+                <input type="text" name="gotra"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Your gotra name">
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-semibold mb-2 text-sm">Special Wishes / Sankalp</label>
+                <textarea name="wishes" rows="2"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="Any specific wishes or prayers..."></textarea>
+            </div>
+
+            <div class="bg-orange-50 p-4 rounded-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-gray-700 font-semibold">Puja Amount:</span>
+                    <span id="modal-price" class="text-2xl font-bold text-orange-600">999</span>
+                </div>
+                <p class="text-xs text-gray-600">Includes video proof + Aashirwad box delivery</p>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white py-4 rounded-xl font-bold text-lg hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg">
+                Proceed to Payment
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const templeId = {{ temple.id }};
+    const templeName = '{{ temple.name }}';
+
+    function selectPuja(pujaId, pujaName, pujaPrice) {
+        // Remove selection from all cards
+        document.querySelectorAll('.puja-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Add selection to clicked card
+        event.currentTarget.classList.add('selected');
+    }
+
+    function bookPuja(pujaId, pujaName, pujaPrice) {
+        // Check if user is logged in
+        const token = localStorage.getItem('token');
+        if (!token) {
+            // Show login modal or redirect
+            openLoginRequiredModal();
+            return;
+        }
+
+        // Populate modal
+        document.getElementById('selected-puja-id').value = pujaId;
+        document.getElementById('selected-puja-name').value = pujaName;
+        document.getElementById('selected-puja-price').value = pujaPrice;
+        document.getElementById('modal-puja-info').textContent = `${pujaName} at ${templeName}`;
+        document.getElementById('modal-price').textContent = '₹' + pujaPrice;
+
+        // Pre-fill user details if available
+        try {
+            const userData = localStorage.getItem('user');
+            if (userData) {
+                const user = JSON.parse(userData);
+                const nameInput = document.querySelector('#puja-booking-form input[name="name"]');
+                const emailInput = document.querySelector('#puja-booking-form input[name="email"]');
+                if (nameInput && user.full_name) nameInput.value = user.full_name;
+                if (emailInput && user.email) emailInput.value = user.email;
+            }
+        } catch (e) {
+            console.error('Error prefilling user details:', e);
+        }
+
+        // Show modal
+        const modal = document.getElementById('puja-booking-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeBookingModal() {
+        const modal = document.getElementById('puja-booking-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Form submission
+    document.getElementById('puja-booking-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+
+        // Add to cart as a temple puja booking
+        const cartItem = {
+            id: `temple_puja_${data.puja_id}`,
+            temple_id: templeId,
+            temple_name: templeName,
+            puja_id: data.puja_id,
+            name: `${data.puja_name} at ${templeName}`,
+            price: parseFloat(data.puja_price),
+            quantity: 1,
+            type: 'temple_puja',
+            booking_details: {
+                date: data.date,
+                gotra: data.gotra,
+                wishes: data.wishes,
+                customer_name: data.name,
+                customer_phone: data.phone,
+                customer_email: data.email
+            }
+        };
+
+        // Add to cart
+        const existingIndex = cart.findIndex(item => item.id === cartItem.id);
+        if (existingIndex > -1) {
+            cart[existingIndex] = cartItem;
+        } else {
+            cart.push(cartItem);
+        }
+
+        updateCartUI();
+        closeBookingModal();
+
+        // Show success and redirect to checkout
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-24 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-fadeInUp';
+        notification.innerHTML = `<div class="flex items-center gap-3"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Puja added to cart!</span></div>`;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+
+        // Redirect to checkout
+        setTimeout(() => {
+            checkout();
+        }, 500);
+    });
+
+    // Set minimum date
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('puja-date');
+        if (dateInput) {
+            const today = new Date();
+            today.setDate(today.getDate() + 1); // Minimum 1 day advance booking
+            dateInput.min = today.toISOString().split('T')[0];
+        }
+    });
+
+    // Close modal on outside click
+    document.getElementById('puja-booking-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeBookingModal();
+        }
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeBookingModal();
+        }
+    });
+</script>
+{% endblock %}

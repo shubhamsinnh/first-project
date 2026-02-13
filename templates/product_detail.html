@@ -164,8 +164,8 @@ body {
                     <div>
                         <div class="flex items-baseline gap-3">
                             <span class="text-3xl font-medium text-gray-900">₹{{ product.price }}</span>
-                            {% if (product.price * 1.25) > product.price %}
-                            <span class="text-lg text-gray-400 line-through font-light">₹{{ (product.price *
+                            {% if (product.price|float * 1.25) > product.price|float %}
+                            <span class="text-lg text-gray-400 line-through font-light">₹{{ (product.price|float *
                                 1.25)|round|int }}</span>
                             <span
                                 class="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded inline-block align-middle ml-1">-20%</span>

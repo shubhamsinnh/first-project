@@ -8,3 +8,4 @@ from .admin import Admin
 from .booking import Booking
 from .order import Order, OrderItem
 from .otp import OTP
+from .temple import Temple, TemplePuja

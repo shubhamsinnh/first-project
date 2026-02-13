@@ -3,7 +3,18 @@
     "allow": [
       "Bash(python app.py:*)",
       "Bash(timeout:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "WebFetch(domain:www.bombayshavingcompany.com)",
+      "Bash(.venv/Scripts/python -m flask db migrate:*)",
+      "Bash(.venv/Scripts/python:*)",
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:pujaapaath.com)",
+      "Bash(findstr:*)",
+      "Bash(del \"\\\\?\\\\d:\\\\first-project\\\\first-project\\\\nul\")",
+      "Bash(cmd /c \"del /f /q \\\\?\\\\d:\\\\first-project\\\\first-project\\\\nul\")",
+      "Bash(cmd /c \"del \\\\.\\\\d:\\\\first-project\\\\first-project\\\\nul\")",
+      "Bash(git add:*)"
     ]
   }
 }

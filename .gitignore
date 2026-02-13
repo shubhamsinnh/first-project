@@ -162,3 +162,6 @@ cython_debug/
 .env
 #database connection data breach
 brain/
+
+# Windows reserved filenames
+nul

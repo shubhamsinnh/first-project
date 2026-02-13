@@ -424,12 +424,12 @@ body {
                         <p class="text-xs text-gray-600">
                             Total Value:
                             <span class="line-through text-gray-400">₹{% if bundle.total_individual_value %}{{
-                                bundle.total_individual_value }}{% else %}{{ bundle.original_price * 1.5 }}{% endif
+                                bundle.total_individual_value }}{% else %}{{ (bundle.original_price|float * 1.5)|round(2) }}{% endif
                                 %}</span>
                             <span class="font-bold text-green-600 ml-2">
                                 You Save: ₹{% if bundle.total_individual_value %}{{ bundle.total_individual_value -
-                                bundle.discounted_price }}{% else %}{{ (bundle.original_price * 1.5) -
-                                bundle.discounted_price }}{% endif %}
+                                bundle.discounted_price }}{% else %}{{ ((bundle.original_price|float * 1.5) -
+                                bundle.discounted_price|float)|round(2) }}{% endif %}
                             </span>
                         </p>
                     </div>
@@ -465,7 +465,7 @@ body {
                                         bundle.discounted_price }}</td>
                                     <td class="py-3 px-4 line-through text-gray-400">
                                         ₹{% if bundle.total_individual_value %}{{ bundle.total_individual_value }}{%
-                                        else %}{{ bundle.original_price * 1.5 }}{% endif %}
+                                        else %}{{ (bundle.original_price|float * 1.5)|round(2) }}{% endif %}
                                     </td>
                                 </tr>
                                 <tr>

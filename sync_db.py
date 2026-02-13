@@ -12,7 +12,7 @@ import sys
 from sqlalchemy import inspect, text
 from app import app
 from database import db
-from models import User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking, Order, OrderItem, OTP
+from models import User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking, Order, OrderItem, OTP, Temple, TemplePuja
 
 # Map SQLAlchemy types to PostgreSQL types
 TYPE_MAP = {
@@ -69,7 +69,7 @@ def get_default_clause(column):
 
 def sync_database(apply=False):
     """Compare models to database and report/fix mismatches."""
-    models = [User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking, Order, OrderItem, OTP]
+    models = [User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking, Order, OrderItem, OTP, Temple, TemplePuja]
 
     with app.app_context():
         inspector = inspect(db.engine)

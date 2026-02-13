@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Sacred Temples & Pujas | PujaPath{% endblock %}
+
+{% block meta_description %}Book authentic pujas at India's holiest temples. Video proof, Aashirwad box, and Vedic rituals performed by verified pandits.{% endblock %}
+
+{% block extra_styles %}
+.temple-card {
+    transition: all 0.3s ease;
+}
+
+.temple-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: white;
+    border-color: transparent;
+}
+
+.search-input:focus {
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3);
+}
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 py-12 overflow-hidden">
+    <div class="absolute top-0 left-0 w-72 h-72 bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+    <div class="absolute bottom-0 right-0 w-72 h-72 bg-amber-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+
+    <div class="container mx-auto px-6 text-center relative z-10">
+        <span class="inline-block px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold mb-4">
+            Temple Rituals, From Your Home
+        </span>
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4">
+            <span class="gradient-text">Sacred Temples</span> of India
+        </h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+            Book authentic pujas at India's holiest temples. Get video proof, blessed prasad, and Aashirwad box delivered to your doorstep.
+        </p>
+
+        <!-- Trust Badges -->
+        <div class="flex flex-wrap justify-center gap-4 md:gap-6">
+            <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                <i class="fas fa-video text-orange-600"></i>
+                <span class="text-sm font-medium text-gray-700">Video Proof</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                <i class="fas fa-gift text-orange-600"></i>
+                <span class="text-sm font-medium text-gray-700">Aashirwad Box</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                <i class="fas fa-om text-orange-600"></i>
+                <span class="text-sm font-medium text-gray-700">Vedic Rituals</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                <i class="fas fa-certificate text-orange-600"></i>
+                <span class="text-sm font-medium text-gray-700">Verified Pandits</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search & Filters -->
+<section class="py-6 bg-white border-b border-gray-100 sticky top-16 z-30">
+    <div class="container mx-auto px-6">
+        <form method="GET" action="{{ url_for('temples') }}" class="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <!-- Search Bar -->
+            <div class="relative flex-1 max-w-md w-full">
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Search temples, deities..."
+                    class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent search-input">
+                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-3 items-center">
+                <select name="state" onchange="this.form.submit()"
+                    class="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <option value="">All States</option>
+                    {% for state in states %}
+                    <option value="{{ state }}" {% if current_state == state %}selected{% endif %}>{{ state }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="deity" onchange="this.form.submit()"
+                    class="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <option value="">All Deities</option>
+                    {% for deity in deities %}
+                    <option value="{{ deity }}" {% if current_deity == deity %}selected{% endif %}>{{ deity }}</option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit"
+                    class="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-amber-700 transition-all">
+                    <i class="fas fa-filter mr-2"></i>Filter
+                </button>
+
+                {% if search_query or current_state or current_deity %}
+                <a href="{{ url_for('temples') }}"
+                    class="px-4 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-times mr-1"></i>Clear
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- Temples Grid -->
+<section class="py-10 bg-gradient-to-b from-white to-orange-50/30">
+    <div class="container mx-auto px-6">
+        {% if temples %}
+        <!-- Results Count -->
+        <div class="mb-6 flex items-center justify-between">
+            <p class="text-gray-600">
+                Showing <span class="font-bold text-gray-800">{{ temples|length }}</span> temples
+                {% if search_query %} for "{{ search_query }}"{% endif %}
+            </p>
+        </div>
+
+        <!-- Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {% for temple in temples %}
+            <a href="{{ url_for('temple_detail', temple_id=temple.id) }}"
+                class="temple-card bg-white rounded-2xl shadow-lg overflow-hidden border border-orange-100 block">
+                <div class="relative">
+                    <img src="{{ url_for('static', filename=temple.image_url) if temple.image_url else 'https://images.unsplash.com/photo-1627894006066-b45f13d12f6e?w=400&h=300&fit=crop' }}"
+                        onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1627894006066-b45f13d12f6e?w=400&h=300&fit=crop'"
+                        alt="{{ temple.name }}" class="w-full h-48 object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div class="absolute bottom-3 left-3 text-white">
+                        <h3 class="text-lg font-bold">{{ temple.name }}</h3>
+                        <p class="text-sm opacity-90"><i class="fas fa-map-marker-alt mr-1"></i>{{ temple.location }}, {{ temple.state }}</p>
+                    </div>
+                    {% if temple.is_featured %}
+                    <div class="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                        Featured
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="p-5">
+                    {% if temple.deity %}
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-om text-orange-500"></i>
+                        <span class="text-sm text-gray-600">{{ temple.deity }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if temple.pujas %}
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        {% for puja in temple.pujas[:2] %}
+                        <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">{{ puja.name }}</span>
+                        {% endfor %}
+                        {% if temple.pujas|length > 2 %}
+                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">+{{ temple.pujas|length - 2 }} more</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-sm text-gray-500">Starting from</span>
+                            <span class="text-xl font-bold text-orange-600 ml-2">{{ temple.starting_price|int }}</span>
+                        </div>
+                        <span class="text-orange-600 font-semibold text-sm flex items-center gap-1">
+                            View Pujas <i class="fas fa-arrow-right"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- No Results -->
+        <div class="text-center py-16">
+            <div class="text-6xl mb-4">
+                <i class="fas fa-gopuram text-gray-300"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">No temples found</h3>
+            <p class="text-gray-600 mb-6">Try adjusting your search or filters</p>
+            <a href="{{ url_for('temples') }}"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-amber-700 transition-all">
+                <i class="fas fa-redo"></i>View All Temples
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Why Book With Us -->
+<section class="py-12 bg-white">
+    <div class="container mx-auto px-6">
+        <h2 class="text-3xl font-extrabold text-center mb-10">
+            Why Book <span class="gradient-text">Puja With Us</span>?
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 text-center border border-orange-100">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-orange-500">
+                    <i class="fas fa-video text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">Live Video Proof</h3>
+                <p class="text-sm text-gray-600">Watch your puja being performed live or receive recorded video</p>
+            </div>
+
+            <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 text-center border border-orange-100">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-orange-500">
+                    <i class="fas fa-gift text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">Aashirwad Box</h3>
+                <p class="text-sm text-gray-600">Receive blessed prasad and sacred items from the temple</p>
+            </div>
+
+            <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 text-center border border-orange-100">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-orange-500">
+                    <i class="fas fa-user-check text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">Verified Pandits</h3>
+                <p class="text-sm text-gray-600">All rituals performed by temple-authorized pandits</p>
+            </div>
+
+            <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 text-center border border-orange-100">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-orange-500">
+                    <i class="fas fa-shield-alt text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">100% Authentic</h3>
+                <p class="text-sm text-gray-600">Genuine Vedic rituals following traditional procedures</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-12 bg-gradient-to-r from-orange-500 to-amber-600">
+    <div class="container mx-auto px-6 text-center">
+        <h2 class="text-3xl font-extrabold text-white mb-4">Need Help Choosing the Right Puja?</h2>
+        <p class="text-orange-100 mb-8 max-w-xl mx-auto">Our expert pandits can guide you to the perfect ritual based on your needs and kundali.</p>
+        <a href="https://wa.me/919155095375?text=Hi, I need help choosing the right puja for my requirements." target="_blank"
+            class="inline-flex items-center gap-2 px-8 py-4 bg-white text-orange-600 rounded-xl font-bold text-lg hover:bg-orange-50 transition-all shadow-lg">
+            <i class="fab fa-whatsapp text-2xl"></i>
+            Chat with a Pandit
+        </a>
+    </div>
+</section>
+{% endblock %}

@@ -48,6 +48,14 @@
 
         .animate-float {
             animation: float 3s ease-in-out infinite;
+            will-change: transform;
+            transform: translateZ(0);
+        }
+
+        /* GPU acceleration for blur elements */
+        [class*="blur-"] {
+            will-change: transform;
+            transform: translateZ(0);
         }
 
         /* Gradient Text */
@@ -187,11 +195,12 @@
             animation: pulse 1s infinite;
         }
 
-        /* Scroll Reveal */
+        /* Scroll Reveal - disabled (always visible) */
         .scroll-reveal {
-            opacity: 0;
-            transform: translateY(50px);
-            transition: all 0.8s ease-out;
+            opacity: 1;
+            transform: translateY(0);
+            content-visibility: auto;
+            contain-intrinsic-size: auto 500px;
         }
 
         .scroll-reveal.active {
@@ -513,8 +522,20 @@
         updateNavPosition();
         window.addEventListener('resize', updateNavPosition);
 
-        // Sticky Header scroll effect
-        window.addEventListener('scroll', () => {
+        // Throttle utility for scroll performance
+        function throttle(func, limit) {
+            let inThrottle;
+            return function(...args) {
+                if (!inThrottle) {
+                    func.apply(this, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        }
+
+        // Sticky Header scroll effect (throttled for performance)
+        window.addEventListener('scroll', throttle(() => {
             const nav = document.getElementById('main-nav');
             if (nav) {
                 if (window.scrollY > 50) {
@@ -526,7 +547,7 @@
                 }
                 updateNavPosition();
             }
-        });
+        }, 16));
 
         function openLoginModal() {
             const modal = document.getElementById('login-modal');

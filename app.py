@@ -23,7 +23,7 @@ from firebase_admin import credentials, auth as firebase_auth
 
 # Local imports
 from database import db
-from models import User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking, Order, OrderItem, OTP
+from models import User, Pandit, PujaMaterial, Testimonial, Bundle, Admin, Booking, Order, OrderItem, OTP, Temple, TemplePuja
 
 # Load environment variables
 load_dotenv(override=True)
@@ -700,15 +700,11 @@ def home():
             pandits=Pandit.query.filter_by(is_approved=True).limit(4).all(),  # Limit to 4 featured pandits
             materials=PujaMaterial.query.limit(8).all(),      # Limit to 8 featured materials
             testimonials=Testimonial.query.limit(6).all(),    # Limit to 6 testimonials
-            bundles=Bundle.query.limit(4).all()               # Limit to 4 featured bundles
+            bundles=Bundle.query.limit(4).all(),              # Limit to 4 featured bundles
+            temples=Temple.query.filter_by(is_active=True).order_by(Temple.is_featured.desc()).limit(9).all()  # Limit to 9 featured temples
         )
     except SQLAlchemyError as e:
         app.logger.error(f"Database error: {str(e)}")
-        return jsonify({
-            "error": "Database connection error. Please check your database connection.",
-            "details": str(e)
-        }), 500
-
         return jsonify({
             "error": "Database connection error. Please check your database connection.",
             "details": str(e)
@@ -1423,9 +1419,67 @@ def bundle_detail(bundle_id):
     # Get some products (excluding any that might be in the bundle)
     # You need to know how your Bundle and PujaMaterial models are related
     
-    return render_template('bundle_detail.html', 
-                         bundle=bundle, 
+    return render_template('bundle_detail.html',
+                         bundle=bundle,
                          related_products=related_products)  # Now passing related_products
+
+
+@app.route('/temples')
+def temples():
+    """Browse all temples page"""
+    # Get filter parameters
+    state = request.args.get('state', '')
+    deity = request.args.get('deity', '')
+    search = request.args.get('search', '')
+
+    # Base query
+    query = Temple.query.filter_by(is_active=True)
+
+    # Apply filters
+    if state:
+        query = query.filter(Temple.state.ilike(f'%{state}%'))
+    if deity:
+        query = query.filter(Temple.deity.ilike(f'%{deity}%'))
+    if search:
+        query = query.filter(
+            db.or_(
+                Temple.name.ilike(f'%{search}%'),
+                Temple.location.ilike(f'%{search}%'),
+                Temple.deity.ilike(f'%{search}%')
+            )
+        )
+
+    temples_list = query.order_by(Temple.is_featured.desc(), Temple.name).all()
+
+    # Get unique states and deities for filter dropdowns
+    all_temples = Temple.query.filter_by(is_active=True).all()
+    states = sorted(set(t.state for t in all_temples if t.state))
+    deities = sorted(set(t.deity for t in all_temples if t.deity))
+
+    return render_template('temples.html',
+                          temples=temples_list,
+                          states=states,
+                          deities=deities,
+                          current_state=state,
+                          current_deity=deity,
+                          search_query=search)
+
+
+@app.route('/temples/<int:temple_id>')
+def temple_detail(temple_id):
+    """Temple detail page with available pujas"""
+    temple = Temple.query.get_or_404(temple_id)
+
+    # Get active pujas for this temple
+    pujas = TemplePuja.query.filter_by(temple_id=temple_id, is_active=True).order_by(TemplePuja.is_popular.desc(), TemplePuja.price).all()
+
+    # Get other temples for "More Temples" section
+    other_temples = Temple.query.filter(Temple.id != temple_id, Temple.is_active == True).limit(4).all()
+
+    return render_template('temple_detail.html',
+                          temple=temple,
+                          pujas=pujas,
+                          other_temples=other_temples)
 
 
 @app.route('/about')
@@ -1554,10 +1608,10 @@ def seed_data():
         
         # Add Puja Materials (20+ products)
         materials = [
-            PujaMaterial(name="Premium Incense Sticks Set", description="Hand-rolled traditional incense sticks made from natural ingredients. Includes sandalwood, jasmine, and rose varieties.", price=299, image_url="priest.jpeg"),
-            PujaMaterial(name="Brass Diya Collection", description="Set of 5 handcrafted brass diyas with intricate designs. Traditional oil lamps perfect for festivals and daily worship.", price=599, image_url="priest1.jpeg"),
-            PujaMaterial(name="Sacred Puja Thali Set", description="Complete brass puja thali with essential items including kumkum holder, rice bowl, diya, bell, and agarbatti holder.", price=1299, image_url="th.png"),
-            PujaMaterial(name="Organic Camphor Tablets", description="Pure and natural camphor tablets for aarti and havan. Smokeless burning, strong fragrance. Pack of 100 tablets.", price=149, image_url="priest.jpeg"),
+            PujaMaterial(name="Premium Incense Sticks Set", description="Hand-rolled traditional incense sticks made from natural ingredients. Includes sandalwood, jasmine, and rose varieties.", price=299, image_url="pujamaterial/Premium Incense Sticks Set.webp"),
+            PujaMaterial(name="Brass Diya Collection", description="Set of 5 handcrafted brass diyas with intricate designs. Traditional oil lamps perfect for festivals and daily worship.", price=599, image_url="pujamaterial/brass collection.jpg"),
+            PujaMaterial(name="Sacred Puja Thali Set", description="Complete brass puja thali with essential items including kumkum holder, rice bowl, diya, bell, and agarbatti holder.", price=1299, image_url="pujamaterial/Puja thali set.webp"),
+            PujaMaterial(name="Organic Camphor Tablets", description="Pure and natural camphor tablets for aarti and havan. Smokeless burning, strong fragrance. Pack of 100 tablets.", price=149, image_url="pujamaterial/camphor tablet.webp"),
             PujaMaterial(name="Sandalwood Powder", description="Premium quality pure sandalwood powder for tilak, havan, and puja. 100g pack of aromatic sandalwood.", price=450, image_url="priest1.jpeg"),
             PujaMaterial(name="Rudraksha Mala 108 Beads", description="Authentic 5 Mukhi Rudraksha mala with 108 beads. Perfect for meditation, japa, and spiritual practices.", price=899, image_url="th.png"),
             PujaMaterial(name="Copper Kalash Set", description="Traditional copper kalash (pot) with coconut holder and mango leaves holder. Essential for all Hindu pujas.", price=799, image_url="priest.jpeg"),
@@ -1583,14 +1637,14 @@ def seed_data():
         
         # Add Testimonials (8 reviews)
         testimonials = [
-            Testimonial(author="Priya Sharma", author_image="priest.jpeg", content="Excellent service! The pandit ji was very knowledgeable and performed the Griha Pravesh puja beautifully. The puja materials were of premium quality. Highly recommended!", rating=5, location="Mumbai, Maharashtra"),
-            Testimonial(author="Rajesh Kumar", author_image="priest1.jpeg", content="Very professional and punctual. All the puja essentials arrived on time and were exactly as described. The complete ritual bundle saved me so much time and effort.", rating=5, location="Delhi, NCR"),
-            Testimonial(author="Anjali Verma", author_image="th.png", content="PujaPath made our wedding ceremony stress-free. The pandit was experienced and guided us through every ritual. Thank you for preserving our traditions with such dedication!", rating=5, location="Bangalore, Karnataka"),
-            Testimonial(author="Vikram Singh", author_image="priest.jpeg", content="Great platform for all puja needs. The prices are reasonable and the quality is authentic. I especially love the monthly subscription for daily puja items.", rating=5, location="Jaipur, Rajasthan"),
-            Testimonial(author="Meera Patel", author_image="priest1.jpeg", content="Booked a pandit for Satyanarayan Katha and it was a wonderful experience. The pandit was knowledgeable and explained everything beautifully. Will definitely use again!", rating=5, location="Ahmedabad, Gujarat"),
-            Testimonial(author="Amit Gupta", author_image="th.png", content="The quality of puja items is top-notch. Received my order within 2 days with proper packaging. Customer service is also very helpful and responsive.", rating=5, location="Pune, Maharashtra"),
-            Testimonial(author="Kavita Reddy", author_image="priest.jpeg", content="Found the perfect pandit for my daughter's wedding through PujaPath. Everything was organized professionally and the ceremony was beautiful. Highly satisfied!", rating=5, location="Hyderabad, Telangana"),
-            Testimonial(author="Sandeep Joshi", author_image="priest1.jpeg", content="Impressed with the variety of puja materials available. The Rudraksha mala I purchased is authentic and of excellent quality. Great initiative to preserve our culture!", rating=5, location="Kolkata, West Bengal")
+            Testimonial(author="Priya Sharma", author_image="testimonial/priya.jpg", content="Excellent service! The pandit ji was very knowledgeable and performed the Griha Pravesh puja beautifully. The puja materials were of premium quality. Highly recommended!", rating=5, location="Mumbai, Maharashtra"),
+            Testimonial(author="Rajesh Kumar", author_image="testimonial/rajesh.jpg", content="Very professional and punctual. All the puja essentials arrived on time and were exactly as described. The complete ritual bundle saved me so much time and effort.", rating=5, location="Delhi, NCR"),
+            Testimonial(author="Anjali Verma", author_image="testimonial/anjali.jpg", content="PujaPath made our wedding ceremony stress-free. The pandit was experienced and guided us through every ritual. Thank you for preserving our traditions with such dedication!", rating=5, location="Bangalore, Karnataka"),
+            Testimonial(author="Vikram Singh", author_image="testimonial/vikram.jpg", content="Great platform for all puja needs. The prices are reasonable and the quality is authentic. I especially love the monthly subscription for daily puja items.", rating=5, location="Jaipur, Rajasthan"),
+            Testimonial(author="Meera Patel", author_image="testimonial/priya.jpg", content="Booked a pandit for Satyanarayan Katha and it was a wonderful experience. The pandit was knowledgeable and explained everything beautifully. Will definitely use again!", rating=5, location="Ahmedabad, Gujarat"),
+            Testimonial(author="Amit Gupta", author_image="testimonial/rajesh.jpg", content="The quality of puja items is top-notch. Received my order within 2 days with proper packaging. Customer service is also very helpful and responsive.", rating=5, location="Pune, Maharashtra"),
+            Testimonial(author="Kavita Reddy", author_image="testimonial/anjali.jpg", content="Found the perfect pandit for my daughter's wedding through PujaPath. Everything was organized professionally and the ceremony was beautiful. Highly satisfied!", rating=5, location="Hyderabad, Telangana"),
+            Testimonial(author="Sandeep Joshi", author_image="testimonial/vikram.jpg", content="Impressed with the variety of puja materials available. The Rudraksha mala I purchased is authentic and of excellent quality. Great initiative to preserve our culture!", rating=5, location="Kolkata, West Bengal")
         ]
         
         # Add Sample Pandits (10+ pandits)
@@ -1616,7 +1670,7 @@ def seed_data():
             Bundle(
                 name="Griha Pravesh Complete Package",
                 description="Everything you need for a perfect housewarming ceremony. Includes pandit booking, all puja materials, havan samagri, and decorative items.",
-                image_url="priest.jpeg",
+                image_url="bundle/griha parvesh.jpg",
                 original_price=5999,
                 discounted_price=4499,
                 includes="Pandit Service, Puja Thali, Havan Kund, Samagri, Flowers, Fruits"
@@ -1624,7 +1678,7 @@ def seed_data():
             Bundle(
                 name="Satyanarayan Puja Bundle",
                 description="Complete kit for Satyanarayan Katha puja. Authentic materials curated by experienced pandits. Perfect for home celebrations and festivals.",
-                image_url="priest1.jpeg",
+                image_url="bundle/Satyanarayan Puja Bundle.jpg",
                 original_price=3499,
                 discounted_price=2799,
                 includes="Puja Book, Kalash Set, Prasad Items, Decorations, Photo Frame"
@@ -1632,7 +1686,7 @@ def seed_data():
             Bundle(
                 name="Monthly Puja Essentials Box",
                 description="Subscription box with all daily puja needs delivered monthly. Includes incense, diyas, kumkum, vibhuti, and seasonal items.",
-                image_url="th.png",
+                image_url="bundle/Monthly Puja Essentials Box.webp",
                 original_price=999,
                 discounted_price=799,
                 includes="Incense Sticks, Diyas, Kumkum, Rice, Camphor, Sacred Thread"
@@ -1640,7 +1694,7 @@ def seed_data():
             Bundle(
                 name="Wedding Ritual Complete Set",
                 description="Comprehensive package for Hindu wedding ceremonies. Experienced pandit with all required materials. Make your special day memorable.",
-                image_url="priest.jpeg",
+                image_url="bundle/Wedding Ritual Complete.webp",
                 original_price=15999,
                 discounted_price=12999,
                 includes="Expert Pandit, Complete Samagri, Mandap Items, Mangalsutra, Documentation"
@@ -1945,17 +1999,44 @@ def create_order():
                 bundle = Bundle.query.get(item.get('id'))
                 if not bundle:
                     continue
-                
+
                 price = bundle.discounted_price
                 subtotal = price * quantity
                 total_amount += subtotal
-                
+
                 product_name = bundle.name
                 if schedule and schedule.get('date'):
                      product_name += f" [Date: {schedule.get('date')}, Time: {schedule.get('time', 'Any')}]"
-                
+
                 order_items_data.append({
                     'bundle_id': bundle.id,
+                    'product_name': product_name,
+                    'product_price': price,
+                    'quantity': quantity,
+                    'subtotal': subtotal
+                })
+            elif item_type == 'temple_puja':
+                puja_id = item.get('puja_id')
+                if not puja_id:
+                    continue
+                puja = TemplePuja.query.get(int(puja_id))
+                if not puja:
+                    continue
+
+                price = float(puja.price)
+                subtotal = price * quantity
+                total_amount += subtotal
+
+                # Include booking details in product name
+                booking_details = item.get('booking_details', {})
+                product_name = f"{puja.name} at {puja.temple.name}"
+                if booking_details.get('date'):
+                    product_name += f" [Date: {booking_details.get('date')}"
+                    if booking_details.get('gotra'):
+                        product_name += f", Gotra: {booking_details.get('gotra')}"
+                    product_name += "]"
+
+                order_items_data.append({
                     'product_name': product_name,
                     'product_price': price,
                     'quantity': quantity,
