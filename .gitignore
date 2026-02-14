@@ -163,5 +163,8 @@ cython_debug/
 #database connection data breach
 brain/
 
+# Claude Code
+.claude/
+
 # Windows reserved filenames
 nul
