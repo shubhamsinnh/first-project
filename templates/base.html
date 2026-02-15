@@ -455,9 +455,31 @@
         // USER AUTHENTICATION FUNCTIONS
         // ============================================
 
+        // Check if JWT token is expired
+        function isTokenExpired(token) {
+            if (!token) return true;
+            try {
+                // JWT structure: header.payload.signature
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                // exp is in seconds, Date.now() is in milliseconds
+                return payload.exp * 1000 < Date.now();
+            } catch (e) {
+                return true; // Invalid token format
+            }
+        }
+
         function checkAuthStatus() {
             const token = localStorage.getItem('token');
             const userData = localStorage.getItem('user');
+
+            // If token is expired, clear stale data
+            if (token && isTokenExpired(token)) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            }
+
+            const validToken = localStorage.getItem('token');
+            const validUserData = localStorage.getItem('user');
 
             const loginButton = document.getElementById('login-button');
             const userMenu = document.getElementById('user-menu');
@@ -465,7 +487,7 @@
             const mobileUserSection = document.getElementById('mobile-user-section');
             const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
 
-            if (token && userData) {
+            if (validToken && validUserData) {
                 if (loginButton) {
                     loginButton.classList.add('hidden');
                     loginButton.classList.remove('md:flex');
@@ -480,7 +502,7 @@
                 if (mobileLogoutBtn) mobileLogoutBtn.style.display = 'flex';
 
                 try {
-                    const user = JSON.parse(userData);
+                    const user = JSON.parse(validUserData);
                     const initial = user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
                     const fullName = user.full_name || user.username || 'User';
 
