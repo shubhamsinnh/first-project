@@ -2245,6 +2245,7 @@ def payment_page(order_number):
 
 
 @app.route('/payment/verify', methods=['POST'])
+@csrf.exempt
 def verify_razorpay_payment():
     try:
         data = request.get_json()
@@ -2263,34 +2264,39 @@ def verify_razorpay_payment():
         }
 
         razorpay_client.utility.verify_payment_signature(params_dict)
-        
-            # Signature verified - update order
+
+        # Signature verified - update order
         order = Order.query.filter_by(order_number=order_number).first()
-        if order:
-            order.payment_status = 'paid'
-            order.status = 'confirmed'
-            order.payment_reference = razorpay_payment_id
-            order.payment_date = datetime.now(timezone.utc)
-            db.session.commit()
-            
-            print(f"Payment verified for Order {order_number}. Sending email...")
-
-            # Send Order Confirmation Email
-            try:
-                # Debug logging
-                print(f"Calling send_order_confirmation_email for order {order.id}")
-                send_order_confirmation_email(order)
-            except Exception as e:
-                app.logger.error(f"Failed to trigger order email: {str(e)}")
-                import traceback
-                traceback.print_exc()
-
+        if not order:
             return jsonify({
-                "success": True,
-                "message": "Payment verified successfully",
-                "order_number": order_number,
-                "payment_id": razorpay_payment_id
-            })
+                "success": False,
+                "error": "Order not found"
+            }), 404
+
+        # Update order status
+        order.payment_status = 'paid'
+        order.status = 'confirmed'
+        order.payment_reference = razorpay_payment_id
+        order.payment_date = datetime.now(timezone.utc)
+        db.session.commit()
+
+        print(f"Payment verified for Order {order_number}. Sending email...")
+
+        # Send Order Confirmation Email
+        try:
+            print(f"Calling send_order_confirmation_email for order {order.id}")
+            send_order_confirmation_email(order)
+        except Exception as e:
+            app.logger.error(f"Failed to trigger order email: {str(e)}")
+            import traceback
+            traceback.print_exc()
+
+        return jsonify({
+            "success": True,
+            "message": "Payment verified successfully",
+            "order_number": order_number,
+            "payment_id": razorpay_payment_id
+        })
 
     except razorpay.errors.SignatureVerificationError as e:
         app.logger.error(f"Signature verification failed: {str(e)}")
@@ -2401,29 +2407,34 @@ def verify_pandit_razorpay_payment():
         }
 
         razorpay_client.utility.verify_payment_signature(params_dict)
-        
+
         # Signature verified - update booking
         booking = Booking.query.filter_by(booking_number=booking_number).first()
-        if booking:
-            booking.payment_status = 'paid'
-            booking.status = 'confirmed'
-            booking.payment_reference = razorpay_payment_id
-            booking.payment_date = datetime.now(timezone.utc)
-            db.session.commit()
-
-            # Send Confirmation Email with Calendar Invite
-            # We run this in a try/except to ensure response returns even if email fails
-            try:
-                send_booking_confirmation_email(booking, booking.pandit)
-            except Exception as e:
-                app.logger.error(f"Failed to trigger email: {str(e)}")
-
+        if not booking:
             return jsonify({
-                "success": True,
-                "message": "Payment verified successfully",
-                "booking_number": booking_number,
-                "payment_id": razorpay_payment_id
-            })
+                "success": False,
+                "error": "Booking not found"
+            }), 404
+
+        # Update booking status
+        booking.payment_status = 'paid'
+        booking.status = 'confirmed'
+        booking.payment_reference = razorpay_payment_id
+        booking.payment_date = datetime.now(timezone.utc)
+        db.session.commit()
+
+        # Send Confirmation Email with Calendar Invite
+        try:
+            send_booking_confirmation_email(booking, booking.pandit)
+        except Exception as e:
+            app.logger.error(f"Failed to trigger email: {str(e)}")
+
+        return jsonify({
+            "success": True,
+            "message": "Payment verified successfully",
+            "booking_number": booking_number,
+            "payment_id": razorpay_payment_id
+        })
 
     except razorpay.errors.SignatureVerificationError as e:
         app.logger.error(f"Signature verification failed: {str(e)}")

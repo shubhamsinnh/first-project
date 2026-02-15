@@ -176,27 +176,34 @@
                     "description": `Order #${orderNumber}`,
                     "order_id": paymentData.order_id,
                     "handler": async function (response) {
-                        // 3. Verify payment on your server
-                        const verificationResponse = await fetch('/payment/verify', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_signature: response.razorpay_signature,
-                                order_number: orderNumber
-                            })
-                        });
+                        try {
+                            // 3. Verify payment on your server
+                            const verificationResponse = await fetch('/payment/verify', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    order_number: orderNumber
+                                })
+                            });
 
-                        const verificationResult = await verificationResponse.json();
+                            const verificationResult = await verificationResponse.json();
 
-                        if (verificationResult.success) {
-                            // Redirect to success page
-                            window.location.href = `/order-confirmation/${orderNumber}`;
-                        } else {
-                            alert('Payment verification failed. Please contact support.');
+                            if (verificationResult.success) {
+                                // Redirect to success page
+                                window.location.href = `/order-confirmation/${orderNumber}`;
+                            } else {
+                                alert('Payment verification failed: ' + (verificationResult.error || 'Unknown error. Please contact support.'));
+                                button.disabled = false;
+                                button.textContent = 'Pay Now';
+                            }
+                        } catch (verifyError) {
+                            console.error('Verification error:', verifyError);
+                            alert('Error verifying payment. Please contact support with your order number: ' + orderNumber);
                             button.disabled = false;
                             button.textContent = 'Pay Now';
                         }
