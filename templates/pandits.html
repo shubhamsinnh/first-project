@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Our Verified Pandits | PujaPath{% endblock %}
+
+{% block meta_description %}Book verified and experienced pandits for home pujas. Griha Pravesh, Satyanarayan Katha, Navgraha Shanti & more. Available across India.{% endblock %}
+
+{% block extra_styles %}
+.pandit-card {
+    transition: all 0.3s ease;
+}
+
+.pandit-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: white;
+    border-color: transparent;
+}
+
+.search-input:focus {
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3);
+}
+
+.rating-stars {
+    color: #f59e0b;
+}
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 py-12 md:py-16 overflow-hidden">
+    <div class="absolute top-0 left-0 w-72 h-72 bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+    <div class="absolute bottom-0 right-0 w-72 h-72 bg-amber-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+
+    <div class="container mx-auto px-6 relative z-10">
+        <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+            <!-- Text Content -->
+            <div class="flex-1 text-center lg:text-left">
+                <span class="inline-block px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold mb-4">
+                    Verified & Experienced Pandits
+                </span>
+                <h1 class="text-4xl md:text-5xl font-extrabold mb-4">
+                    <span class="gradient-text">Our Verified Pandits</span>
+                </h1>
+                <p class="text-lg text-gray-600 max-w-xl mb-8">
+                    Book experienced and verified pandits for home pujas. From Griha Pravesh to Satyanarayan Katha, get authentic Vedic rituals performed at your doorstep.
+                </p>
+
+                <!-- Trust Badges -->
+                <div class="flex flex-wrap justify-center lg:justify-start gap-3 md:gap-4">
+                    <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                        <i class="fas fa-user-check text-orange-600"></i>
+                        <span class="text-sm font-medium text-gray-700">Verified Pandits</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                        <i class="fas fa-graduation-cap text-orange-600"></i>
+                        <span class="text-sm font-medium text-gray-700">Vedic Trained</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                        <i class="fas fa-home text-orange-600"></i>
+                        <span class="text-sm font-medium text-gray-700">Home Visit</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                        <i class="fas fa-star text-orange-600"></i>
+                        <span class="text-sm font-medium text-gray-700">5-Star Rated</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero Image -->
+            <div class="flex-1 w-full max-w-lg lg:max-w-none">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-gradient-to-r from-orange-400 to-amber-400 rounded-2xl transform rotate-3 opacity-20"></div>
+                    <img src="{{ url_for('static', filename='hero/Orange and Brown Kedarnath India Travel YouTube Thumbnail (1).png') }}"
+                        alt="Verified Pandits for Home Pujas"
+                        class="relative w-full h-auto rounded-2xl shadow-2xl object-cover">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search & Filters -->
+<section class="py-6 bg-white border-b border-gray-100 sticky top-16 z-30">
+    <div class="container mx-auto px-6">
+        <form method="GET" action="{{ url_for('pandits_list') }}" class="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <!-- Search Bar -->
+            <div class="relative flex-1 max-w-md w-full">
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Search pandits, specialties..."
+                    class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent search-input">
+                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-3 items-center">
+                <select name="location" onchange="this.form.submit()"
+                    class="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <option value="">All Locations</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc }}" {% if current_location == loc %}selected{% endif %}>{{ loc }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="specialty" onchange="this.form.submit()"
+                    class="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <option value="">All Specialties</option>
+                    {% for spec in specialties %}
+                    <option value="{{ spec }}" {% if current_specialty == spec %}selected{% endif %}>{{ spec }}</option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit"
+                    class="px-6 py-3 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-xl font-semibold hover:from-gray-900 hover:to-black transition-all">
+                    <i class="fas fa-filter mr-2"></i>Filter
+                </button>
+
+                {% if search_query or current_location or current_specialty %}
+                <a href="{{ url_for('pandits_list') }}"
+                    class="px-4 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-times mr-1"></i>Clear
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- Pandits Grid -->
+<section class="py-10 bg-gradient-to-b from-white to-orange-50/30">
+    <div class="container mx-auto px-6">
+        {% if pandits %}
+        <!-- Results Count -->
+        <div class="mb-6 flex items-center justify-between">
+            <p class="text-gray-600">
+                Showing <span class="font-bold text-gray-800">{{ pandits|length }}</span> verified pandits
+                {% if search_query %} for "{{ search_query }}"{% endif %}
+            </p>
+        </div>
+
+        <!-- Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {% for pandit in pandits %}
+            <a href="{{ url_for('pandit_detail', pandit_id=pandit.id) }}"
+                class="pandit-card bg-white rounded-2xl shadow-lg overflow-hidden border border-orange-100 block">
+                <div class="relative">
+                    <img src="{{ url_for('static', filename=pandit.image_url) if pandit.image_url else 'https://ui-avatars.com/api/?name=' + pandit.name|urlencode + '&background=f97316&color=fff&size=400' }}"
+                        onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ pandit.name|urlencode }}&background=f97316&color=fff&size=400'"
+                        alt="{{ pandit.name }}" class="w-full h-48 object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div class="absolute bottom-3 left-3 text-white">
+                        <h3 class="text-lg font-bold">{{ pandit.name }}</h3>
+                        <p class="text-sm opacity-90"><i class="fas fa-map-marker-alt mr-1"></i>{{ pandit.location }}</p>
+                    </div>
+                    {% if pandit.availability %}
+                    <div class="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                        Available
+                    </div>
+                    {% else %}
+                    <div class="absolute top-3 right-3 bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                        Busy
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="p-5">
+                    <!-- Rating & Experience -->
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-1 rating-stars">
+                            {% for i in range(pandit.rating or 5) %}
+                            <i class="fas fa-star text-sm"></i>
+                            {% endfor %}
+                            <span class="text-gray-600 text-sm ml-1">({{ pandit.rating or 5 }}.0)</span>
+                        </div>
+                        <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
+                            {{ pandit.experience }}
+                        </span>
+                    </div>
+
+                    <!-- Languages -->
+                    {% if pandit.languages %}
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fas fa-language text-orange-500"></i>
+                        <span class="text-sm text-gray-600">{{ pandit.languages }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Specialties -->
+                    {% if pandit.specialties %}
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        {% for specialty in pandit.specialties.split(',')[:2] %}
+                        <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">{{ specialty.strip() }}</span>
+                        {% endfor %}
+                        {% if pandit.specialties.split(',')|length > 2 %}
+                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">+{{ pandit.specialties.split(',')|length - 2 }} more</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-sm text-gray-500">Experience</span>
+                            <span class="text-sm font-bold text-gray-800 ml-1">{{ pandit.experience }}</span>
+                        </div>
+                        <span class="text-orange-600 font-semibold text-sm flex items-center gap-1">
+                            View Profile <i class="fas fa-arrow-right"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- No Results -->
+        <div class="text-center py-16">
+            <div class="text-6xl mb-4">
+                <i class="fas fa-user-tie text-gray-300"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">No pandits found</h3>
+            <p class="text-gray-600 mb-6">Try adjusting your search or filters</p>
+            <a href="{{ url_for('pandits_list') }}"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-xl font-semibold hover:from-gray-900 hover:to-black transition-all">
+                <i class="fas fa-redo"></i>View All Pandits
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Why Book Our Pandits -->
+<section class="py-12 bg-white">
+    <div class="container mx-auto px-6">
+        <h2 class="text-3xl font-extrabold text-center mb-10">
+            Why Book <span class="gradient-text">Our Pandits</span>?
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 text-center border border-orange-100">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-orange-500">
+                    <i class="fas fa-user-check text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">Verified & Trusted</h3>
+                <p class="text-sm text-gray-600">All pandits are verified with background checks and credentials</p>
+            </div>
+
+            <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 text-center border border-orange-100">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-orange-500">
+                    <i class="fas fa-graduation-cap text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">Vedic Trained</h3>
+                <p class="text-sm text-gray-600">Trained in authentic Vedic rituals and mantras</p>
+            </div>
+
+            <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 text-center border border-orange-100">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-orange-500">
+                    <i class="fas fa-home text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">Home Visit</h3>
+                <p class="text-sm text-gray-600">Pandits come to your home at your preferred time</p>
+            </div>
+
+            <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 text-center border border-orange-100">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-orange-500">
+                    <i class="fas fa-headset text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">24/7 Support</h3>
+                <p class="text-sm text-gray-600">Get assistance anytime before, during, or after the puja</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-12 bg-gradient-to-r from-gray-800 to-gray-900">
+    <div class="container mx-auto px-6 text-center">
+        <h2 class="text-3xl font-extrabold text-white mb-4">Need Help Finding the Right Pandit?</h2>
+        <p class="text-orange-100 mb-8 max-w-xl mx-auto">Our team can help match you with the perfect pandit based on your puja requirements and location.</p>
+        <a href="https://wa.me/919155095375?text=Hi, I need help finding a pandit for my puja requirements." target="_blank"
+            class="inline-flex items-center gap-2 px-8 py-4 bg-white text-orange-600 rounded-xl font-bold text-lg hover:bg-orange-50 transition-all shadow-lg">
+            <i class="fab fa-whatsapp text-2xl"></i>
+            Chat with Us
+        </a>
+    </div>
+</section>
+{% endblock %}

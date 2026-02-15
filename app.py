@@ -1465,6 +1465,71 @@ def temples():
                           search_query=search)
 
 
+@app.route('/pandits')
+def pandits_list():
+    """Browse all verified pandits page"""
+    # Get filter parameters
+    location = request.args.get('location', '')
+    specialty = request.args.get('specialty', '')
+    search = request.args.get('search', '')
+
+    # Base query - only approved pandits
+    query = Pandit.query.filter_by(is_approved=True)
+
+    # Apply filters
+    if location:
+        query = query.filter(Pandit.location.ilike(f'%{location}%'))
+    if specialty:
+        query = query.filter(Pandit.specialties.ilike(f'%{specialty}%'))
+    if search:
+        query = query.filter(
+            db.or_(
+                Pandit.name.ilike(f'%{search}%'),
+                Pandit.location.ilike(f'%{search}%'),
+                Pandit.specialties.ilike(f'%{search}%'),
+                Pandit.languages.ilike(f'%{search}%')
+            )
+        )
+
+    pandits = query.order_by(Pandit.rating.desc(), Pandit.name).all()
+
+    # Get unique locations and specialties for filter dropdowns
+    all_pandits = Pandit.query.filter_by(is_approved=True).all()
+    locations = sorted(set(p.location for p in all_pandits if p.location))
+
+    # Extract unique specialties from comma-separated values
+    all_specialties = set()
+    for p in all_pandits:
+        if p.specialties:
+            for s in p.specialties.split(','):
+                all_specialties.add(s.strip())
+    specialties = sorted(all_specialties)
+
+    return render_template('pandits.html',
+                          pandits=pandits,
+                          locations=locations,
+                          specialties=specialties,
+                          current_location=location,
+                          current_specialty=specialty,
+                          search_query=search)
+
+
+@app.route('/pandits/<int:pandit_id>')
+def pandit_detail(pandit_id):
+    """Individual pandit detail page"""
+    pandit = Pandit.query.get_or_404(pandit_id)
+
+    # Get other pandits for "More Pandits" section
+    other_pandits = Pandit.query.filter(
+        Pandit.id != pandit_id,
+        Pandit.is_approved == True
+    ).limit(4).all()
+
+    return render_template('pandit_detail.html',
+                          pandit=pandit,
+                          other_pandits=other_pandits)
+
+
 @app.route('/temples/<int:temple_id>')
 def temple_detail(temple_id):
     """Temple detail page with available pujas"""
