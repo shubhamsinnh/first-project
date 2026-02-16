@@ -15,7 +15,7 @@
         }
 
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
         }
 
         .gradient-text {
@@ -23,7 +23,7 @@
         }
 
         .sidebar-link:hover {
-            background: rgba(102, 126, 234, 0.1);
+            background: rgba(31, 41, 55, 0.1);
         }
 
         .stat-card:hover {
@@ -123,9 +123,9 @@
                 </svg>
             </button>
 
-            <a href="/" class="flex items-center space-x-2">
+            <a href="/" class="flex items-center space-x-2 md:space-x-3">
                 <div
-                    class="w-10 h-10 bg-[#2d2d2d] rounded-full flex items-center justify-center text-white font-bold text-xl shadow-md">
+                    class="w-10 h-10 md:w-12 md:h-12 bg-[#2d2d2d] rounded-full flex items-center justify-center text-white font-bold text-xl md:text-2xl shadow-lg">
                     ॐ
                 </div>
                 <span class="text-xl md:text-2xl font-bold gradient-text">PujaPath</span>
@@ -155,7 +155,7 @@
     <!-- Side Drawer & Overlay (Standardized) -->
     <div class="drawer-overlay" id="drawer-overlay" onclick="toggleSideDrawer()"></div>
     <div class="side-drawer" id="side-drawer">
-        <div class="bg-gradient-to-br from-purple-600 to-indigo-700 p-8 text-white">
+        <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-8 text-white">
             <div class="flex items-center space-x-4 mb-4">
                 <div class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white font-bold text-2xl border border-white/30"
                     id="drawerUserInitial">
@@ -163,7 +163,7 @@
                 </div>
                 <div>
                     <p class="font-bold text-lg" id="drawerUserName">User Name</p>
-                    <p class="text-xs text-purple-100" id="drawerUserEmail">user@email.com</p>
+                    <p class="text-xs text-gray-300" id="drawerUserEmail">user@email.com</p>
                 </div>
             </div>
         </div>
